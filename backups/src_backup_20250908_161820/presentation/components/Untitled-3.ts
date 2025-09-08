@@ -1905,6 +1905,21 @@ export const GenesisCore: React.FC = () => {
           <p style={{ margin: '0 0 0.2rem 0' }}>Precisão: {(predictionMetrics.accuracy * 100).toFixed(1)}%</p>
           <p style={{ margin: '0 0 0.2rem 0' }}>Status: {predictionMetrics.isReady ? '✅ Ativo' : '⏳ Coletando'}</p>
           
+          {/* INTEGRAÇÃO: Métricas de predição temporal avançada */}
+          <p style={{ margin: '0.5rem 0 0.3rem 0', color: '#aa88ff' }}>Predição Avançada (LSTM-style):</p>
+          <p style={{ margin: '0 0 0.2rem 0' }}>Precisão: {(advancedPredictionMetrics.accuracy * 100).toFixed(1)}%</p>
+          <p style={{ margin: '0 0 0.2rem 0' }}>Status: {advancedPredictionMetrics.isReady ? '🔮 Neural Ativo' : '🧠 Treinando'}</p>
+          <p style={{ margin: '0 0 0.2rem 0' }}>Horizonte: {(advancedPredictionMetrics.predictionHorizon / 1000).toFixed(1)}s</p>
+          {advancedPrediction && (
+            <>
+              <p style={{ margin: '0 0 0.2rem 0' }}>Tendência: {
+                advancedPrediction.trend === 'ascending' ? '📈 Crescente' :
+                advancedPrediction.trend === 'descending' ? '📉 Decrescente' : '➡️ Estável'
+              }</p>
+              <p style={{ margin: '0 0 0.2rem 0' }}>Confiança: {(advancedPrediction.confidence * 100).toFixed(1)}%</p>
+            </>
+          )}
+          
           <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.7rem', opacity: 0.7, color: performanceMetrics.fps >= 60 ? '#00ff88' : '#ffaa44' }}>
             OTIMIZADO - ZERO PERDAS ✅
           </p>

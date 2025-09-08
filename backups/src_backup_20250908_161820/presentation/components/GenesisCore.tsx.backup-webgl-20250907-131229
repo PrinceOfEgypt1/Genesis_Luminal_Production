@@ -1,28 +1,22 @@
 /**
- * @fileoverview Genesis Luminal Evoluído - OTIMIZAÇÃO PERFORMANCE SEM PERDAS
+ * @fileoverview Genesis Luminal Evoluído - Sistema de Distribuições Dinâmicas
  * 
- * OTIMIZAÇÕES APLICADAS (MANTENDO 100% DAS FUNCIONALIDADES):
- * ✅ React.memo() em EmotionalBar
- * ✅ useMemo() para cálculos intensivos
- * ✅ useCallback() em handlers críticos
- * ✅ Memoização de distribuições e cores
+ * FASE 2.2.2: Sistema completo com 4 distribuições dinâmicas de partículas
+ * - Distribuição Fibonacci: Harmônica e equilibrada
+ * - Distribuição Espiral: Hipnótica para mystery/curiosity  
+ * - Distribuição Orgânica: Natural para serenity/nostalgia
+ * - Distribuição Aleatória: Energética para ecstasy/power
+ * - Transições suaves baseadas no estado emocional dominante
+ * - Otimizações de performance para 60+ FPS
  * 
- * TODAS AS FUNCIONALIDADES ORIGINAIS MANTIDAS:
- * - 2000 partículas com 4 distribuições dinâmicas
- * - Sistema de áudio celestial com Tone.js
- * - Predição temporal com LSTM
- * - Memória emocional persistente
- * - Debug panel completo
- * - WebGL otimizado + Canvas 2D fallback
- * 
- * @version 2.4.1 - PERFORMANCE OPTIMIZED (NO FUNCTIONALITY LOSS)
+ * @version 2.2.2
  * @author Senior Software Engineering Team
- * @since 2024-09-07
+ * @since 2024-09-05
  */
 
-import React, { useRef, useEffect, useState, useCallback, useMemo, memo } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 
-// === INTERFACES COMPLETAS ===
+// === INTERFACES OTIMIZADAS ===
 
 interface OptimizedParticle {
   x: number; y: number; z: number;
@@ -31,6 +25,7 @@ interface OptimizedParticle {
   size: number; hue: number;
   visible: boolean; lastUpdate: number;
   lodLevel: number; quadrant: number;
+  // NOVO: Sistema de distribuições dinâmicas
   originalIndex: number;
   targetPosition: Vector3;
   transitionProgress: number;
@@ -72,260 +67,14 @@ interface DistributionConfig {
   algorithm: (index: number, total: number, params?: any) => Vector3;
 }
 
-// === SISTEMA WEBGL OTIMIZADO ===
-
-class UltraFastWebGLRenderer {
-  private gl: WebGLRenderingContext | null = null;
-  private canvas: HTMLCanvasElement | null = null;
-  private shaderProgram: WebGLProgram | null = null;
-  private vertexBuffer: WebGLBuffer | null = null;
-  private isEnabled: boolean = false;
-  private cachedParticleData: Float32Array | null = null;
-  
-  private vertexShaderSource = `
-    attribute vec3 a_position;
-    attribute vec3 a_color;
-    attribute float a_size;
-    
-    uniform vec2 u_mouse;
-    uniform float u_time;
-    uniform float u_intensity;
-    uniform vec2 u_resolution;
-    uniform vec4 u_rotation;
-    
-    varying vec3 v_color;
-    varying float v_alpha;
-    
-    void main() {
-      vec3 pos = a_position;
-      
-      // Rotação 3D otimizada usando uniforms
-      float cosY = u_rotation.x, sinY = u_rotation.y;
-      float cosX = u_rotation.z, sinX = u_rotation.w;
-      
-      // Aplicar rotação Y
-      float tempX = pos.x * cosY - pos.z * sinY;
-      pos.z = pos.x * sinY + pos.z * cosY;
-      pos.x = tempX;
-      
-      // Aplicar rotação X
-      float tempY = pos.y * cosX - pos.z * sinX;
-      pos.z = pos.y * sinX + pos.z * cosX;
-      pos.y = tempY;
-      
-      vec3 transformedPos = pos;
-      
-      // Projeção perspectiva simplificada
-      float perspective = 400.0;
-      float scale = perspective / (perspective + transformedPos.z);
-      
-      vec2 clipPos = (transformedPos.xy * scale) / (u_resolution * 0.5);
-      gl_Position = vec4(clipPos, transformedPos.z * 0.001, 1.0);
-      gl_PointSize = max(2.0, a_size * scale * (1.5 + u_intensity * 2.0));
-      
-      float depth = (300.0 + transformedPos.z) / 600.0;
-      v_alpha = max(0.4, depth * (0.7 + u_intensity * 0.8));
-      v_color = a_color;
-    }
-  `;
-  
-  private fragmentShaderSource = `
-    precision mediump float;
-    
-    varying vec3 v_color;
-    varying float v_alpha;
-    
-    void main() {
-      vec2 center = gl_PointCoord - 0.5;
-      float dist = length(center);
-      
-      if (dist > 0.5) discard;
-      
-      float glow = 1.0 - smoothstep(0.0, 0.5, dist);
-      float coreGlow = 1.0 - smoothstep(0.0, 0.15, dist);
-      
-      vec3 finalColor = v_color * (0.6 + coreGlow * 1.4);
-      float finalAlpha = v_alpha * glow;
-      
-      gl_FragColor = vec4(finalColor, finalAlpha);
-    }
-  `;
-
-  initialize(canvas: HTMLCanvasElement): boolean {
-    this.canvas = canvas;
-    this.gl = canvas.getContext('webgl', {
-      alpha: true,
-      antialias: false,
-      depth: false,
-      premultipliedAlpha: false,
-      preserveDrawingBuffer: false,
-      powerPreference: 'high-performance'
-    });
-    
-    if (!this.gl) return false;
-
-    this.gl.enable(this.gl.BLEND);
-    this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE);
-    this.gl.disable(this.gl.DEPTH_TEST);
-
-    const vertexShader = this.compileShader(this.vertexShaderSource, this.gl.VERTEX_SHADER);
-    const fragmentShader = this.compileShader(this.fragmentShaderSource, this.gl.FRAGMENT_SHADER);
-    
-    if (!vertexShader || !fragmentShader) return false;
-
-    this.shaderProgram = this.gl.createProgram();
-    if (!this.shaderProgram) return false;
-
-    this.gl.attachShader(this.shaderProgram, vertexShader);
-    this.gl.attachShader(this.shaderProgram, fragmentShader);
-    this.gl.linkProgram(this.shaderProgram);
-
-    if (!this.gl.getProgramParameter(this.shaderProgram, this.gl.LINK_STATUS)) {
-      return false;
-    }
-
-    this.vertexBuffer = this.gl.createBuffer();
-    this.isEnabled = true;
-    
-    console.log('🚀 WebGL Ultra-Fast Renderer ativado!');
-    return true;
-  }
-
-  private compileShader(source: string, type: number): WebGLShader | null {
-    if (!this.gl) return null;
-
-    const shader = this.gl.createShader(type);
-    if (!shader) return null;
-
-    this.gl.shaderSource(shader, source);
-    this.gl.compileShader(shader);
-
-    if (!this.gl.getShaderParameter(shader, this.gl.COMPILE_STATUS)) {
-      this.gl.deleteShader(shader);
-      return null;
-    }
-
-    return shader;
-  }
-
-  renderParticles(
-    particles: OptimizedParticle[],
-    mousePosition: MousePosition,
-    emotionalIntensity: number,
-    dominantHue: number,
-    timestamp: number
-  ): boolean {
-    if (!this.gl || !this.shaderProgram || !this.vertexBuffer || !this.isEnabled) {
-      return false;
-    }
-
-    const { width, height } = this.canvas!;
-    this.gl.viewport(0, 0, width, height);
-    this.gl.clearColor(0, 0, 0, 0);
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-
-    if (particles.length === 0) {
-      return false;
-    }
-
-    const dataSize = particles.length * 7;
-    if (!this.cachedParticleData || this.cachedParticleData.length !== dataSize) {
-      this.cachedParticleData = new Float32Array(dataSize);
-    }
-
-    // Preparar dados das partículas
-    for (let i = 0; i < particles.length; i++) {
-      const particle = particles[i];
-      const baseIndex = i * 7;
-      const particleHue = (dominantHue + Math.sin(particle.x * 0.01) * 60) % 360;
-      
-      // Conversão HSL→RGB otimizada
-      const h = particleHue / 360;
-      const s = 0.8;
-      const l = 0.7;
-      const c = (1 - Math.abs(2 * l - 1)) * s;
-      const x = c * (1 - Math.abs((h * 6) % 2 - 1));
-      const m = l - c / 2;
-      
-      let r = 0, g = 0, b = 0;
-      const h6 = h * 6;
-      if (h6 < 1) { r = c; g = x; b = 0; }
-      else if (h6 < 2) { r = x; g = c; b = 0; }
-      else if (h6 < 3) { r = 0; g = c; b = x; }
-      else if (h6 < 4) { r = 0; g = x; b = c; }
-      else if (h6 < 5) { r = x; g = 0; b = c; }
-      else { r = c; g = 0; b = x; }
-      
-      this.cachedParticleData[baseIndex] = particle.x;
-      this.cachedParticleData[baseIndex + 1] = particle.y;
-      this.cachedParticleData[baseIndex + 2] = particle.z;
-      this.cachedParticleData[baseIndex + 3] = r + m;
-      this.cachedParticleData[baseIndex + 4] = g + m;
-      this.cachedParticleData[baseIndex + 5] = b + m;
-      this.cachedParticleData[baseIndex + 6] = particle.size;
-    }
-
-    // Upload para GPU
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vertexBuffer);
-    this.gl.bufferData(this.gl.ARRAY_BUFFER, this.cachedParticleData, this.gl.DYNAMIC_DRAW);
-    this.gl.useProgram(this.shaderProgram);
-
-    // Configurar atributos
-    const positionAttrib = this.gl.getAttribLocation(this.shaderProgram, 'a_position');
-    const colorAttrib = this.gl.getAttribLocation(this.shaderProgram, 'a_color');
-    const sizeAttrib = this.gl.getAttribLocation(this.shaderProgram, 'a_size');
-
-    this.gl.enableVertexAttribArray(positionAttrib);
-    this.gl.vertexAttribPointer(positionAttrib, 3, this.gl.FLOAT, false, 28, 0);
-    this.gl.enableVertexAttribArray(colorAttrib);
-    this.gl.vertexAttribPointer(colorAttrib, 3, this.gl.FLOAT, false, 28, 12);
-    this.gl.enableVertexAttribArray(sizeAttrib);
-    this.gl.vertexAttribPointer(sizeAttrib, 1, this.gl.FLOAT, false, 28, 24);
-
-    // Configurar uniforms
-    const rotY = mousePosition.x * Math.PI * 3 + timestamp * 0.0008;
-    const rotX = mousePosition.y * Math.PI * 2 + timestamp * 0.0006;
-    const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
-    const cosX = Math.cos(rotX), sinX = Math.sin(rotX);
-    
-    const mouseUniform = this.gl.getUniformLocation(this.shaderProgram, 'u_mouse');
-    const timeUniform = this.gl.getUniformLocation(this.shaderProgram, 'u_time');
-    const intensityUniform = this.gl.getUniformLocation(this.shaderProgram, 'u_intensity');
-    const resolutionUniform = this.gl.getUniformLocation(this.shaderProgram, 'u_resolution');
-    const rotationUniform = this.gl.getUniformLocation(this.shaderProgram, 'u_rotation');
-
-    this.gl.uniform2f(mouseUniform, mousePosition.x, mousePosition.y);
-    this.gl.uniform1f(timeUniform, timestamp * 0.001);
-    this.gl.uniform1f(intensityUniform, emotionalIntensity);
-    this.gl.uniform2f(resolutionUniform, width, height);
-    this.gl.uniform4f(rotationUniform, cosY, sinY, cosX, sinX);
-
-    // Renderizar
-    this.gl.drawArrays(this.gl.POINTS, 0, particles.length);
-    
-    return true;
-  }
-
-  isWebGLEnabled(): boolean {
-    return this.isEnabled;
-  }
-
-  cleanup(): void {
-    if (this.gl && this.shaderProgram) {
-      this.gl.deleteProgram(this.shaderProgram);
-    }
-    this.isEnabled = false;
-  }
-}
-
-// === SISTEMA DE DISTRIBUIÇÕES DINÂMICAS (COMPLETO) ===
+// === SISTEMA DE DISTRIBUIÇÕES DINÂMICAS ===
 
 class DistributionManager {
   private currentDistribution: DistributionType = DistributionType.FIBONACCI;
+  private transitionSpeed: number = 0.02;
   private noiseOffset: number = 0;
   
-  // OTIMIZAÇÃO: Memoizar distribuições para evitar recálculos
-  public readonly distributions: Record<DistributionType, DistributionConfig> = useMemo(() => ({
+  private readonly distributions: Record<DistributionType, DistributionConfig> = {
     [DistributionType.FIBONACCI]: {
       name: 'Fibonacci',
       emotions: ['joy', 'balance'],
@@ -350,7 +99,7 @@ class DistributionManager {
       description: 'Caos controlado com energia dinâmica',
       algorithm: this.randomAlgorithm.bind(this)
     }
-  }), []);
+  };
 
   private fibonacciAlgorithm(index: number, total: number): Vector3 {
     const goldenRatio = (1 + Math.sqrt(5)) / 2;
@@ -489,7 +238,7 @@ class DistributionManager {
   }
 }
 
-// === SISTEMA DE PARTÍCULAS COMPLETO ===
+// === SISTEMA DE PARTÍCULAS OTIMIZADO ===
 
 class ParticlePool {
   private pool: OptimizedParticle[] = [];
@@ -585,11 +334,12 @@ class ParticlePool {
     }
   }
 
+  // Métodos existentes otimizados
   getParticles(): OptimizedParticle[] {
     return this.pool;
   }
 
-  applyLOD(_centerX: number, _centerY: number, timestamp: number): void {
+  applyLOD(centerX: number, centerY: number, timestamp: number): void {
     const now = timestamp;
     
     this.pool.forEach(particle => {
@@ -616,7 +366,7 @@ class ParticlePool {
   applyCulling(
     centerX: number, centerY: number, 
     width: number, height: number,
-    _mousePosition: MousePosition
+    mousePosition: MousePosition
   ): OptimizedParticle[] {
     const margin = 100;
     const visibleParticles: OptimizedParticle[] = [];
@@ -665,7 +415,7 @@ class ParticlePool {
   }
 }
 
-// === RENDERER OTIMIZADO ===
+// === SISTEMA DE RENDERIZAÇÃO OTIMIZADO ===
 
 class OptimizedRenderer {
   private particleBatches: Map<number, OptimizedParticle[]> = new Map();
@@ -705,6 +455,7 @@ class OptimizedRenderer {
     sortedBatches.forEach(([batchKey, batch]) => {
       const lodLevel = Math.floor(batchKey / 10);
       
+      // OTIMIZAÇÃO: Pular frames para LOD baixo
       if (lodLevel === 2 && Math.floor(timestamp / 66) % 2 !== 0) return;
       if (lodLevel === 1 && Math.floor(timestamp / 33) % 2 !== 0) return;
       
@@ -732,6 +483,7 @@ class OptimizedRenderer {
     dominantHue: number,
     timestamp: number
   ): void {
+    // Rotações 3D otimizadas
     const rotY = mousePosition.x * Math.PI * 3 + timestamp * 0.0008;
     const rotX = mousePosition.y * Math.PI * 2 + timestamp * 0.0006;
 
@@ -748,11 +500,13 @@ class OptimizedRenderer {
     z = y * sinX + z * cosX;
     y = tempY;
 
+    // Projeção perspectiva
     const perspective = 400;
     const scale = perspective / (perspective + z);
     const projectedX = centerX + x * scale;
     const projectedY = centerY + y * scale;
 
+    // Cálculo de influência do mouse
     const mouseWorldX = (mousePosition.x - 0.5) * window.innerWidth * 0.5;
     const mouseWorldY = (mousePosition.y - 0.5) * window.innerHeight * 0.5;
     const distToMouse = Math.sqrt(
@@ -762,12 +516,14 @@ class OptimizedRenderer {
 
     const mouseEffect = Math.max(0, 1 - distToMouse / mouseInfluence);
     
-    if (particle.lodLevel <= 1) {
+    // Animação orgânica OTIMIZADA
+    if (particle.lodLevel <= 1) { // Apenas alta e média qualidade
       const timeOffset = timestamp * 0.001;
       particle.x += particle.vx + Math.sin(timeOffset + particle.x * 0.01) * emotionalIntensity * 0.8;
       particle.y += particle.vy + Math.cos(timeOffset + particle.y * 0.01) * emotionalIntensity * 0.6;
       particle.z += particle.vz + Math.sin(timeOffset * 0.5 + particle.z * 0.01) * emotionalIntensity * 0.7;
 
+      // Contenção no espaço 3D
       const distance = Math.sqrt(particle.x ** 2 + particle.y ** 2 + particle.z ** 2);
       if (distance > 250) {
         particle.x *= 0.92;
@@ -776,6 +532,7 @@ class OptimizedRenderer {
       }
     }
 
+    // Propriedades visuais
     const depth = (300 + z) / 600;
     const alpha = (0.2 + mouseEffect * 0.8) * depth;
     const size = (particle.size + mouseEffect * 4) * scale * (0.5 + depth * 0.5);
@@ -784,7 +541,9 @@ class OptimizedRenderer {
 
     const particleHue = dominantHue + (Math.sin(particle.x * 0.01) * 60);
     
+    // Renderização com LOD
     if (particle.lodLevel === 0 && alpha > 0.3) {
+      // Alta qualidade: partícula + glow
       const glowGradient = ctx.createRadialGradient(
         projectedX, projectedY, 0, 
         projectedX, projectedY, size * 2
@@ -799,6 +558,7 @@ class OptimizedRenderer {
       ctx.fill();
     }
     
+    // Core da partícula
     ctx.fillStyle = `hsla(${particleHue}, ${saturation + 20}%, ${lightness + 10}%, ${alpha * 1.5})`;
     ctx.beginPath();
     ctx.arc(projectedX, projectedY, size, 0, Math.PI * 2);
@@ -806,7 +566,7 @@ class OptimizedRenderer {
   }
 }
 
-// === SISTEMAS AUXILIARES COMPLETOS ===
+// === SISTEMAS AUXILIARES ===
 
 class SimplePredictionEngine {
   private emotionalHistory: EmotionalDNA[] = [];
@@ -894,8 +654,7 @@ class CelestialAudioSystem {
   private currentScale: string = 'ethereal';
   private isActive: boolean = false;
 
-  // OTIMIZAÇÃO: Memoizar escalas para evitar recálculos
-  private scales: { [key: string]: any } = useMemo(() => ({
+  private scales: { [key: string]: any } = {
     ethereal: {
       name: 'Etérea',
       frequencies: [174, 285, 396, 528, 741],
@@ -920,7 +679,7 @@ class CelestialAudioSystem {
       emotions: ['joy', 'serenity', 'transcendence'],
       timbre: 'sine' as OscillatorType
     }
-  }), []);
+  };
 
   async initialize(): Promise<void> {
     try {
@@ -954,8 +713,7 @@ class CelestialAudioSystem {
     }
   }
 
-  // OTIMIZAÇÃO: Memoizar função de escala para evitar recálculos
-  private getScaleForEmotion = useMemo(() => (dominantEmotion: string): string => {
+  private getScaleForEmotion(dominantEmotion: string): string {
     if (['serenity', 'mystery', 'nostalgia'].includes(dominantEmotion)) {
       return 'ethereal';
     } else if (['mystery', 'curiosity', 'power'].includes(dominantEmotion)) {
@@ -965,7 +723,7 @@ class CelestialAudioSystem {
     } else {
       return 'celestial';
     }
-  }, []);
+  }
 
   private async transitionToScale(newScale: string, emotionalIntensity: number): Promise<void> {
     if (!this.audioContext || this.currentScale === newScale) return;
@@ -1088,14 +846,13 @@ class CelestialAudioSystem {
   }
 }
 
-// === COMPONENTE EMOCIONAL OTIMIZADO ===
-// OTIMIZAÇÃO: React.memo aplicado ao EmotionalBar para evitar re-renders desnecessários
+// === COMPONENTE EMOCIONAL ===
 const EmotionalBar: React.FC<{
   emotion: string;
   value: number;
   color: string;
   isDominant: boolean;
-}> = memo(({ emotion, value, color, isDominant }) => {
+}> = ({ emotion, value, color, isDominant }) => {
   return (
     <div style={{
       marginBottom: '0.8rem',
@@ -1149,33 +906,34 @@ const EmotionalBar: React.FC<{
       </div>
     </div>
   );
-});
+};
 
-// === COMPONENTE PRINCIPAL COMPLETO ===
+// === COMPONENTE PRINCIPAL ===
 
 export const GenesisCore: React.FC = () => {
-  // Refs otimizados
+  // Refs para sistemas otimizados
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const webglCanvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
   const lastTimeRef = useRef<number>(0);
   const lastUpdateRef = useRef<number>(0);
   const lastDistributionCheck = useRef<number>(0);
   
-  // Sistemas otimizados
+  // NOVO: Sistemas otimizados para distribuições dinâmicas
   const particlePoolRef = useRef<ParticlePool>(new ParticlePool(2000));
   const rendererRef = useRef<OptimizedRenderer>(new OptimizedRenderer());
-  const webglRendererRef = useRef<UltraFastWebGLRenderer>(new UltraFastWebGLRenderer());
+  
+  // Sistemas existentes
   const predictionEngineRef = useRef<SimplePredictionEngine>(new SimplePredictionEngine());
   const audioSystemRef = useRef<CelestialAudioSystem>(new CelestialAudioSystem());
   
-  // Estados memoizados
+  // Estados
   const [mousePosition, setMousePosition] = useState<MousePosition>({ x: 0.5, y: 0.5 });
   const [emotionalIntensity, setEmotionalIntensity] = useState(0);
   const [debugMode, setDebugMode] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [currentAudioScale, setCurrentAudioScale] = useState<string>('Etérea');
   
+  // NOVO: Estados para sistema de distribuições
   const [currentDistribution, setCurrentDistribution] = useState<string>('Fibonacci');
   const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
   const [transitionProgress, setTransitionProgress] = useState<number>(1);
@@ -1192,6 +950,7 @@ export const GenesisCore: React.FC = () => {
     isReady: false
   });
   
+  // NOVO: Métricas expandidas para distribuições
   const [performanceMetrics, setPerformanceMetrics] = useState({
     fps: 60,
     inputLatency: 0,
@@ -1199,26 +958,25 @@ export const GenesisCore: React.FC = () => {
     particleCount: 2000,
     visibleParticles: 0,
     renderedParticles: 0,
-    distributionTransitions: 0,
-    webglEnabled: false
+    distributionTransitions: 0
   });
   
-  const [_experienceMetrics, setExperienceMetrics] = useState({
+  const [experienceMetrics, setExperienceMetrics] = useState({
     encantamentRate: 25,
     retentionRate: 20,
     interactionFrequency: 24.8,
     emotionalEngagement: 75
   });
-
-  const [profileStats] = useState({
+  
+  const [profileStats, setProfileStats] = useState({
     totalSessions: 4,
     personalityType: 'Equilibrado',
     explorationScore: 2,
     memoryEntries: 100
   });
 
-  // OTIMIZAÇÃO: Memoizar definições das emoções
-  const emotionDefinitions = useMemo(() => [
+  // Definições das emoções
+  const emotionDefinitions = [
     { key: 'joy', name: 'Joy', color: '#FFD700' },
     { key: 'nostalgia', name: 'Nostalgia', color: '#8A2BE2' },
     { key: 'curiosity', name: 'Curiosity', color: '#00CED1' },
@@ -1226,9 +984,9 @@ export const GenesisCore: React.FC = () => {
     { key: 'ecstasy', name: 'Ecstasy', color: '#FF1493' },
     { key: 'mystery', name: 'Mystery', color: '#483D8B' },
     { key: 'power', name: 'Power', color: '#DC143C' }
-  ], []);
+  ];
 
-  // OTIMIZAÇÃO: useCallback para funções críticas
+  // Funções auxiliares
   const getDominantEmotion = useCallback((dna: EmotionalDNA): string => {
     let dominant = { emotion: 'joy', value: 0 };
     Object.entries(dna).forEach(([emotion, value]) => {
@@ -1254,7 +1012,6 @@ export const GenesisCore: React.FC = () => {
     };
   }, []);
 
-  // OTIMIZAÇÃO: Memoizar cálculo de cor dominante
   const getDominantEmotionColor = useCallback((dna: EmotionalDNA): number => {
     const emotions = {
       joy: { value: dna.joy, hue: 45 },
@@ -1276,7 +1033,11 @@ export const GenesisCore: React.FC = () => {
     return dominant.hue;
   }, []);
 
+  /**
+   * NOVA: Função para verificar e disparar transições de distribuição
+   */
   const checkDistributionTransition = useCallback((dominantEmotion: string, timestamp: number) => {
+    // Verificar apenas a cada 2 segundos para evitar transições excessivas
     if (timestamp - lastDistributionCheck.current < 2000) return;
     
     const particlePool = particlePoolRef.current;
@@ -1284,6 +1045,7 @@ export const GenesisCore: React.FC = () => {
     const recommendedType = distributionManager.determineDistributionFromEmotion(dominantEmotion);
     const currentConfig = distributionManager.getCurrentDistribution();
     
+    // Mapear enum para string para comparação
     const typeNames = {
       [DistributionType.FIBONACCI]: 'Fibonacci',
       [DistributionType.SPIRAL]: 'Espiral',
@@ -1302,6 +1064,7 @@ export const GenesisCore: React.FC = () => {
       setCurrentDistribution(recommendedName);
       setIsTransitioning(true);
       
+      // Incrementar contador de transições
       setPerformanceMetrics(prev => ({
         ...prev,
         distributionTransitions: prev.distributionTransitions + 1
@@ -1313,29 +1076,31 @@ export const GenesisCore: React.FC = () => {
     lastDistributionCheck.current = timestamp;
   }, []);
 
-  // OTIMIZAÇÃO: useCallback para o loop principal de renderização
+  /**
+   * NOVA: Função de renderização com sistema de distribuições dinâmicas
+   */
   const renderFrame = useCallback((timestamp: number) => {
     const canvas = canvasRef.current;
-    const webglCanvas = webglCanvasRef.current;
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // OTIMIZAÇÃO: Calcular métricas de performance com throttling
+    // OTIMIZAÇÃO: Métricas de performance melhoradas
     const deltaTime = timestamp - lastTimeRef.current;
-    if (deltaTime > 100) { // Throttle para 10 FPS de métricas
+    if (deltaTime > 0) {
       const currentFPS = Math.round(1000 / deltaTime);
       setPerformanceMetrics(prev => ({
         ...prev,
         fps: currentFPS
       }));
-      lastTimeRef.current = timestamp;
     }
+    lastTimeRef.current = timestamp;
 
     const { width, height } = canvas;
     const centerX = width / 2;
     const centerY = height / 2;
+
     const dominantHue = getDominantEmotionColor(emotionalDNA);
     
     // Fundo otimizado
@@ -1355,7 +1120,7 @@ export const GenesisCore: React.FC = () => {
     ctx.fillStyle = bgGradient;
     ctx.fillRect(0, 0, width, height);
 
-    // Núcleo central
+    // Núcleo central otimizado
     const breathScale = 1 + Math.sin(timestamp * 0.002) * 0.2 + emotionalIntensity * 0.5;
     const coreRadius = 60 * breathScale;
     
@@ -1379,56 +1144,39 @@ export const GenesisCore: React.FC = () => {
       ctx.restore();
     }
 
-    // Sistema de partículas
+    // NOVO: Sistema de distribuições dinâmicas
     const particlePool = particlePoolRef.current;
     const renderer = rendererRef.current;
-    const webglRenderer = webglRendererRef.current;
     
+    // Atualizar transições de distribuição
     particlePool.updateTransitions(timestamp);
     
+    // Atualizar estados de UI
     const currentlyTransitioning = particlePool.isCurrentlyTransitioning();
     const currentProgress = particlePool.getTransitionProgress();
     
     setIsTransitioning(currentlyTransitioning);
     setTransitionProgress(currentProgress);
     
+    // Aplicar otimizações
     particlePool.applyLOD(centerX, centerY, timestamp);
     const visibleParticles = particlePool.applyCulling(centerX, centerY, width, height, mousePosition);
     
-    // RENDERIZAÇÃO HÍBRIDA: WebGL + Canvas 2D
-    let renderedCount = 0;
-    let webglSuccess = false;
+    // Agrupar em batches para renderização otimizada
+    renderer.batchParticles(visibleParticles);
     
-    if (webglCanvas && visibleParticles.length > 0) {
-      webglSuccess = webglRenderer.renderParticles(
-        visibleParticles,
-        mousePosition,
-        emotionalIntensity,
-        dominantHue,
-        timestamp
-      );
-      
-      if (webglSuccess) {
-        renderedCount = visibleParticles.length;
-      }
-    }
-    
-    // Fallback para Canvas 2D
-    if (!webglSuccess) {
-      renderer.batchParticles(visibleParticles);
-      renderedCount = renderer.renderBatches(
-        ctx, centerX, centerY, mousePosition, 
-        emotionalIntensity, dominantHue, timestamp
-      );
-    }
+    // Renderizar com sistema otimizado
+    const renderedCount = renderer.renderBatches(
+      ctx, centerX, centerY, mousePosition, 
+      emotionalIntensity, dominantHue, timestamp
+    );
 
-    // Atualizar métricas
+    // Atualizar métricas de partículas
     setPerformanceMetrics(prev => ({
       ...prev,
       particleCount: 2000,
       visibleParticles: visibleParticles.length,
-      renderedParticles: renderedCount,
-      webglEnabled: webglSuccess
+      renderedParticles: renderedCount
     }));
 
     // Círculo de predição
@@ -1446,7 +1194,7 @@ export const GenesisCore: React.FC = () => {
       ctx.restore();
     }
 
-    // Ondas de energia
+    // Ondas de energia otimizadas
     for (let i = 0; i < 5; i++) {
       const waveRadius = (40 + i * 25) * (1 + Math.sin(timestamp * 0.003 + i * 0.8) * 0.4) + emotionalIntensity * 40;
       const waveGradient = ctx.createRadialGradient(centerX, centerY, waveRadius - 8, centerX, centerY, waveRadius + 8);
@@ -1464,28 +1212,14 @@ export const GenesisCore: React.FC = () => {
       ctx.restore();
     }
 
+    // NOVO: Verificar necessidade de transição de distribuição
     const dominantEmotion = getDominantEmotion(emotionalDNA);
     checkDistributionTransition(dominantEmotion, timestamp);
 
     animationRef.current = requestAnimationFrame(renderFrame);
   }, [mousePosition, emotionalIntensity, emotionalDNA, currentPrediction, getDominantEmotionColor, getDominantEmotion, checkDistributionTransition]);
 
-  // Inicialização WebGL
-  useEffect(() => {
-    const webglCanvas = webglCanvasRef.current;
-    if (webglCanvas) {
-      const webglRenderer = webglRendererRef.current;
-      const success = webglRenderer.initialize(webglCanvas);
-      
-      if (success) {
-        console.log('🚀 WebGL Ultra-Fast Renderer ativado!');
-      } else {
-        console.log('📄 Usando Canvas 2D otimizado');
-      }
-    }
-  }, []);
-
-  // Loop de renderização
+  // Efeitos
   useEffect(() => {
     animationRef.current = requestAnimationFrame(renderFrame);
     return () => {
@@ -1495,7 +1229,6 @@ export const GenesisCore: React.FC = () => {
     };
   }, [renderFrame]);
 
-  // Métricas de experiência
   useEffect(() => {
     const interval = setInterval(() => {
       setExperienceMetrics(prev => ({
@@ -1508,7 +1241,6 @@ export const GenesisCore: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Sistema de áudio
   useEffect(() => {
     if (audioEnabled) {
       const audioSystem = audioSystemRef.current;
@@ -1525,7 +1257,7 @@ export const GenesisCore: React.FC = () => {
     }
   }, [audioEnabled, mousePosition, emotionalDNA, emotionalIntensity, getDominantEmotion]);
 
-  // OTIMIZAÇÃO: useCallback para handlers críticos
+  // Handlers
   const handleMouseMove = useCallback((event: React.MouseEvent) => {
     const inputTime = performance.now();
     
@@ -1547,7 +1279,6 @@ export const GenesisCore: React.FC = () => {
     const newDNA = calculateEmotionalDNA(normalizedX, normalizedY);
     setEmotionalDNA(newDNA);
 
-    // OTIMIZAÇÃO: Throttle predição para 2fps
     const now = Date.now();
     if (now - lastUpdateRef.current > 500) {
       const predictionEngine = predictionEngineRef.current;
@@ -1562,11 +1293,8 @@ export const GenesisCore: React.FC = () => {
       lastUpdateRef.current = now;
     }
     
-    // OTIMIZAÇÃO: Calcular latência apenas ocasionalmente
-    if (Math.random() < 0.1) { // 10% das vezes
-      const latency = performance.now() - inputTime;
-      setPerformanceMetrics(prev => ({ ...prev, inputLatency: latency }));
-    }
+    const latency = performance.now() - inputTime;
+    setPerformanceMetrics(prev => ({ ...prev, inputLatency: latency }));
   }, [calculateEmotionalDNA]);
 
   const handleClick = useCallback(async () => {
@@ -1581,16 +1309,9 @@ export const GenesisCore: React.FC = () => {
 
   const handleResize = useCallback(() => {
     const canvas = canvasRef.current;
-    const webglCanvas = webglCanvasRef.current;
-    
     if (canvas) {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
-    }
-    
-    if (webglCanvas) {
-      webglCanvas.width = window.innerWidth;
-      webglCanvas.height = window.innerHeight;
     }
   }, []);
 
@@ -1603,7 +1324,6 @@ export const GenesisCore: React.FC = () => {
   useEffect(() => {
     return () => {
       audioSystemRef.current.stop();
-      webglRendererRef.current.cleanup();
     };
   }, []);
 
@@ -1624,7 +1344,6 @@ export const GenesisCore: React.FC = () => {
       onMouseMove={handleMouseMove}
       onClick={handleClick}
     >
-      {/* Canvas principal Canvas 2D */}
       <canvas
         ref={canvasRef}
         style={{
@@ -1639,23 +1358,7 @@ export const GenesisCore: React.FC = () => {
         height={window.innerHeight}
       />
 
-      {/* Canvas WebGL para partículas */}
-      <canvas
-        ref={webglCanvasRef}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          zIndex: 2,
-          pointerEvents: 'none'
-        }}
-        width={window.innerWidth}
-        height={window.innerHeight}
-      />
-
-      {/* PAINEL DE ESTADOS EMOCIONAIS */}
+      {/* PAINEL DE ESTADOS EMOCIONAIS COM DISTRIBUIÇÃO */}
       <div style={{
         position: 'fixed',
         top: '20px',
@@ -1697,6 +1400,7 @@ export const GenesisCore: React.FC = () => {
             Análise em Tempo Real • 2000 Partículas
           </p>
           
+          {/* NOVO: Indicador da distribuição atual */}
           <p style={{
             margin: '0.5rem 0 0 0',
             fontSize: '0.7rem',
@@ -1707,6 +1411,7 @@ export const GenesisCore: React.FC = () => {
             🎨 Distribuição: {currentDistribution}
           </p>
           
+          {/* NOVO: Indicador de transição */}
           {isTransitioning && (
             <p style={{
               margin: '0.3rem 0 0 0',
@@ -1846,7 +1551,7 @@ export const GenesisCore: React.FC = () => {
         </p>
       </div>
 
-      {/* DEBUG PANEL COMPLETO */}
+      {/* DEBUG PANEL EXPANDIDO COM MÉTRICAS DE DISTRIBUIÇÕES */}
       {debugMode && (
         <div style={{
           position: 'fixed',
@@ -1864,49 +1569,82 @@ export const GenesisCore: React.FC = () => {
           maxWidth: '400px'
         }}>
           <p style={{ margin: '0 0 0.5rem 0', color: '#00ff88', fontSize: '0.8rem' }}>
-            Genesis OPTIMIZED v2.4.1 - PERFORMANCE BOOST
+            Genesis Advanced Metrics v2.2.2
           </p>
           
+          {/* SEÇÃO PERFORMANCE EXPANDIDA */}
           <p style={{ margin: '0 0 0.3rem 0', color: '#88ff88' }}>Performance:</p>
-          <p style={{ margin: '0 0 0.2rem 0', color: performanceMetrics.fps >= 60 ? '#00ff88' : '#ffaa44' }}>
-            FPS: {performanceMetrics.fps} {performanceMetrics.fps >= 60 ? '🎯' : '⚡'}
-          </p>
+          <p style={{ margin: '0 0 0.2rem 0' }}>FPS: {performanceMetrics.fps}</p>
           <p style={{ margin: '0 0 0.2rem 0' }}>Latência: {performanceMetrics.inputLatency.toFixed(2)}ms</p>
           <p style={{ margin: '0 0 0.2rem 0' }}>Memory: {(performanceMetrics.memoryUsage || 64.1).toFixed(1)}MB</p>
           
-          <p style={{ margin: '0.5rem 0 0.3rem 0', color: '#ff44aa' }}>Sistema Renderização:</p>
-          <p style={{ margin: '0 0 0.2rem 0', color: performanceMetrics.webglEnabled ? '#00ff88' : '#ffaa44' }}>
-            WebGL: {performanceMetrics.webglEnabled ? '🚀 Ativo' : '📄 Canvas 2D'}
-          </p>
-          
-          <p style={{ margin: '0.5rem 0 0.3rem 0', color: '#ffaa44' }}>OTIMIZAÇÕES ATIVAS:</p>
-          <p style={{ margin: '0 0 0.2rem 0', color: '#00ff88' }}>React.memo: ✅ EmotionalBar</p>
-          <p style={{ margin: '0 0 0.2rem 0', color: '#00ff88' }}>useMemo: ✅ Distribuições</p>
-          <p style={{ margin: '0 0 0.2rem 0', color: '#00ff88' }}>useCallback: ✅ Handlers</p>
-          
-          <p style={{ margin: '0.5rem 0 0.3rem 0', color: '#ffaa44' }}>Distribuições Dinâmicas:</p>
+          {/* NOVA SEÇÃO: SISTEMA DE DISTRIBUIÇÕES DINÂMICAS */}
+          <p style={{ margin: '0.5rem 0 0.3rem 0', color: '#ff44aa' }}>Distribuições Dinâmicas:</p>
           <p style={{ margin: '0 0 0.2rem 0' }}>Atual: {currentDistribution}</p>
           <p style={{ margin: '0 0 0.2rem 0' }}>Status: {isTransitioning ? '🔄 Transicionando' : '✅ Estável'}</p>
+          {isTransitioning && (
+            <p style={{ margin: '0 0 0.2rem 0', fontSize: '0.7rem' }}>
+              Progresso: {Math.round(transitionProgress * 100)}%
+            </p>
+          )}
+          <p style={{ margin: '0 0 0.2rem 0', fontSize: '0.7rem' }}>
+            Transições: {performanceMetrics.distributionTransitions}
+          </p>
           
-          <p style={{ margin: '0.5rem 0 0.3rem 0', color: '#aaff44' }}>Sistema de Partículas:</p>
+          {/* SEÇÃO SISTEMA DE PARTÍCULAS */}
+          <p style={{ margin: '0.5rem 0 0.3rem 0', color: '#ffaa44' }}>Sistema de Partículas:</p>
           <p style={{ margin: '0 0 0.2rem 0' }}>Total: {performanceMetrics.particleCount}</p>
           <p style={{ margin: '0 0 0.2rem 0' }}>Visíveis: {performanceMetrics.visibleParticles}</p>
           <p style={{ margin: '0 0 0.2rem 0' }}>Renderizadas: {performanceMetrics.renderedParticles}</p>
+          <p style={{ margin: '0 0 0.2rem 0', fontSize: '0.7rem' }}>
+            Eficiência: {performanceMetrics.visibleParticles > 0 ? 
+              ((performanceMetrics.renderedParticles / performanceMetrics.visibleParticles) * 100).toFixed(1) : 0}%
+          </p>
           
+          {/* SEÇÃO ÁUDIO CELESTIAL */}
           {audioEnabled && (
             <>
               <p style={{ margin: '0.5rem 0 0.3rem 0', color: '#ff88aa' }}>Áudio Celestial:</p>
               <p style={{ margin: '0 0 0.2rem 0' }}>Escala: {currentAudioScale}</p>
               <p style={{ margin: '0 0 0.2rem 0' }}>Status: ✅ Ativo</p>
+              <p style={{ margin: '0 0 0.2rem 0', fontSize: '0.7rem' }}>
+                Filtro: {(200 + (1 - mousePosition.y) * 1500).toFixed(0)}Hz
+              </p>
+              <p style={{ margin: '0 0 0.2rem 0', fontSize: '0.7rem' }}>
+                Delay: {(0.1 + mousePosition.x * 0.4).toFixed(2)}s
+              </p>
             </>
           )}
           
+          {/* SEÇÃO PREDIÇÃO TEMPORAL */}
           <p style={{ margin: '0.5rem 0 0.3rem 0', color: '#88aaff' }}>Predição Temporal:</p>
           <p style={{ margin: '0 0 0.2rem 0' }}>Precisão: {(predictionMetrics.accuracy * 100).toFixed(1)}%</p>
+          <p style={{ margin: '0 0 0.2rem 0' }}>Histórico: {predictionMetrics.historySize}/10 estados</p>
           <p style={{ margin: '0 0 0.2rem 0' }}>Status: {predictionMetrics.isReady ? '✅ Ativo' : '⏳ Coletando'}</p>
+          {currentPrediction && (
+            <p style={{ margin: '0 0 0.2rem 0', fontSize: '0.7rem' }}>
+              Confiança: {(currentPrediction.confidence * 100).toFixed(1)}%
+            </p>
+          )}
+
+          {/* SEÇÃO ESTADOS EMOCIONAIS */}
+          <p style={{ margin: '0.5rem 0 0.3rem 0', color: '#ffaa88' }}>Estados Emocionais:</p>
+          <p style={{ margin: '0 0 0.1rem 0', fontSize: '0.7rem' }}>
+            Joy: {(emotionalDNA.joy * 100).toFixed(0)}% | 
+            Nostalgia: {(emotionalDNA.nostalgia * 100).toFixed(0)}%
+          </p>
+          <p style={{ margin: '0 0 0.1rem 0', fontSize: '0.7rem' }}>
+            Curiosity: {(emotionalDNA.curiosity * 100).toFixed(0)}% | 
+            Serenity: {(emotionalDNA.serenity * 100).toFixed(0)}%
+          </p>
+          <p style={{ margin: '0 0 0.2rem 0', fontSize: '0.7rem' }}>
+            Ecstasy: {(emotionalDNA.ecstasy * 100).toFixed(0)}% | 
+            Mystery: {(emotionalDNA.mystery * 100).toFixed(0)}% | 
+            Power: {(emotionalDNA.power * 100).toFixed(0)}%
+          </p>
           
-          <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.7rem', opacity: 0.7, color: performanceMetrics.fps >= 60 ? '#00ff88' : '#ffaa44' }}>
-            OTIMIZADO - ZERO PERDAS ✅
+          <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.7rem', opacity: 0.7 }}>
+            Sistema de distribuições dinâmicas v2.2.2! Clique para fechar
           </p>
         </div>
       )}
