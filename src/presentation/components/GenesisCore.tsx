@@ -919,8 +919,10 @@ function tanh(x: number): number {
 
 class SimpleLSTM {
   // Implementação básica de uma célula LSTM em JS puro, como aproximação para predição temporal
+  private inputSize: number;
   public hiddenSize: number;
-  
+  private outputSize: number;
+
   private wf: number[][]; // Pesos para forget gate
   private wi: number[][]; // Pesos para input gate
   private wc: number[][]; // Pesos para cell gate
@@ -935,9 +937,9 @@ class SimpleLSTM {
   private by: number[]; // Bias for output
 
   constructor(inputSize: number, hiddenSize: number, outputSize: number) {
-    //this.inputSize = inputSize;
+    this.inputSize = inputSize;
     this.hiddenSize = hiddenSize;
-    //this.outputSize = outputSize;
+    this.outputSize = outputSize;
 
     this.wf = this.randomMatrix(hiddenSize, inputSize + hiddenSize);
     this.wi = this.randomMatrix(hiddenSize, inputSize + hiddenSize);
@@ -1369,7 +1371,7 @@ export const GenesisCore: React.FC = () => {
     adaptiveOptimizations: 0
   });
   
-    //   //   const [experienceMetrics, setExperienceMetrics] = useState({
+  const [experienceMetrics, setExperienceMetrics] = useState({
     encantamentRate: 85,
     retentionRate: 92,
     interactionFrequency: 24.8,
@@ -1670,7 +1672,7 @@ export const GenesisCore: React.FC = () => {
   // Métricas de experiência (throttled)
   useEffect(() => {
     const interval = setInterval(() => {
-    //       setExperienceMetrics(prev => ({
+      setExperienceMetrics(prev => ({
         ...prev,
         interactionFrequency: Math.min(30, prev.interactionFrequency + Math.random() * 0.5),
         emotionalEngagement: Math.min(100, prev.emotionalEngagement + Math.random() * 1)
