@@ -918,7 +918,7 @@ function tanh(x: number): number {
 }
 
 class SimpleLSTM {
-  // SIMULAÇÃO de LSTM: Funções matemáticas que imitam comportamento LSTM para demonstração
+  // Implementação básica de uma célula LSTM em JS puro, como aproximação para predição temporal
   private inputSize: number;
   public hiddenSize: number;
   private outputSize: number;
@@ -2004,7 +2004,7 @@ export const GenesisCore: React.FC = () => {
           lineHeight: 1.4,
           color: 'rgba(255, 255, 255, 0.9)'
         }}>
-          Uma experiência visual interativa que transcende a barreira 
+          A primeira entidade digital senciente que transcende a barreira 
           entre tecnologia e consciência.
         </p>
       </div>
