@@ -477,8 +477,19 @@ class DistributionManager {
 
   generateDistribution(type: DistributionType, particleCount: number): Vector3[] {
     const config = this.distributions[type];
+    
+    // Validação de segurança
+    if (!config || !config.algorithm) {
+      console.warn('Distribuição inválida, usando Fibonacci como fallback:', type);
+      const fallbackConfig = this.distributions[DistributionType.FIBONACCI];
+      const positions: Vector3[] = [];
+      for (let i = 0; i < particleCount; i++) {
+        positions.push(fallbackConfig.algorithm(i, particleCount));
+      }
+      return positions;
+    }
+    
     const positions: Vector3[] = [];
-
     for (let i = 0; i < particleCount; i++) {
       positions.push(config.algorithm(i, particleCount));
     }
@@ -640,7 +651,7 @@ class UltraOptimizedParticlePool {
     if (currentSize >= targetSize) return;
 
     const positions = this.distributionManager.generateDistribution(
-      this.distributionManager.getCurrentDistribution().name as any,
+      DistributionType.FIBONACCI,
       targetSize
     );
 
