@@ -109,7 +109,6 @@ export class RealLSTMEngine {
       });
 
       console.log('✅ Modelo LSTM real compilado');
-      console.log('📊 Arquitetura:', this.model.summary());
       
     } catch (error) {
       console.error('❌ Erro ao inicializar LSTM real:', error);
@@ -137,6 +136,7 @@ export class RealLSTMEngine {
   /**
    * TRAINING LOOP REAL com TensorFlow.js
    * ✅ USA model.fit() genuíno com validação
+   * 🔧 CORREÇÃO: Usar history para atualizar métricas
    */
   private async trainModel(): Promise<void> {
     if (!this.model || this.emotionalHistory.length < 10) {
@@ -157,8 +157,8 @@ export class RealLSTMEngine {
       this.trainingData = features;
       this.trainingLabels = labels;
 
-      // TRAINING LOOP REAL com validação
-      const history = await this.model.fit(features, labels, {
+      // TRAINING LOOP REAL com validação - CORREÇÃO: usar history
+      const trainingHistory = await this.model.fit(features, labels, {
         epochs: 50,
         batchSize: 8,
         validationSplit: 0.2, // 20% para validação
@@ -184,6 +184,14 @@ export class RealLSTMEngine {
           }
         }
       });
+
+      // 🔧 CORREÇÃO: Usar trainingHistory para métricas finais
+      const finalMetrics = trainingHistory.history;
+      if (finalMetrics.loss && finalMetrics.loss.length > 0) {
+        const lastEpoch = finalMetrics.loss.length - 1;
+        this.realMetrics.loss = finalMetrics.loss[lastEpoch] as number;
+        this.realMetrics.accuracy = finalMetrics.accuracy ? finalMetrics.accuracy[lastEpoch] as number : 0;
+      }
 
       this.isModelTrained = true;
       console.log('✅ Modelo treinado com sucesso!');
