@@ -941,9 +941,6 @@ class SimpleLSTM {
     this.hiddenSize = hiddenSize;
     this.outputSize = outputSize;
 
-    // 🔧 CORREÇÃO TS6133: Usar as variáveis inputSize e outputSize
-    console.log(`LSTM inicializado: input=${this.inputSize}, hidden=${hiddenSize}, output=${this.outputSize}`);
-
     this.wf = this.randomMatrix(hiddenSize, inputSize + hiddenSize);
     this.wi = this.randomMatrix(hiddenSize, inputSize + hiddenSize);
     this.wc = this.randomMatrix(hiddenSize, inputSize + hiddenSize);
@@ -1374,8 +1371,7 @@ export const GenesisCore: React.FC = () => {
     adaptiveOptimizations: 0
   });
   
-  // 🔧 CORREÇÃO TS6133: Substituir experienceMetrics por variável descartada
-  const [, setExperienceMetrics] = useState({
+  const [experienceMetrics, setExperienceMetrics] = useState({
     encantamentRate: 85,
     retentionRate: 92,
     interactionFrequency: 24.8,
@@ -2071,52 +2067,52 @@ export const GenesisCore: React.FC = () => {
           <p style={{ margin: '0 0 0.2rem 0', color: '#00ff88' }}>✅ Throttling Inteligente</p>
           
           <p style={{ margin: '0.5rem 0 0.3rem 0', color: '#aaff44' }}>Sistema de Partículas Adaptativo:</p>
-          <p style={{ margin: '0 0 0.2rem 0' }}>Total: {performanceMetrics.particleCount}</p>
-          <p style={{ margin: '0 0 0.2rem 0' }}>Visíveis: {performanceMetrics.visibleParticles}</p>
-          <p style={{ margin: '0 0 0.2rem 0' }}>Renderizadas: {performanceMetrics.renderedParticles}</p>
-          
-          <p style={{ margin: '0.5rem 0 0.3rem 0', color: '#ffaa44' }}>Distribuições Dinâmicas:</p>
-          <p style={{ margin: '0 0 0.2rem 0' }}>Atual: {currentDistribution}</p>
-          <p style={{ margin: '0 0 0.2rem 0' }}>Status: {isTransitioning ? '🔄 Transicionando' : '✅ Estável'}</p>
-          
-          {audioEnabled && (
-            <>
-              <p style={{ margin: '0.5rem 0 0.3rem 0', color: '#ff88aa' }}>Áudio Celestial:</p>
-              <p style={{ margin: '0 0 0.2rem 0' }}>Escala: {currentAudioScale}</p>
-              <p style={{ margin: '0 0 0.2rem 0' }}>Status: ✅ Ativo</p>
-            </>
-          )}
-          
-          <p style={{ margin: '0.5rem 0 0.3rem 0', color: '#88aaff' }}>Predição Temporal:</p>
-          <p style={{ margin: '0 0 0.2rem 0' }}>Precisão: {(predictionMetrics.accuracy * 100).toFixed(1)}%</p>
-          <p style={{ margin: '0 0 0.2rem 0' }}>Status: {predictionMetrics.isReady ? '✅ Ativo' : '⏳ Coletando'}</p>
-          
-          <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.7rem', opacity: 0.9, color: performanceMetrics.fps >= 60 ? '#00ff88' : performanceMetrics.fps >= 45 ? '#ffaa44' : '#ff4444' }}>
-            {performanceMetrics.fps >= 60 ? '🎯 PERFORMANCE PERFEITA!' : 
-             performanceMetrics.fps >= 45 ? '⚡ PERFORMANCE BOA' : 
-             '🚨 OTIMIZANDO AUTOMATICAMENTE...'}
-          </p>
-        </div>
+		  <p style={{ margin: '0 0 0.2rem 0' }}>Total: {performanceMetrics.particleCount}</p>
+		  <p style={{ margin: '0 0 0.2rem 0' }}>Visíveis: {performanceMetrics.visibleParticles}</p>
+		  <p style={{ margin: '0 0 0.2rem 0' }}>Renderizadas: {performanceMetrics.renderedParticles}</p>
+		  <p style={{ margin: '0.5rem 0 0.3rem 0', color: '#ffaa44' }}>Distribuições Dinâmicas:</p>
+      <p style={{ margin: '0 0 0.2rem 0' }}>Atual: {currentDistribution}</p>
+      <p style={{ margin: '0 0 0.2rem 0' }}>Status: {isTransitioning ? '🔄 Transicionando' : '✅ Estável'}</p>
+      
+      {audioEnabled && (
+        <>
+          <p style={{ margin: '0.5rem 0 0.3rem 0', color: '#ff88aa' }}>Áudio Celestial:</p>
+          <p style={{ margin: '0 0 0.2rem 0' }}>Escala: {currentAudioScale}</p>
+          <p style={{ margin: '0 0 0.2rem 0' }}>Status: ✅ Ativo</p>
+        </>
       )}
-
-      {/* Cursor customizado (mantido) */}
-      <div style={{
-        position: 'fixed',
-        left: `${mousePosition.x * 100}%`,
-        top: `${mousePosition.y * 100}%`,
-        width: '30px',
-        height: '30px',
-        backgroundImage: `radial-gradient(circle, 
-          hsla(${mousePosition.x * 360}, 90%, 80%, 0.8), 
-          hsla(${mousePosition.x * 360}, 90%, 80%, 0.3) 40%,
-          transparent 70%)`,
-        borderRadius: '50%',
-        pointerEvents: 'none',
-        zIndex: 1000,
-        transform: `translate(-50%, -50%) scale(${0.5 + emotionalIntensity * 1.5})`,
-        transition: 'transform 0.2s ease-out',
-        boxShadow: `0 0 30px hsla(${mousePosition.x * 360}, 90%, 80%, 0.6)`
-      }} />
+      
+      <p style={{ margin: '0.5rem 0 0.3rem 0', color: '#88aaff' }}>Predição Temporal:</p>
+      <p style={{ margin: '0 0 0.2rem 0' }}>Precisão: {(predictionMetrics.accuracy * 100).toFixed(1)}%</p>
+      <p style={{ margin: '0 0 0.2rem 0' }}>Status: {predictionMetrics.isReady ? '✅ Ativo' : '⏳ Coletando'}</p>
+      
+      <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.7rem', opacity: 0.9, color: performanceMetrics.fps >= 60 ? '#00ff88' : performanceMetrics.fps >= 45 ? '#ffaa44' : '#ff4444' }}>
+        {performanceMetrics.fps >= 60 ? '🎯 PERFORMANCE PERFEITA!' : 
+         performanceMetrics.fps >= 45 ? '⚡ PERFORMANCE BOA' : 
+         '🚨 OTIMIZANDO AUTOMATICAMENTE...'}
+      </p>
     </div>
-  );
+  )}
+
+  {/* Cursor customizado (mantido) */}
+  <div style={{
+    position: 'fixed',
+    left: `${mousePosition.x * 100}%`,
+    top: `${mousePosition.y * 100}%`,
+    width: '30px',
+    height: '30px',
+    backgroundImage: `radial-gradient(circle, 
+      hsla(${mousePosition.x * 360}, 90%, 80%, 0.8), 
+      hsla(${mousePosition.x * 360}, 90%, 80%, 0.3) 40%,
+      transparent 70%)`,
+    borderRadius: '50%',
+    pointerEvents: 'none',
+    zIndex: 1000,
+    transform: `translate(-50%, -50%) scale(${0.5 + emotionalIntensity * 1.5})`,
+    transition: 'transform 0.2s ease-out',
+    boxShadow: `0 0 30px hsla(${mousePosition.x * 360}, 90%, 80%, 0.6)`
+  }} />
+</div>
+
+);
 };
