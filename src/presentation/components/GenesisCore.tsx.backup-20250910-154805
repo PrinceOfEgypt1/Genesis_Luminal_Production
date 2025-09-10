@@ -1369,7 +1369,7 @@ export const GenesisCore: React.FC = () => {
     adaptiveOptimizations: 0
   });
   
-    //   //   const [experienceMetrics, setExperienceMetrics] = useState({
+  const [experienceMetrics, setExperienceMetrics] = useState({
     encantamentRate: 85,
     retentionRate: 92,
     interactionFrequency: 24.8,
@@ -1670,7 +1670,7 @@ export const GenesisCore: React.FC = () => {
   // Métricas de experiência (throttled)
   useEffect(() => {
     const interval = setInterval(() => {
-    //       setExperienceMetrics(prev => ({
+      setExperienceMetrics(prev => ({
         ...prev,
         interactionFrequency: Math.min(30, prev.interactionFrequency + Math.random() * 0.5),
         emotionalEngagement: Math.min(100, prev.emotionalEngagement + Math.random() * 1)
