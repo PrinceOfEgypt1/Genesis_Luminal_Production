@@ -8,7 +8,7 @@
  */
 
 import { ClaudeAPIClient, EmotionalAnalysis } from './ClaudeAPIClient';
-import { EmotionalDNA } from '../../domain/EmotionalDNA';
+import { EmotionalDNA } from '../../entities/EmotionalDNA';
 
 export interface AIInsights {
   prediction: EmotionalDNA;

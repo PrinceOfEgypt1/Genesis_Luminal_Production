@@ -6,7 +6,7 @@
  */
 
 import { RealAIEngine, AIInsights } from './claude/RealAIEngine';
-import { EmotionalDNA } from '../domain/EmotionalDNA';
+import { EmotionalDNA } from '../entities/EmotionalDNA';
 
 /**
  * Adaptador que mantém interface LSTMPredictionEngine
@@ -58,7 +58,7 @@ export class LSTMPredictionEngine {
    * Simula treinamento mas na verdade não treina nada
    * (Claude já vem pré-treinado)
    */
-  async train(dna: EmotionalDNA): Promise<void> {
+  async train(_dna: EmotionalDNA): Promise<void> {
     // Claude não precisa ser treinado - já vem com conhecimento
     console.log('📚 Claude não precisa de treinamento local (já é pré-treinado)');
   }

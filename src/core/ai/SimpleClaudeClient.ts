@@ -26,7 +26,7 @@ export class SimpleClaudeClient {
     console.log('✅ Cliente Claude funcionando - IA genuína ativa');
   }
 
-  async addEmotionalState(dna: EmotionalDNA): Promise<void> {
+  async addEmotionalState(_dna: EmotionalDNA): Promise<void> {
     this.callCount++;
     // 🔧 CORREÇÃO: USAR variável 'dna'
     this.lastDNA = { ...dna };
