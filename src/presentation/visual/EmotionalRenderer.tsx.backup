@@ -1,5 +1,5 @@
 /**
- * 🎨 EMOTIONAL RENDERER - VERSÃO SIMPLES
+ * 🎨 EMOTIONAL RENDERER
  * Renderizador visual responsivo às emoções
  */
 
@@ -9,23 +9,23 @@ import { EmotionalDNA } from '../../core/entities/EmotionalDNA';
 interface EmotionalRendererProps {
   emotionalState: EmotionalDNA;
   mousePosition: { x: number; y: number };
-  claudeRecommendations?: any;
+
 }
 
 export const EmotionalRenderer: React.FC<EmotionalRendererProps> = ({
   emotionalState,
   mousePosition,
-  claudeRecommendations
-}) => {
-  // Definir intensity com fallback
-  const intensity = claudeRecommendations?.intensity || 0.7;
 
+}) => {
   // Cores baseadas no estado emocional
   const emotionalColor = `hsl(
     ${emotionalState.joy * 60 + emotionalState.curiosity * 180},
     ${50 + emotionalState.ecstasy * 30}%,
     ${40 + emotionalState.serenity * 20}%
   )`;
+
+  // Intensidade baseada em recomendações Claude
+
 
   return (
     <div style={{
