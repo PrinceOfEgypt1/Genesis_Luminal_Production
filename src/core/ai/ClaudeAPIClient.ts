@@ -173,13 +173,26 @@ IMPORTANTE: Responda APENAS com o JSON, sem texto adicional.`;
   /**
    * PREDIÇÃO INTELIGENTE usando Claude
    * ✅ Baseada em IA real, não algoritmos procedurais
+   * 🔧 CORREÇÃO: Usar currentState corretamente
    */
   async predictNextEmotionalState(
     currentState: EmotionalDNA,
     context: EmotionalContext
   ): Promise<{ predictedState: EmotionalDNA; confidence: number; reasoning: string } | null> {
     
-    const analysis = await this.analyzeEmotionalState(context);
+    // 🔧 USAR currentState para validação
+    if (!this.isValidEmotionalState(currentState)) {
+      console.warn('⚠️ Estado emocional inválido para predição');
+      return null;
+    }
+
+    // Usar currentState no contexto se não estiver presente
+    const enhancedContext = {
+      ...context,
+      currentState: context.currentState || currentState
+    };
+    
+    const analysis = await this.analyzeEmotionalState(enhancedContext);
     
     if (!analysis) {
       return null;
@@ -195,13 +208,17 @@ IMPORTANTE: Responda APENAS com o JSON, sem texto adicional.`;
   /**
    * RECOMENDAÇÕES PERSONALIZADAS usando Claude
    * ✅ IA genuína para personalização da experiência
+   * 🔧 CORREÇÃO: Usar userProfile corretamente
    */
   async getPersonalizedRecommendations(
     userProfile: any,
     currentContext: EmotionalContext
   ): Promise<any> {
     
-    const analysis = await this.analyzeEmotionalState(currentContext);
+    // 🔧 USAR userProfile para personalização
+    const enhancedContext = this.enhanceContextWithProfile(currentContext, userProfile);
+    
+    const analysis = await this.analyzeEmotionalState(enhancedContext);
     
     if (!analysis) {
       return {
@@ -212,6 +229,42 @@ IMPORTANTE: Responda APENAS com o JSON, sem texto adicional.`;
     }
 
     return analysis.recommendations;
+  }
+
+  /**
+   * 🔧 NOVA: Validar estado emocional
+   */
+  private isValidEmotionalState(state: EmotionalDNA): boolean {
+    const emotions = ['joy', 'nostalgia', 'curiosity', 'serenity', 'ecstasy', 'mystery', 'power'];
+    
+    for (const emotion of emotions) {
+      const value = state[emotion as keyof EmotionalDNA];
+      if (typeof value !== 'number' || value < 0 || value > 1) {
+        return false;
+      }
+    }
+    
+    return true;
+  }
+
+  /**
+   * 🔧 NOVA: Melhorar contexto com perfil do usuário
+   */
+  private enhanceContextWithProfile(context: EmotionalContext, userProfile: any): EmotionalContext {
+    if (!userProfile) {
+      return context;
+    }
+
+    // Adicionar informações do perfil ao contexto
+    const enhanced = {
+      ...context,
+      interactionPatterns: [
+        ...context.interactionPatterns,
+        ...(userProfile.preferredPatterns || [])
+      ]
+    };
+
+    return enhanced;
   }
 
   /**
