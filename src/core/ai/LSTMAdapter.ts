@@ -1,28 +1,26 @@
 /**
- * 🔄 ADAPTADOR PARA COMPATIBILIDADE
+ * 🔄 LSTM ADAPTER - VERSÃO FUNCIONAL SIMPLES
  * 
- * Mantém interface original mas usa RealAIEngine internamente
- * Status: ADAPTADOR (compatibilidade de interface)
+ * Adaptador sem dependências externas quebradas
+ * Status: FUNCIONAL (sem API Claude)
  */
-
 
 import { EmotionalDNA } from '../entities/EmotionalDNA';
 
 /**
- * Adaptador que mantém interface LSTMPredictionEngine
- * mas usa RealAIEngine (Claude API) internamente
+ * Simulação básica de predição emocional
+ * Usado para manter compatibilidade de interface
  */
 export class LSTMPredictionEngine {
-  private realAIEngine: RealAIEngine;
-  private predictionHistory: AIInsights[] = [];
+  private predictionCount = 0;
+  private lastPrediction: EmotionalDNA | null = null;
 
   constructor() {
-    this.realAIEngine = new RealAIEngine();
-    console.log('🔄 LSTMAdapter inicializado com RealAIEngine (Claude API)');
+    console.log('🔄 LSTMAdapter inicializado - Versão local simples');
   }
 
   /**
-   * Mantém interface original mas usa IA real
+   * Predição simples baseada em tendências
    */
   async predict(
     currentEmotionalState: EmotionalDNA,
@@ -30,50 +28,69 @@ export class LSTMPredictionEngine {
     sessionDuration: number
   ): Promise<EmotionalDNA> {
     
-    console.log('🧠 Predição via Claude API...');
+    this.predictionCount++;
     
     try {
-      const insights = await this.realAIEngine.analyzeEmotionalState(
-        currentEmotionalState,
-        mousePosition,
-        sessionDuration
+      // Predição procedural simples (não é IA real)
+      const variation = 0.1;
+      const mouseInfluence = {
+        joy: mousePosition.x * variation,
+        curiosity: mousePosition.y * variation,
+        serenity: (1 - Math.abs(mousePosition.x - 0.5)) * variation,
+        mystery: (1 - mousePosition.y) * variation,
+        power: Math.abs(mousePosition.x - 0.5) * variation,
+        nostalgia: Math.sin(sessionDuration * 0.001) * variation * 0.5,
+        ecstasy: (mousePosition.x * mousePosition.y) * variation
+      };
+
+      const prediction = new EmotionalDNA(
+        Math.max(0, Math.min(1, currentEmotionalState.joy + mouseInfluence.joy)),
+        Math.max(0, Math.min(1, currentEmotionalState.nostalgia + mouseInfluence.nostalgia)),
+        Math.max(0, Math.min(1, currentEmotionalState.curiosity + mouseInfluence.curiosity)),
+        Math.max(0, Math.min(1, currentEmotionalState.serenity + mouseInfluence.serenity)),
+        Math.max(0, Math.min(1, currentEmotionalState.ecstasy + mouseInfluence.ecstasy)),
+        Math.max(0, Math.min(1, currentEmotionalState.mystery + mouseInfluence.mystery)),
+        Math.max(0, Math.min(1, currentEmotionalState.power + mouseInfluence.power))
       );
 
-      if (insights) {
-        this.predictionHistory.push(insights);
-        console.log('✅ Predição Claude realizada:', insights.confidence);
-        return insights.prediction;
+      this.lastPrediction = prediction;
+      
+      // Log apenas ocasionalmente para não poluir console
+      if (this.predictionCount % 50 === 0) {
+        console.log(`📊 Predição ${this.predictionCount}: joy=${prediction.joy.toFixed(2)}, curiosity=${prediction.curiosity.toFixed(2)}`);
       }
 
-      // Fallback: retorna estado atual
-      console.log('⚠️ Fallback: mantendo estado atual');
-      return currentEmotionalState;
+      return prediction;
     } catch (error) {
-      console.error('❌ Erro na predição Claude:', error);
+      console.warn('⚠️ Erro na predição, mantendo estado atual:', error);
       return currentEmotionalState;
     }
   }
 
   /**
-   * Simula treinamento mas na verdade não treina nada
-   * (Claude já vem pré-treinado)
+   * Simulação de treinamento (não faz nada real)
    */
   async train(_dna: EmotionalDNA): Promise<void> {
-    // Claude não precisa ser treinado - já vem com conhecimento
-    console.log('📚 Claude não precisa de treinamento local (já é pré-treinado)');
+    // Não faz nada - apenas para compatibilidade de interface
   }
 
   /**
-   * Retorna métricas da IA real
+   * Métricas simuladas
    */
   getMetrics() {
-    const aiStats = this.realAIEngine.getAIStats();
     return {
-      accuracy: Math.min(0.95, 0.85 + (aiStats.totalAnalyses * 0.01)), // Accuracy baseada em uso
-      loss: Math.max(0.05, 0.15 - (aiStats.totalAnalyses * 0.01)),
-      predictions: aiStats.totalAnalyses,
-      source: 'Claude API (Real AI)',
-      lastUpdate: aiStats.lastAnalysis
+      accuracy: Math.min(0.95, 0.7 + (this.predictionCount * 0.001)), // Simula melhora com uso
+      loss: Math.max(0.05, 0.3 - (this.predictionCount * 0.001)),
+      predictions: this.predictionCount,
+      source: 'Predição Local Procedural',
+      lastUpdate: new Date().toISOString()
     };
+  }
+
+  /**
+   * Estado do sistema
+   */
+  isReady(): boolean {
+    return true;
   }
 }

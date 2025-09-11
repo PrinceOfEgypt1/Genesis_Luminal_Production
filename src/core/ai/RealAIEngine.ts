@@ -23,14 +23,14 @@ interface EmotionalPrediction {
 /**
  * Engine de IA Real - substitui simulações
  */
-export class RealAIEngine {
-  private claudeClient: ClaudeAPIClient;
+
+
   private emotionalHistory: EmotionalDNA[] = [];
   private sessionStartTime: number = Date.now();
   private interactionPatterns: string[] = [];
 
   constructor() {
-    this.claudeClient = new ClaudeAPIClient();
+
     console.log('🧠 Engine de IA Real inicializada com Claude API');
   }
 
@@ -67,7 +67,7 @@ export class RealAIEngine {
         interactionPatterns: this.interactionPatterns
       };
 
-      const prediction = await this.claudeClient.predictNextEmotionalState(
+
         context.currentState,
         context
       );
@@ -125,10 +125,10 @@ export class RealAIEngine {
       accuracy: 'N/A (IA Real Claude)',
       historySize: this.emotionalHistory.length,
       maxHistorySize: 20,
-      isReady: this.claudeClient.isAPIEnabled(),
+
       isRealAI: true,
       aiType: 'Claude API',
-      status: this.claudeClient.getStatus()
+
     };
   }
 
@@ -153,7 +153,7 @@ export class RealAIEngine {
       interactionPatterns: this.interactionPatterns
     };
 
-    const recommendations = await this.claudeClient.getPersonalizedRecommendations(
+
       null, // userProfile pode ser expandido futuramente
       context
     );
@@ -165,6 +165,6 @@ export class RealAIEngine {
    * Status da IA
    */
   isRealAI(): boolean {
-    return this.claudeClient.isAPIEnabled();
+
   }
 }

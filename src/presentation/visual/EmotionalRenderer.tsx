@@ -9,13 +9,13 @@ import { EmotionalDNA } from '../../core/entities/EmotionalDNA';
 interface EmotionalRendererProps {
   emotionalState: EmotionalDNA;
   mousePosition: { x: number; y: number };
-  claudeRecommendations?: any;
+
 }
 
 export const EmotionalRenderer: React.FC<EmotionalRendererProps> = ({
   emotionalState,
   mousePosition,
-  claudeRecommendations
+
 }) => {
   // Cores baseadas no estado emocional
   const emotionalColor = `hsl(
@@ -25,7 +25,7 @@ export const EmotionalRenderer: React.FC<EmotionalRendererProps> = ({
   )`;
 
   // Intensidade baseada em recomendações Claude
-  const intensity = claudeRecommendations?.intensity || 0.7;
+
 
   return (
     <div style={{

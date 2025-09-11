@@ -40,7 +40,7 @@ interface ClaudeAnalysis {
  */
 export class ClaudeAPIClient {
   private baseURL = 'https://api.anthropic.com/v1/messages';
-  private model = 'claude-sonnet-4-20250514';
+
   private isEnabled = false;
   
   constructor() {
@@ -91,9 +91,9 @@ export class ClaudeAPIClient {
       }
 
       const data = await response.json();
-      const claudeResponse = data.content[0].text;
+
       
-      return this.parseClaudeResponse(claudeResponse);
+
       
     } catch (error) {
       console.error('❌ Erro ao comunicar com Claude:', error);
