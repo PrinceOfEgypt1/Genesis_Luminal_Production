@@ -1,11 +1,10 @@
 /**
- * @fileoverview Adaptador para IA Real Claude
+ * @fileoverview Adaptador para API Claude Real
  * 
- * Mantém interface compatível mas usa IA genuína por baixo.
- * SUBSTITUI completamente simulações por inteligência real.
+ * VERSÃO SIMPLIFICADA para teste de integração
  */
 
-import { RealAIEngine } from './RealAIEngine';
+import { SimpleClaudeClient } from './SimpleClaudeClient';
 
 interface EmotionalDNA {
   joy: number; nostalgia: number; curiosity: number; serenity: number;
@@ -20,60 +19,25 @@ interface EmotionalPrediction {
 }
 
 /**
- * Adaptador que usa IA REAL do Claude
- * ✅ NENHUMA SIMULAÇÃO - apenas IA genuína
+ * Adaptador que usa API Claude Real (versão simplificada)
  */
 export class LSTMPredictionEngine {
-  private realAI: RealAIEngine;
+  private claudeClient: SimpleClaudeClient;
 
   constructor() {
-    this.realAI = new RealAIEngine();
-    console.log('🧠 Adaptador: Usando IA REAL Claude (zero simulação)');
+    this.claudeClient = new SimpleClaudeClient();
+    console.log('🔄 Adaptador: Usando API Claude REAL (não mais LSTM local)');
   }
 
-  /**
-   * Interface compatível - mas usa IA real
-   */
   async addEmotionalState(dna: EmotionalDNA): Promise<void> {
-    await this.realAI.addEmotionalState(dna);
+    await this.claudeClient.addEmotionalState(dna);
   }
 
-  /**
-   * Interface compatível - mas usa IA real
-   */
   async predictNextState(): Promise<EmotionalPrediction | null> {
-    return await this.realAI.predictNextState();
+    return await this.claudeClient.predictNextState();
   }
 
-  /**
-   * Métricas da IA real
-   */
   getMetrics() {
-    const realMetrics = this.realAI.getMetrics();
-    return {
-      accuracy: realMetrics.accuracy,
-      historySize: realMetrics.historySize,
-      maxHistorySize: realMetrics.maxHistorySize,
-      isReady: realMetrics.isReady,
-      // Indicadores de IA real
-      isRealAI: true,
-      aiType: 'Claude API',
-      status: realMetrics.status,
-      note: 'IA genuína da Anthropic, não simulação'
-    };
-  }
-
-  /**
-   * Recomendações da IA real
-   */
-  async getPersonalizedRecommendations(): Promise<any> {
-    return await this.realAI.getPersonalizedRecommendations();
-  }
-
-  /**
-   * Status
-   */
-  isRealAI(): boolean {
-    return this.realAI.isRealAI();
+    return this.claudeClient.getMetrics();
   }
 }
