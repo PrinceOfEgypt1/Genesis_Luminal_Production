@@ -29,15 +29,15 @@ export class SimpleClaudeClient {
   async addEmotionalState(_dna: EmotionalDNA): Promise<void> {
     this.callCount++;
     // 🔧 CORREÇÃO: USAR variável 'dna'
-    this.lastDNA = { ..._dna };
+    this.lastDNA = { ...dna };
     
     console.log(`📊 API Claude: Estado emocional ${this.callCount} processado`);
-    console.log(`🎭 Estado dominante: ${this.getDominantEmotion(_dna)}`);
+    console.log(`🎭 Estado dominante: ${this.getDominantEmotion(dna)}`);
     
     // Simular chamada API real (por enquanto)
     if (this.callCount % 5 === 0) {
       console.log('🔄 API Claude: Enviando dados para análise...');
-      console.log(`📈 Dados: joy=${_dna.joy.toFixed(2)}, curiosity=${_dna.curiosity.toFixed(2)}`);
+      console.log(`📈 Dados: joy=${dna.joy.toFixed(2)}, curiosity=${dna.curiosity.toFixed(2)}`);
       console.log('✅ API Claude: Análise recebida com sucesso');
     }
   }
