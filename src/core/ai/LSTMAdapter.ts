@@ -5,7 +5,7 @@
  * Status: ADAPTADOR (compatibilidade de interface)
  */
 
-import { RealAIEngine, AIInsights } from './claude/RealAIEngine';
+
 import { EmotionalDNA } from '../entities/EmotionalDNA';
 
 /**
