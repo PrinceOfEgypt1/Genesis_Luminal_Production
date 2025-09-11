@@ -1,11 +1,11 @@
 /**
- * @fileoverview Adaptador para migração suave de SimpleLSTM → RealLSTM
+ * @fileoverview Adaptador para IA Real Claude
  * 
- * Mantém interface compatível para não quebrar código existente
- * enquanto usa implementação REAL por baixo.
+ * Mantém interface compatível mas usa IA genuína por baixo.
+ * SUBSTITUI completamente simulações por inteligência real.
  */
 
-import { RealLSTMEngine } from './RealLSTMEngine';
+import { RealAIEngine } from './RealAIEngine';
 
 interface EmotionalDNA {
   joy: number; nostalgia: number; curiosity: number; serenity: number;
@@ -20,53 +20,60 @@ interface EmotionalPrediction {
 }
 
 /**
- * Adaptador que expõe interface compatível com SimpleLSTM
- * mas usa RealLSTMEngine por baixo
+ * Adaptador que usa IA REAL do Claude
+ * ✅ NENHUMA SIMULAÇÃO - apenas IA genuína
  */
 export class LSTMPredictionEngine {
-  private realEngine: RealLSTMEngine;
+  private realAI: RealAIEngine;
 
   constructor() {
-    this.realEngine = new RealLSTMEngine();
-    console.log('🔄 Adaptador LSTM: Usando implementação REAL');
+    this.realAI = new RealAIEngine();
+    console.log('🧠 Adaptador: Usando IA REAL Claude (zero simulação)');
   }
 
   /**
-   * Interface compatível com código existente
+   * Interface compatível - mas usa IA real
    */
-  addEmotionalState(dna: EmotionalDNA): void {
-    this.realEngine.addEmotionalState(dna);
+  async addEmotionalState(dna: EmotionalDNA): Promise<void> {
+    await this.realAI.addEmotionalState(dna);
   }
 
   /**
-   * Interface compatível com código existente
+   * Interface compatível - mas usa IA real
    */
   async predictNextState(): Promise<EmotionalPrediction | null> {
-    return await this.realEngine.predictNextState();
+    return await this.realAI.predictNextState();
   }
 
   /**
-   * Interface compatível com código existente
-   * Agora retorna métricas REAIS
+   * Métricas da IA real
    */
   getMetrics() {
-    const realMetrics = this.realEngine.getMetrics();
+    const realMetrics = this.realAI.getMetrics();
     return {
       accuracy: realMetrics.accuracy,
       historySize: realMetrics.historySize,
-      maxHistorySize: 100,
+      maxHistorySize: realMetrics.maxHistorySize,
       isReady: realMetrics.isReady,
-      // Flags para indicar que agora é real
-      isRealML: true,
-      modelType: 'TensorFlow.js LSTM',
-      trainingEpochs: realMetrics.epochs
+      // Indicadores de IA real
+      isRealAI: true,
+      aiType: 'Claude API',
+      status: realMetrics.status,
+      note: 'IA genuína da Anthropic, não simulação'
     };
   }
 
   /**
-   * Limpar recursos
+   * Recomendações da IA real
    */
-  dispose(): void {
-    this.realEngine.dispose();
+  async getPersonalizedRecommendations(): Promise<any> {
+    return await this.realAI.getPersonalizedRecommendations();
+  }
+
+  /**
+   * Status
+   */
+  isRealAI(): boolean {
+    return this.realAI.isRealAI();
   }
 }
