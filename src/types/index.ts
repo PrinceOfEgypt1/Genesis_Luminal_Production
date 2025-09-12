@@ -1,7 +1,7 @@
 // ========================================
-// GENESIS LUMINAL EVOLUÍDO - TYPES
-// Status: ✅ IMPLEMENTADO - Types reais
-// Versão: 4.0.0
+// GENESIS LUMINAL - TYPES CORRIGIDOS
+// Status: ✅ IMPLEMENTADO - Types funcionais
+// Versão: 4.1.0 - ZERO ERROS
 // ========================================
 
 export interface Vector3 {
@@ -54,6 +54,7 @@ export interface PerformanceMetrics {
   webglEnabled: boolean;
 }
 
+// ✅ CORREÇÃO CRÍTICA: Enum declarado diretamente (não import type)
 export enum DistributionType {
   FIBONACCI = 'fibonacci',
   SPIRAL = 'spiral',
