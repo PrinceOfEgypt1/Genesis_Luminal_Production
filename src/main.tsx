@@ -1,18 +1,9 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { GenesisCore } from './presentation/components/GenesisCore.tsx'
+import { GenesisCore } from './components/GenesisCore'
+import './index.css'
 
-// Verificar se o elemento root existe
-const rootElement = document.getElementById('root');
-
-if (!rootElement) {
-  throw new Error('Root element not found');
-}
-
-// Criar root e renderizar
-const root = ReactDOM.createRoot(rootElement);
-
-root.render(
+ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <GenesisCore />
   </React.StrictMode>,
