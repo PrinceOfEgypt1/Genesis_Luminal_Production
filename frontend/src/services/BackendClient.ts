@@ -1,23 +1,8 @@
-export interface EmotionalAnalysisRequest {
-  currentState: any;
-  mousePosition: { x: number; y: number };
-  sessionDuration: number;
-}
-
-export interface EmotionalAnalysisResponse {
-  success: boolean;
-  confidence: number;
-  recommendation: string;
-  emotionalShift?: string;
-  morphogenicSuggestion?: string;
-  error?: any;
-}
-
-export interface HealthCheckResponse {
-  success: boolean;
-  status: string;
-  error?: any;
-}
+import { 
+  EmotionalAnalysisRequest,
+  EmotionalAnalysisResponse,
+  HealthCheckResponse
+} from '../../../shared/types/api';
 
 export class BackendClient {
   private baseUrl: string;
@@ -28,6 +13,7 @@ export class BackendClient {
 
   constructor() {
     this.baseUrl = 'http://localhost:3001';
+    console.log('🔧 BackendClient initialized with corrected API endpoints');
   }
 
   async healthCheck(): Promise<HealthCheckResponse> {
@@ -42,7 +28,7 @@ export class BackendClient {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.REQUEST_TIMEOUT);
       
-      const response = await fetch(`${this.baseUrl}/health`, {
+      const response = await fetch(`${this.baseUrl}/api/liveness`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

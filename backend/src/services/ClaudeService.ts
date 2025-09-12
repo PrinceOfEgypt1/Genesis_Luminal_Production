@@ -5,6 +5,11 @@
 import { config } from '../config/environment';
 import { logger } from '../utils/logger';
 import { CacheService } from './CacheService';
+import { 
+  EmotionalAnalysisRequest, 
+  EmotionalAnalysisResponse, 
+  EmotionalDNA 
+} from '../../../shared/types/api';
 
 export interface ClaudeRequest {
   model: string;
@@ -26,17 +31,10 @@ export interface ClaudeResponse {
   };
 }
 
-export interface EmotionalAnalysisRequest {
-  currentState: any;
-  mousePosition: { x: number; y: number };
-  sessionDuration: number;
-  userId?: string;
-}
-
 export class ClaudeService {
   private cache = new CacheService();
 
-  async analyzeEmotionalState(request: EmotionalAnalysisRequest): Promise<any> {
+  async analyzeEmotionalState(request: EmotionalAnalysisRequest): Promise<EmotionalAnalysisResponse> {
     try {
       // Gerar cache key baseado na requisição
       const cacheKey = this.generateCacheKey(request);
@@ -65,13 +63,30 @@ export class ClaudeService {
         await this.cache.set(cacheKey, analysis, config.CACHE_TTL);
         
         logger.info('Claude analysis completed successfully');
-        return analysis;
+        return {
+          success: true,
+          intensity: analysis.intensity || 0.5,
+          dominantAffect: analysis.dominantAffect || 'curiosity',
+          timestamp: new Date().toISOString(),
+          confidence: analysis.confidence || 0.8,
+          recommendation: analysis.recommendation || 'Continue exploring',
+          emotionalShift: analysis.emotionalShift,
+          morphogenicSuggestion: analysis.morphogenicSuggestion
+        };
       }
 
       throw new Error('Invalid response from Claude API');
     } catch (error) {
       logger.error('Claude API error:', error);
-      throw error;
+      return {
+        success: false,
+        intensity: 0,
+        dominantAffect: 'curiosity',
+        timestamp: new Date().toISOString(),
+        confidence: 0,
+        recommendation: 'System operating in fallback mode',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
     }
   }
 
