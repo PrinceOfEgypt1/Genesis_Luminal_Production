@@ -1,0 +1,71 @@
+# Encontre esta seção no GenesisCore.tsx (linhas ~1300-1320):
+
+  // Teste de conexão Claude
+  useEffect(() => {
+    const testClaudeConnection = async () => {
+      setConnectionStatus('connecting');
+      try {
+        const backendClient = backendClientRef.current;
+        const healthCheck = await backendClient.healthCheck();
+        setConnectionStatus(healthCheck.success ? 'connected' : 'disconnected');
+      } catch (error) {
+        setConnectionStatus('disconnected');
+      }
+    };
+
+    testClaudeConnection();
+    
+    const interval = setInterval(() => {
+      if (connectionStatus === 'disconnected') {
+        testClaudeConnection();
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [connectionStatus]);
+
+# SUBSTITUA por:
+
+  // Teste de conexão Claude (THROTTLED)
+  useEffect(() => {
+    let isMounted = true;
+    
+    const testClaudeConnection = async () => {
+      if (!isMounted) return;
+      
+      // Só tentar conectar se status atual não for 'connecting'
+      if (connectionStatus === 'connecting') return;
+      
+      setConnectionStatus('connecting');
+      
+      try {
+        const backendClient = backendClientRef.current;
+        const healthCheck = await backendClient.healthCheck();
+        
+        if (isMounted) {
+          setConnectionStatus(healthCheck.success ? 'connected' : 'disconnected');
+        }
+      } catch (error) {
+        if (isMounted) {
+          setConnectionStatus('disconnected');
+        }
+      }
+    };
+
+    // Teste inicial após 1 segundo
+    const initialTimeout = setTimeout(testClaudeConnection, 1000);
+    
+    // Testes periódicos apenas se desconectado (a cada 30 segundos)
+    const interval = setInterval(() => {
+      if (connectionStatus === 'disconnected') {
+        testClaudeConnection();
+      }
+    }, 30000); // 30 segundos em vez de 5
+
+    return () => {
+      isMounted = false;
+      clearTimeout(initialTimeout);
+      clearInterval(interval);
+    };
+  }, []); // Remove connectionStatus da dependência para evitar loops
+

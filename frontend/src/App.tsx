@@ -1,5 +1,4 @@
-import React from 'react'
-import GenesisCore from './presentation/components/GenesisCore'
+import { GenesisCore } from './components/GenesisCore'
 import './App.css'
 
 function App() {
