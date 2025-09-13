@@ -1,3 +1,4 @@
+import { SHOW_AI_HUD } from '../shared/constants/uiFlags';
 /**
  * @fileoverview Genesis Luminal Evoluído - CORREÇÕES TYPESCRIPT
  * 

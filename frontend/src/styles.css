@@ -108,3 +108,11 @@ button:hover,
     scroll-behavior: auto !important;
   }
 }
+/* === AI HUD kill-switch (não exibido por padrão) === */
+:root { --show-ai-hud: 0; }
+#ai-status, .ai-status, .status-hud, .debug-hud, .hud, .status {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
