@@ -23,3 +23,6 @@ router.post('/analyze', async (req, res) => {
 });
 
 export default router;
+
+/** Garantia de exportação named */
+export const emotionalRouter = router;

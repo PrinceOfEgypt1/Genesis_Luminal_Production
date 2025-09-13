@@ -1,15 +1,20 @@
+import type { Express } from 'express';
+import health from './health';
+import emotionalDefault, { emotionalRouter as emotionalNamed } from './emotional';
+
 /**
- * Configuração de rotas principais
+ * Monta rotas do backend. Aceita tanto export default quanto named do módulo emotional.
  */
+export default function setupRoutes(app: Express) {
+  if (health) {
+    app.use('/api/health', health);
+  }
 
-import { Router } from 'express';
-import { emotionalRoutes } from './emotional';
-
-export function setupRoutes(): Router {
-  const router = Router();
-
-  // Rotas de análise emocional
-  router.use('/emotional', emotionalRoutes);
-
-  return router;
+  const emotional = (emotionalDefault as any) || (emotionalNamed as any);
+  if (!emotional) {
+    // Mantém o servidor no ar, mas loga claramente se algo falhar
+    console.warn('[routes] emotional router não carregado (default e named ausentes).');
+  } else {
+    app.use('/api/emotional', emotional);
+  }
 }
