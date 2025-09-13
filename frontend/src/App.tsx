@@ -1,18 +1,13 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { GenesisCore } from './components/GenesisCore';
 import ErrorBoundary from './components/ErrorBoundary';
 import './App.css';
 import './styles.css';
 
 function App() {
-  const [statusMessage, setStatusMessage] = useState<string>('');
+  const [statusMessage] = useState<string>('');
 
   // Função para atualizar mensagens de status para screen readers
-  const updateStatus = (message: string) => {
-    setStatusMessage(message);
-    // Limpar mensagem após 5 segundos
-    setTimeout(() => setStatusMessage(''), 5000);
-  };
 
   return (
     <ErrorBoundary>
@@ -51,7 +46,7 @@ function App() {
             outline: 'none'
           }}
         >
-          <GenesisCore onStatusChange={updateStatus} />
+          <GenesisCore />
         </main>
       </div>
     </ErrorBoundary>

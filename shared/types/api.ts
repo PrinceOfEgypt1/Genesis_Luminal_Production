@@ -40,15 +40,19 @@ export interface EmotionalAnalysisRequest {
 }
 
 export interface EmotionalAnalysisResponse {
-  success: boolean;
-  intensity: number;
-  dominantAffect: EmotionalAffect;
-  timestamp: string;
-  confidence: number;
-  recommendation: string;
-  emotionalShift?: string;
-  morphogenicSuggestion?: string;
-  error?: any;
+  /** Intensidade (0..1). Temporariamente opcional para compatibilidade. */
+  intensity?: number;
+  /** Afeto dominante. Temporariamente opcional. */
+  dominantAffect?: keyof EmotionalDNA;
+  /** ISO datetime. Temporariamente opcional. */
+  timestamp?: string;
+  // --- Campos legados aceitos temporariamente (compatibilidade) ---
+  success?: boolean;
+  confidence?: number;
+  recommendation?: string;
+  error?: unknown;
+  emotionalShift?: unknown;
+  morphogenicSuggestion?: unknown;
 }
 
 // === HEALTH CHECK ===

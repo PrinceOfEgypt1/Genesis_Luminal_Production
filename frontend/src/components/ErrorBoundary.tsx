@@ -40,7 +40,7 @@ class ErrorBoundary extends Component<Props, State> {
     this.setState({
       hasError: true,
       error,
-      errorInfo: errorInfo.componentStack
+      errorInfo: (errorInfo?.componentStack ?? null)
     });
   }
 

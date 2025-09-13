@@ -10,8 +10,9 @@
  */
 
 import React, { useRef, useEffect, useState, useCallback, useMemo, memo } from 'react';
+import type { EmotionalAnalysisRequest } from '@genesis-luminal/shared/types/api';
 import * as Tone from 'tone';
-import { BackendClient, EmotionalAnalysisRequest } from '../services/BackendClient';
+import { BackendClient } from '../services/BackendClient';
 
 // === INTERFACES COMPLETAS ===
 
@@ -1458,10 +1459,10 @@ export const GenesisCore: React.FC = () => {
       
       if (analysis.success) {
         setClaudeAnalysis({
-          confidence: analysis.confidence,
-          recommendation: analysis.recommendation,
-          emotionalShift: analysis.emotionalShift || 'stable',
-          morphogenicSuggestion: analysis.morphogenicSuggestion || 'fibonacci'
+          confidence: (typeof analysis?.confidence === 'number' ? analysis.confidence : 0),
+          recommendation: (typeof analysis?.recommendation === 'string' ? analysis.recommendation : 'fallback'),
+          emotionalShift: String((analysis as any)?.emotionalShift ?? 'stable'),
+          morphogenicSuggestion: String((analysis as any)?.morphogenicSuggestion ?? 'fibonacci')
         });
       }
     } catch (error) {
