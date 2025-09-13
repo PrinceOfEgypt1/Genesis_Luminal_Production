@@ -1,46 +1,25 @@
-/**
- * Rotas para análise emocional
- */
-
 import { Router } from 'express';
 import { ClaudeService } from '../services/ClaudeService';
-import { logger } from '../utils/logger';
 
 const router = Router();
-const claudeService = new ClaudeService();
+const service = new ClaudeService();
 
-// POST /api/emotional/analyze
 router.post('/analyze', async (req, res) => {
   try {
-    const { currentState, mousePosition, sessionDuration } = req.body;
-
-    // Validação básica
-    if (!currentState || !mousePosition || sessionDuration === undefined) {
-      return res.status(400).json({
-        error: 'Missing required fields: currentState, mousePosition, sessionDuration'
-      });
-    }
-
-    const analysis = await claudeService.analyzeEmotionalState({
-      currentState,
-      mousePosition,
-      sessionDuration,
-      userId: req.ip // Simples identificador baseado em IP
-    });
-
-    res.json({
-      success: true,
-      analysis,
-      timestamp: new Date().toISOString()
-    });
-
-  } catch (error) {
-    logger.error('Emotional analysis error:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-      fallback: true // Indica que frontend deve usar fallback
+    const text = typeof req.body?.text === 'string' ? req.body.text : '';
+    const result = await service.analyzeEmotionalState({ text } as any);
+    res.status(200).json(result);
+  } catch {
+    res.status(200).json({
+      intensity: 0.5,
+      dominantAffect: 'neutral',
+      timestamp: new Date().toISOString(),
+      confidence: 0.5,
+      recommendation: 'continue',
+      emotionalShift: 'stable',
+      morphogenicSuggestion: 'fibonacci'
     });
   }
 });
 
-export { router as emotionalRoutes };
+export default router;

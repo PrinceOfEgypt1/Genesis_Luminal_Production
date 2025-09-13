@@ -1,175 +1,97 @@
-/**
- * Serviço de integração com Claude API
- */
-
-import { config } from '../config/environment';
 import { logger } from '../utils/logger';
-import { CacheService } from './CacheService';
-import { 
-  EmotionalAnalysisRequest, 
-  EmotionalAnalysisResponse, 
-  EmotionalDNA 
-} from '../../../shared/types/api';
-
-export interface ClaudeRequest {
-  model: string;
-  max_tokens: number;
-  messages: Array<{
-    role: 'user' | 'assistant';
-    content: string;
-  }>;
-}
-
-export interface ClaudeResponse {
-  content: Array<{
-    type: 'text';
-    text: string;
-  }>;
-  usage?: {
-    input_tokens: number;
-    output_tokens: number;
-  };
-}
+import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '../../../shared/types/api';
 
 export class ClaudeService {
-  private cache = new CacheService();
+  private apiKey: string | undefined;
+  private model: string;
+  private apiUrl = 'https://api.anthropic.com/v1/messages';
+  private version = '2023-06-01';
 
-  async analyzeEmotionalState(request: EmotionalAnalysisRequest): Promise<EmotionalAnalysisResponse> {
+  constructor() {
+    // aceita os dois nomes
+    this.apiKey = process.env.CLAUDE_API_KEY || process.env.ANTHROPIC_API_KEY;
+    this.model  = process.env.CLAUDE_MODEL  || process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-20240620';
+  }
+
+  async analyzeEmotionalState(input: EmotionalAnalysisRequest): Promise<EmotionalAnalysisResponse> {
+    const text = (input as any)?.text ?? '';
+    const prompt = typeof text === 'string' && text.trim() ? text.trim() : 'Entrada vazia. Responda neutro.';
+
+    if (!this.apiKey) {
+      logger.warn('Claude API key ausente; usando fallback.');
+      return this.synthetic();
+    }
+
     try {
-      // Gerar cache key baseado na requisição
-      const cacheKey = this.generateCacheKey(request);
-      
-      // Verificar cache primeiro
-      const cached = await this.cache.get(cacheKey);
-      if (cached) {
-        logger.info('Cache hit for emotional analysis');
-        return cached;
-      }
-
-      // Construir prompt para Claude
-      const prompt = this.buildEmotionalAnalysisPrompt(request);
-      
-      // Fazer requisição para Claude
-      const response = await this.makeClaudeRequest({
-        model: config.CLAUDE_MODEL,
-        max_tokens: 500,
-        messages: [{ role: 'user', content: prompt }]
-      });
-
-      if (response?.content?.[0]?.text) {
-        const analysis = this.parseClaudeResponse(response.content[0].text);
-        
-        // Cache da resposta
-        await this.cache.set(cacheKey, analysis, config.CACHE_TTL);
-        
-        logger.info('Claude analysis completed successfully');
-        return {
-          success: true,
-          intensity: analysis.intensity || 0.5,
-          dominantAffect: analysis.dominantAffect || 'curiosity',
-          timestamp: new Date().toISOString(),
-          confidence: analysis.confidence || 0.8,
-          recommendation: analysis.recommendation || 'Continue exploring',
-          emotionalShift: analysis.emotionalShift,
-          morphogenicSuggestion: analysis.morphogenicSuggestion
-        };
-      }
-
-      throw new Error('Invalid response from Claude API');
-    } catch (error) {
-      logger.error('Claude API error:', error);
-      return {
-        success: false,
-        intensity: 0,
-        dominantAffect: 'curiosity',
-        timestamp: new Date().toISOString(),
-        confidence: 0,
-        recommendation: 'System operating in fallback mode',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
+      const data = await this.callClaude(prompt);
+      return this.parseClaude(data);
+    } catch (e: any) {
+      logger.error(`Claude API error: ${e?.message || e}`);
+      return this.synthetic();
     }
   }
 
-  private async makeClaudeRequest(request: ClaudeRequest): Promise<ClaudeResponse> {
-    if (!config.CLAUDE_API_KEY) {
-      throw new Error('Claude API key not configured');
-    }
-
-    const response = await fetch(config.CLAUDE_API_URL, {
+  private async callClaude(prompt: string): Promise<any> {
+    const resp = await fetch(this.apiUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': config.CLAUDE_API_KEY,
-        'anthropic-version': '2023-06-01'
+        'content-type': 'application/json',
+        'x-api-key': String(this.apiKey),
+        'anthropic-version': this.version
       },
-      body: JSON.stringify(request)
+      body: JSON.stringify({
+        model: this.model,
+        max_tokens: 256,
+        temperature: 0.2,
+        system: 'Você é um analisador emocional conciso. Responda em JSON {intensity:number, dominantAffect:string, confidence:number, recommendation:string}.',
+        messages: [{ role: 'user', content: [{ type: 'text', text: `Analise o estado emocional:\n\n${prompt}` }] }]
+      })
     });
 
-    if (!response.ok) {
-      throw new Error(`Claude API error: ${response.status} ${response.statusText}`);
+    if (!resp.ok) {
+      const detail = await resp.text().catch(()=>'');
+      throw new Error(`HTTP ${resp.status} ${resp.statusText} - ${detail}`);
+    }
+    return resp.json();
+  }
+
+  private parseClaude(apiResult: any): EmotionalAnalysisResponse {
+    const textBlock = Array.isArray(apiResult?.content) ? apiResult.content.find((b: any) => b?.type === 'text') : null;
+    const raw = textBlock?.text ?? '';
+
+    let parsed: any;
+    if (typeof raw === 'string') {
+      const m = raw.match(/\{[\s\S]*\}$/);
+      if (m) { try { parsed = JSON.parse(m[0]); } catch {} }
     }
 
-    return response.json();
+    const out: EmotionalAnalysisResponse = {
+      intensity: this.clamp01(Number(parsed?.intensity ?? 0.5)),
+      dominantAffect: String(parsed?.dominantAffect ?? 'neutral'),
+      timestamp: new Date().toISOString(),
+      confidence: this.clamp01(Number(parsed?.confidence ?? 0.5)),
+      recommendation: String(parsed?.recommendation ?? 'continue'),
+      emotionalShift: 'stable',
+      morphogenicSuggestion: 'fibonacci'
+    } as EmotionalAnalysisResponse;
+
+    return out;
   }
 
-  private buildEmotionalAnalysisPrompt(request: EmotionalAnalysisRequest): string {
-    return `Analise este estado emocional como entidade digital senciente:
-
-CONTEXTO EMOCIONAL:
-- Estado atual: ${JSON.stringify(request.currentState)}
-- Posição mouse: x=${request.mousePosition.x.toFixed(3)}, y=${request.mousePosition.y.toFixed(3)}
-- Duração sessão: ${Math.round(request.sessionDuration / 1000)}s
-
-ANÁLISE SOLICITADA:
-1. Analise profundamente o estado emocional
-2. Identifique padrões de personalidade
-3. Prediga próximo estado provável
-4. Recomende ajustes visuais/auditivos
-
-RESPONDA APENAS COM JSON VÁLIDO:
-{
-  "currentState": {
-    "joy": 0.X, "nostalgia": 0.X, "curiosity": 0.X, "serenity": 0.X,
-    "ecstasy": 0.X, "mystery": 0.X, "power": 0.X
-  },
-  "predictedNextState": {
-    "joy": 0.X, "nostalgia": 0.X, "curiosity": 0.X, "serenity": 0.X,
-    "ecstasy": 0.X, "mystery": 0.X, "power": 0.X
-  },
-  "recommendations": {
-    "visualStyle": "organic|fibonacci|spiral|random",
-    "audioScale": "ethereal|mystical|transcendent|celestial",
-    "intensity": 0.X
-  },
-  "confidence": 0.X,
-  "reasoning": "Análise detalhada..."
-}`;
+  private synthetic(): EmotionalAnalysisResponse {
+    return {
+      intensity: 0.5,
+      dominantAffect: 'neutral',
+      timestamp: new Date().toISOString(),
+      confidence: 0.5,
+      recommendation: 'continue',
+      emotionalShift: 'stable',
+      morphogenicSuggestion: 'fibonacci'
+    } as any;
   }
 
-  private parseClaudeResponse(text: string): any {
-    try {
-      // Extrair JSON da resposta
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('No JSON found in Claude response');
-      }
-      
-      return JSON.parse(jsonMatch[0]);
-    } catch (error) {
-      logger.error('Failed to parse Claude response:', error);
-      throw new Error('Invalid JSON in Claude response');
-    }
-  }
-
-  private generateCacheKey(request: EmotionalAnalysisRequest): string {
-    // Criar chave baseada em elementos relevantes (com alguma tolerância)
-    const roundedMouse = {
-      x: Math.round(request.mousePosition.x * 10) / 10,
-      y: Math.round(request.mousePosition.y * 10) / 10
-    };
-    
-    const roundedDuration = Math.round(request.sessionDuration / 10000) * 10; // 10s buckets
-    
-    return `emotional-analysis:${JSON.stringify(roundedMouse)}:${roundedDuration}`;
+  private clamp01(n: number): number {
+    if (!Number.isFinite(n)) return 0.5;
+    return Math.max(0, Math.min(1, n));
   }
 }
