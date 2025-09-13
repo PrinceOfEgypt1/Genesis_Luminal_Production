@@ -4,8 +4,8 @@ import { RateLimiterMemory } from 'rate-limiter-flexible';
 const WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS ?? 15 * 60_000);
 const MAX_POINTS = Number(process.env.RATE_LIMIT_MAX ?? 100);
 
-const durationSecRaw = WINDOW_MS / 1000;
-const durationSec = Number.isFinite(durationSecRaw) ? Math.max(1, Math.floor(durationSecRaw)) : 900;
+// rate-limiter-flexible trabalha com segundos
+const durationSec = Number.isFinite(WINDOW_MS / 1000) ? Math.max(1, Math.floor(WINDOW_MS / 1000)) : 900;
 
 const limiter = new RateLimiterMemory({
   points: Number.isFinite(MAX_POINTS) ? MAX_POINTS : 100,
@@ -13,18 +13,22 @@ const limiter = new RateLimiterMemory({
   blockDuration: durationSec,
 });
 
-function clientKey(req: Request): string {
+function resolveClientKey(req: Request): string {
   const xf = req.headers['x-forwarded-for'];
-  const xfFirst = Array.isArray(xf)
-    ? xf[0]
-    : (typeof xf === 'string' ? xf.split(',')[0] : undefined);
-  const ip = req.ip ?? xfFirst ?? (req.socket as any)?.remoteAddress ?? 'unknown';
-  return String(ip).trim();
+  const xfFirst =
+    (Array.isArray(xf) ? xf[0] : (typeof xf === 'string' ? xf.split(',')[0] : undefined))?.trim();
+  return (
+    req.ip ??
+    xfFirst ??
+    (req.socket as any)?.remoteAddress ??
+    'unknown'
+  ).toString();
 }
 
 export async function rateLimit(req: Request, res: Response, next: NextFunction) {
+  const key = resolveClientKey(req);
   try {
-    await limiter.consume(clientKey(req));
+    await limiter.consume(key);
     return next();
   } catch (rejRes) {
     const msBeforeNext =
@@ -35,6 +39,4 @@ export async function rateLimit(req: Request, res: Response, next: NextFunction)
   }
 }
 
-// Mantém compatibilidade com index.ts que importa { rateLimitMiddleware }
-export { rateLimit as rateLimitMiddleware };
 export default rateLimit;

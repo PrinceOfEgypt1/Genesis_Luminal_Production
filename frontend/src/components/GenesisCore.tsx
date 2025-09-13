@@ -1,4 +1,3 @@
-import { SHOW_AI_HUD } from '../shared/constants/uiFlags';
 /**
  * @fileoverview Genesis Luminal Evoluído - CORREÇÕES TYPESCRIPT
  * 
@@ -14,6 +13,8 @@ import React, { useRef, useEffect, useState, useCallback, useMemo, memo } from '
 import type { EmotionalAnalysisRequest } from '@genesis-luminal/shared/types/api';
 import * as Tone from 'tone';
 import { BackendClient } from '../services/BackendClient';
+
+// import { SHOW_AI_HUD } from '../shared/constants/uiFlags';
 
 // === INTERFACES COMPLETAS ===
 

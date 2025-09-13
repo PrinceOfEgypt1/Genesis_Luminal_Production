@@ -21,3 +21,20 @@ export const logger = winston.createLogger({
     })
   ]
 });
+
+// --- auto-injected: demote known Claude quota/rate-limit errors to WARN ---
+const __SUPPRESS_CLAUDE = process.env.SUPPRESS_CLAUDE_QUOTA_LOGS === 'true';
+if (__SUPPRESS_CLAUDE) {
+  const __origError = (logger as any).error?.bind(logger) || ((..._a:any[])=>{});
+  (logger as any).error = (...args: any[]) => {
+    try {
+      const msg = String(args?.[0] ?? '');
+      if (/(Claude API error).*(usage limits|rate limit|insufficient_quota|invalid_request_error)/i.test(msg)) {
+        // demote to warn
+        return (logger as any).warn?.(...args);
+      }
+    } catch {}
+    return __origError(...args);
+  };
+}
+// --- end auto-injected ---

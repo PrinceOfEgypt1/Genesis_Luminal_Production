@@ -2,7 +2,7 @@ import { Router } from 'express';
 import claudeService from '../services/ClaudeService';
 
 const router = Router();
-const service = claudeService;
+const service = new ClaudeService();
 
 router.post('/analyze', async (req, res) => {
   try {
