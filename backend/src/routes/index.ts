@@ -1,20 +1,23 @@
-import type { Express } from 'express';
+import { Router } from 'express';
 import health from './health';
 import emotionalDefault, { emotionalRouter as emotionalNamed } from './emotional';
 
-/**
- * Monta rotas do backend. Aceita tanto export default quanto named do módulo emotional.
- */
-export default function setupRoutes(app: Express) {
-  if (health) {
-    app.use('/api/health', health);
+/** Retorna um Router montando todas as subrotas. */
+export function setupRoutes() {
+  const router = Router();
+
+  // health.ts já registra /liveness, /readiness, /status internamente
+  if (health) router.use(health);
+
+  // aceita default OU named do módulo emotional
+  const emotional = (emotionalDefault as any) || (emotionalNamed as any);
+  if (emotional) {
+    router.use('/emotional', emotional);
+  } else {
+    console.warn('[routes] emotional router ausente (nem default nem named).');
   }
 
-  const emotional = (emotionalDefault as any) || (emotionalNamed as any);
-  if (!emotional) {
-    // Mantém o servidor no ar, mas loga claramente se algo falhar
-    console.warn('[routes] emotional router não carregado (default e named ausentes).');
-  } else {
-    app.use('/api/emotional', emotional);
-  }
+  return router;
 }
+
+export default setupRoutes;
