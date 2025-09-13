@@ -1,3 +1,4 @@
+import { sanitizeEmotional } from './middleware/sanitizeEmotional';
 /**
  * GENESIS LUMINAL BACKEND
  * Servidor principal com integração Claude API
@@ -46,6 +47,7 @@ app.use(cors({
 
 // Body parsing com limite reduzido
 app.use(express.json({ limit: '1mb' }));
+app.use('/api/emotional/analyze', sanitizeEmotional);
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Rate limiting
