@@ -2,6 +2,7 @@ import { sanitizeEmotional } from './middleware/sanitizeEmotional';
 /**
  * GENESIS LUMINAL BACKEND
  * Servidor principal com integração Claude API
+ * CORREÇÃO: Rate limit aplicado APÓS rotas de saúde
  */
 
 import express from 'express';
@@ -50,11 +51,11 @@ app.use(express.json({ limit: '1mb' }));
 app.use('/api/emotional/analyze', sanitizeEmotional);
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-// Rate limiting
-app.use(rateLimitMiddleware);
-
-// Health routes (sem rate limiting)
+// ✅ CORREÇÃO CRÍTICA: Health routes ANTES do rate limiting
 app.use('/api', healthRouter);
+
+// ✅ Rate limiting aplicado APÓS rotas de saúde
+app.use(rateLimitMiddleware);
 
 // Application routes
 app.use('/api', setupRoutes());
@@ -66,8 +67,9 @@ app.use(errorMiddleware);
 const PORT = config.PORT || 3001;
 app.listen(PORT, () => {
   logger.info(`🚀 Genesis Luminal Backend running on port ${PORT}`);
-  logger.info(`📡 Frontend URL: ${config.FRONTEND_URL}`);
+  logger.info(`🔡 Frontend URL: ${config.FRONTEND_URL}`);
   logger.info(`🧠 Claude API: ${config.CLAUDE_API_KEY ? 'Configured' : 'Missing'}`);
   logger.info(`⏱️  Request timeout: ${REQUEST_TIMEOUT_MS}ms`);
   logger.info(`🛡️  Health endpoints: /api/liveness, /api/readiness, /api/status`);
+  logger.info(`✅ CORREÇÃO: Rate limit aplicado APÓS health checks`);
 });
