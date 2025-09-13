@@ -37,7 +37,7 @@ export class PerformanceMonitor {
 
       // Calcular uso de memória (estimativa)
       if ('memory' in performance) {
-        // @ts-ignore
+        // @ts-ignore - reason: compatibility with external library types
         this.metrics.memoryUsage = performance.memory.usedJSHeapSize / 1024 / 1024;
       }
 

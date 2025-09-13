@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-declaration-merging */
 /**
  * 🧬 EMOTIONAL DNA - ESTRUTURA BÁSICA
  * Definição dos tipos emocionais para compatibilidade

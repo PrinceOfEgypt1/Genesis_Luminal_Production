@@ -1,3 +1,4 @@
+/* eslint-disable no-self-assign */
 /**
  * @fileoverview Sistema de Otimização de Partículas
  * 

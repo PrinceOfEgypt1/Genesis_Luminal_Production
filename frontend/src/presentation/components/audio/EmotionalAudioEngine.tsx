@@ -22,7 +22,7 @@ export const EmotionalAudioEngine: React.FC<EmotionalAudioEngineProps> = ({
 
     const initAudio = async () => {
       try {
-        // @ts-ignore
+        // @ts-ignore - reason: compatibility with external library types
         audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
         const ctx = audioContextRef.current;
 

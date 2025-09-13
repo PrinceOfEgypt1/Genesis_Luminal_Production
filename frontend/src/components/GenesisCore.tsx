@@ -834,11 +834,11 @@ class UltraOptimizedRenderer {
     const cosY = Math.cos(rotY), sinY = Math.sin(rotY);
     const cosX = Math.cos(rotX), sinX = Math.sin(rotX);
 
-    let tempX = x * cosY - z * sinY;
+    const tempX = x * cosY - z * sinY;
     z = x * sinY + z * cosY;
     x = tempX;
 
-    let tempY = y * cosX - z * sinX;
+    const tempY = y * cosX - z * sinX;
     z = y * sinX + z * cosX;
     y = tempY;
 
