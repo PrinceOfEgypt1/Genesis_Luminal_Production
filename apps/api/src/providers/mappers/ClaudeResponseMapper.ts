@@ -1,5 +1,5 @@
 /**
- * TRILHO B AÇÃO 5 - ClaudeResponseMapper Real
+ * TRILHO B AÇÃO 5 - ClaudeResponseMapper Real (TIPOS CORRIGIDOS)
  * 
  * Mapper dedicado para transformar respostas da Claude API em EmotionalAnalysisResponse.
  * Implementação REAL com parsing rigoroso e validação completa.
@@ -33,6 +33,7 @@ export interface ClaudeApiResponse {
 
 /**
  * Interface para dados emocionais extraídos da resposta Claude
+ * CORRIGIDO: Usar undefined em vez de null para compatibilidade TypeScript
  */
 export interface ParsedEmotionalData {
   intensity?: number;
@@ -271,9 +272,9 @@ export class ClaudeResponseMapper {
 
       // Verificar se extraiu informações suficientes
       const hasValidData = 
-        intensity !== null || 
-        confidence !== null || 
-        recommendation !== null;
+        intensity !== undefined || 
+        confidence !== undefined || 
+        recommendation !== undefined;
 
       if (hasValidData) {
         return {
@@ -295,7 +296,7 @@ export class ClaudeResponseMapper {
   /**
    * Extrai intensidade emocional do texto
    */
-  private static extractIntensityFromText(text: string): number | null {
+  private static extractIntensityFromText(text: string): number | undefined {
     // Palavras que indicam alta intensidade
     const highIntensityWords = [
       'muito', 'extremamente', 'intensamente', 'profundamente', 'bastante',
@@ -354,7 +355,7 @@ export class ClaudeResponseMapper {
   /**
    * Extrai confiança da análise do texto
    */
-  private static extractConfidenceFromText(text: string): number | null {
+  private static extractConfidenceFromText(text: string): number | undefined {
     const confidenceWords = [
       'certeza', 'certo', 'confiante', 'claro', 'óbvio',
       'certain', 'sure', 'confident', 'clear', 'obvious'
@@ -385,7 +386,7 @@ export class ClaudeResponseMapper {
   /**
    * Extrai recomendação do texto
    */
-  private static extractRecommendationFromText(text: string): string | null {
+  private static extractRecommendationFromText(text: string): string | undefined {
     if (text.includes('continuar') || text.includes('continue') || text.includes('prosseguir')) {
       return 'continue';
     }
@@ -395,13 +396,13 @@ export class ClaudeResponseMapper {
     if (text.includes('adaptar') || text.includes('adapt') || text.includes('ajustar')) {
       return 'adapt';
     }
-    return null;
+    return undefined;
   }
 
   /**
    * Extrai mudança emocional do texto
    */
-  private static extractEmotionalShiftFromText(text: string): string | null {
+  private static extractEmotionalShiftFromText(text: string): string | undefined {
     if (text.includes('positiv') || text.includes('melhor') || text.includes('cresceu')) {
       return 'positive';
     }
@@ -411,19 +412,19 @@ export class ClaudeResponseMapper {
     if (text.includes('estável') || text.includes('stable') || text.includes('constante')) {
       return 'stable';
     }
-    return null;
+    return undefined;
   }
 
   /**
    * Extrai sugestão morfogênica do texto
    */
-  private static extractMorphogenicSuggestionFromText(text: string): string | null {
+  private static extractMorphogenicSuggestionFromText(text: string): string | undefined {
     if (text.includes('espiral') || text.includes('spiral')) return 'spiral';
     if (text.includes('onda') || text.includes('wave')) return 'wave';
     if (text.includes('fibonacci')) return 'fibonacci';
     if (text.includes('orgânic') || text.includes('organic')) return 'organic';
     if (text.includes('geométric') || text.includes('geometric')) return 'geometric';
-    return null;
+    return undefined;
   }
 
   /**
@@ -506,24 +507,24 @@ export class ClaudeResponseMapper {
   }
 
   /**
-   * Utilitários de extração
+   * Utilitários de extração - CORRIGIDOS para retornar undefined
    */
-  private static extractNumber(value: any): number | null {
+  private static extractNumber(value: any): number | undefined {
     if (typeof value === 'number' && isFinite(value)) {
       return value;
     }
     if (typeof value === 'string') {
       const num = parseFloat(value);
-      return isFinite(num) ? num : null;
+      return isFinite(num) ? num : undefined;
     }
-    return null;
+    return undefined;
   }
 
-  private static extractString(value: any): string | null {
+  private static extractString(value: any): string | undefined {
     if (typeof value === 'string' && value.trim().length > 0) {
       return value.trim();
     }
-    return null;
+    return undefined;
   }
 
   private static isValidNumber(value: number, min: number, max: number): boolean {
