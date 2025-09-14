@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GenesisCore } from './components/GenesisCore';
+import { GenesisCore } from './presentation/components/GenesisCore';
 import ErrorBoundary from './components/ErrorBoundary';
 import './App.css';
 import './styles.css';
