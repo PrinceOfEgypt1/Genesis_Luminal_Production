@@ -1,7 +1,8 @@
 /**
- * TRILHO B AÇÃO 6 - Memory Rate Limiter
+ * TRILHO B AÇÃO 6 - Memory Rate Limiter (MAP ITERATION CORRIGIDO)
  * 
  * Implementação em memória do IRateLimiter usando sliding window
+ * Correção: Compatible Map iteration para targets < ES2015
  */
 
 import { IRateLimiter, IRateLimitConfig, IRateLimitResult } from '../interfaces/IRateLimiter';
@@ -22,7 +23,7 @@ export class MemoryRateLimiter implements IRateLimiter {
 
   private readonly defaultConfig: IRateLimitConfig = {
     maxRequests: 100,
-    windowSeconds: 900, // 15 minutos
+    windowSeconds: 900,
     blockDurationSeconds: 900,
     identifier: 'default'
   };
@@ -32,10 +33,9 @@ export class MemoryRateLimiter implements IRateLimiter {
       this.defaultConfig = { ...this.defaultConfig, ...defaultConfig };
     }
 
-    // Cleanup periódico
     setInterval(() => {
       this.cleanup();
-    }, 60000); // Cleanup a cada minuto
+    }, 60000);
 
     logger.info('MemoryRateLimiter initialized', { defaultConfig: this.defaultConfig });
   }
@@ -44,7 +44,6 @@ export class MemoryRateLimiter implements IRateLimiter {
     const effectiveConfig = { ...this.defaultConfig, ...config };
     const entry = this.getOrCreateEntry(key);
     
-    // Verificar se está bloqueado
     if (entry.blocked && entry.blockUntil && Date.now() < entry.blockUntil) {
       const retryAfter = Math.ceil((entry.blockUntil - Date.now()) / 1000);
       return {
@@ -55,11 +54,9 @@ export class MemoryRateLimiter implements IRateLimiter {
       };
     }
 
-    // Limpar requests antigas
     const windowStart = Date.now() - (effectiveConfig.windowSeconds * 1000);
     entry.requests = entry.requests.filter(timestamp => timestamp > windowStart);
     
-    // Desbloquear se necessário
     if (entry.blocked && (!entry.blockUntil || Date.now() >= entry.blockUntil)) {
       entry.blocked = false;
       delete entry.blockUntil;
@@ -88,11 +85,9 @@ export class MemoryRateLimiter implements IRateLimiter {
       return limitResult;
     }
 
-    // Consumir um ponto
     const entry = this.getOrCreateEntry(key);
     entry.requests.push(Date.now());
 
-    // Verificar se excedeu limite após consumir
     if (entry.requests.length >= effectiveConfig.maxRequests) {
       entry.blocked = true;
       entry.blockUntil = Date.now() + (effectiveConfig.blockDurationSeconds * 1000);
@@ -132,7 +127,6 @@ export class MemoryRateLimiter implements IRateLimiter {
 
   async isHealthy(): Promise<boolean> {
     try {
-      // Teste básico
       const testKey = '__health_check__';
       const result = await this.checkLimit(testKey);
       return typeof result.allowed === 'boolean';
@@ -156,10 +150,12 @@ export class MemoryRateLimiter implements IRateLimiter {
     const now = Date.now();
     let cleanedEntries = 0;
 
-    for (const [key, entry] of this.entries.entries()) {
-      // Remover entradas antigas que não têm requests recentes e não estão bloqueadas
+    // CORREÇÃO: Usar Array.from() para compatibilidade
+    const entries = Array.from(this.entries.entries());
+    for (let i = 0; i < entries.length; i++) {
+      const [key, entry] = entries[i];
       const hasRecentRequests = entry.requests.some(timestamp => 
-        now - timestamp < 3600000 // 1 hora
+        now - timestamp < 3600000
       );
       
       const isBlocked = entry.blocked && entry.blockUntil && now < entry.blockUntil;
@@ -179,7 +175,6 @@ export class MemoryRateLimiter implements IRateLimiter {
   }
 }
 
-// Factory function
 export function createMemoryRateLimiter(config?: Partial<IRateLimitConfig>): IRateLimiter {
   return new MemoryRateLimiter(config);
 }

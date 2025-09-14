@@ -1,13 +1,13 @@
 /**
- * TRILHO B AÇÃO 6 - Security Middleware
+ * TRILHO B AÇÃO 6 - Security Middleware (IMPORTS CORRIGIDOS)
  * 
  * Configuração centralizada de middleware de segurança
- * Separação clara de responsabilidades CORS/Helmet
+ * Correção: Imports compatíveis com esModuleInterop
  */
 
-import cors from 'cors';
-import helmet from 'helmet';
-import compression from 'compression';
+import * as cors from 'cors';
+import * as helmet from 'helmet';
+import * as compression from 'compression';
 import { ISecurityMiddleware, ISecurityConfig, ICorsConfig, IHelmetConfig } from '../interfaces/ISecurityMiddleware';
 import { logger } from '../../utils/logger';
 
@@ -18,7 +18,7 @@ export class SecurityMiddleware implements ISecurityMiddleware {
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-      maxAge: 86400 // 24 horas
+      maxAge: 86400
     },
     helmet: {
       contentSecurityPolicy: {
@@ -34,9 +34,9 @@ export class SecurityMiddleware implements ISecurityMiddleware {
           frameSrc: ["'none'"]
         }
       },
-      crossOriginEmbedderPolicy: false, // Compatibilidade com algumas APIs
+      crossOriginEmbedderPolicy: false,
       hsts: {
-        maxAge: 31536000, // 1 ano
+        maxAge: 31536000,
         includeSubDomains: true,
         preload: true
       }
@@ -83,7 +83,7 @@ export class SecurityMiddleware implements ISecurityMiddleware {
       allowedHeaders: corsConfig.allowedHeaders,
       exposedHeaders: corsConfig.exposedHeaders,
       maxAge: corsConfig.maxAge,
-      optionsSuccessStatus: 200 // Para compatibilidade com browsers antigos
+      optionsSuccessStatus: 200
     });
   }
 
@@ -92,7 +92,6 @@ export class SecurityMiddleware implements ISecurityMiddleware {
     
     return helmet({
       ...helmetConfig,
-      // Configurações específicas para desenvolvimento vs produção
       contentSecurityPolicy: process.env.NODE_ENV === 'development' 
         ? false 
         : helmetConfig.contentSecurityPolicy
@@ -101,19 +100,16 @@ export class SecurityMiddleware implements ISecurityMiddleware {
 
   validateConfig(config: ISecurityConfig): boolean {
     try {
-      // Validar CORS
       if (!config.cors || !config.cors.origin) {
         logger.error('Invalid CORS configuration: origin is required');
         return false;
       }
 
-      // Validar request size limit
       if (config.requestSizeLimit && !/^\d+[kmg]?b$/i.test(config.requestSizeLimit)) {
         logger.error('Invalid request size limit format', { limit: config.requestSizeLimit });
         return false;
       }
 
-      // Validar timeout
       if (config.requestTimeout && (config.requestTimeout < 1000 || config.requestTimeout > 60000)) {
         logger.error('Request timeout must be between 1000-60000ms', { timeout: config.requestTimeout });
         return false;
@@ -137,12 +133,10 @@ export class SecurityMiddleware implements ISecurityMiddleware {
   }
 }
 
-// Factory function
 export function createSecurityMiddleware(): ISecurityMiddleware {
   return new SecurityMiddleware();
 }
 
-// Helper para configuração rápida por ambiente
 export function getEnvironmentSecurityConfig(): Partial<ISecurityConfig> {
   const isProduction = process.env.NODE_ENV === 'production';
   const isDevelopment = process.env.NODE_ENV === 'development';
@@ -150,33 +144,33 @@ export function getEnvironmentSecurityConfig(): Partial<ISecurityConfig> {
   if (isProduction) {
     return {
       cors: {
-        origin: process.env.FRONTEND_URL || false, // Restritivo em produção
+        origin: process.env.FRONTEND_URL || false,
         credentials: true
       },
       helmet: {
-        contentSecurityPolicy: true, // Habilitado em produção
+        contentSecurityPolicy: true,
         hsts: {
           maxAge: 31536000,
           includeSubDomains: true,
           preload: true
         }
       },
-      requestTimeout: 10000 // Mais restritivo em produção
+      requestTimeout: 10000
     };
   }
 
   if (isDevelopment) {
     return {
       cors: {
-        origin: true, // Permissivo em desenvolvimento
+        origin: true,
         credentials: true
       },
       helmet: {
-        contentSecurityPolicy: false // Desabilitado em desenvolvimento
+        contentSecurityPolicy: false
       },
-      requestTimeout: 30000 // Mais permissivo em desenvolvimento
+      requestTimeout: 30000
     };
   }
 
-  return {}; // Default config
+  return {};
 }

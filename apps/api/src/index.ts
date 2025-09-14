@@ -1,15 +1,15 @@
 /**
- * TRILHO B AÇÃO 6 - Genesis Luminal Backend Refatorado
+ * TRILHO B AÇÃO 6 - Genesis Luminal Backend Refatorado (CORRIGIDO)
  * 
  * Servidor principal com infraestrutura crosscutting separada
- * Aplicação de SOLID principles e separação de responsabilidades
+ * Correção: Type compatibility e imports
  */
 
-import express from 'express';
+import * as express from 'express';
 import { config } from './config/environment';
 import { setupRoutes } from './routes';
 import { healthRouter } from './routes/health';
-import { errorMiddleware } from './middleware/error';
+import { errorMiddleware } from './infrastructure/middleware/error';
 import { sanitizeEmotional } from './middleware/sanitizeEmotional';
 import { logger } from './utils/logger';
 
@@ -21,14 +21,14 @@ import { createInMemoryCacheService } from './infrastructure/cache/InMemoryCache
 // Inicializar infraestrutura crosscutting
 const securityMiddleware = createSecurityMiddleware();
 const rateLimitMiddleware = createRateLimitMiddleware({
-  maxRequests: parseInt(process.env.RATE_LIMIT_MAX || '100', 10),
-  windowSeconds: parseInt(process.env.RATE_LIMIT_WINDOW_SEC || '900', 10),
-  blockDurationSeconds: parseInt(process.env.RATE_LIMIT_BLOCK_SEC || '900', 10),
+  maxRequests: config.RATE_LIMIT_MAX,
+  windowSeconds: config.RATE_LIMIT_WINDOW_SEC,
+  blockDurationSeconds: config.RATE_LIMIT_BLOCK_SEC,
   excludePaths: ['/api/liveness', '/api/readiness', '/api/health', '/api/status']
 });
 const cacheService = createInMemoryCacheService(
-  parseInt(process.env.CACHE_TTL_SEC || '300', 10),
-  parseInt(process.env.CACHE_MAX_SIZE || '1000', 10)
+  config.CACHE_TTL_SEC,
+  config.CACHE_MAX_SIZE
 );
 
 const app = express();
@@ -37,22 +37,21 @@ const app = express();
 // MIDDLEWARES DE INFRAESTRUTURA
 // ========================================
 
-// 1. Request Timeout (antes de tudo)
-const REQUEST_TIMEOUT_MS = parseInt(process.env.REQUEST_TIMEOUT_MS || '15000', 10);
+// 1. Request Timeout
 app.use((req, res, next) => {
   const timeout = setTimeout(() => {
     if (!res.headersSent) {
       logger.warn('Request timeout', { 
         url: req.url, 
         method: req.method,
-        timeout: REQUEST_TIMEOUT_MS 
+        timeout: config.REQUEST_TIMEOUT_MS 
       });
       res.status(503).json({
         error: 'Request timeout',
-        message: `Request exceeded ${REQUEST_TIMEOUT_MS}ms limit`
+        message: `Request exceeded ${config.REQUEST_TIMEOUT_MS}ms limit`
       });
     }
-  }, REQUEST_TIMEOUT_MS);
+  }, config.REQUEST_TIMEOUT_MS);
 
   res.on('finish', () => clearTimeout(timeout));
   res.on('close', () => clearTimeout(timeout));
@@ -60,22 +59,22 @@ app.use((req, res, next) => {
   next();
 });
 
-// 2. Trust Proxy (para rate limiting correto)
-if (process.env.TRUST_PROXY === 'true') {
+// 2. Trust Proxy
+if (config.TRUST_PROXY) {
   app.set('trust proxy', true);
 }
 
 // 3. Security Middleware (CORS, Helmet, Compression)
+// CORREÇÃO: Usar configuração default se getEnvironmentSecurityConfig retornar vazio
 const securityConfig = getEnvironmentSecurityConfig();
-const securityMiddlewares = securityMiddleware.configure(securityConfig);
+const securityMiddlewares = securityMiddleware.configure(Object.keys(securityConfig).length > 0 ? securityConfig : undefined);
 securityMiddlewares.forEach(middleware => app.use(middleware));
 
-// 4. Body Parsing (com limites de segurança)
+// 4. Body Parsing
 app.use(express.json({ 
-  limit: process.env.REQUEST_SIZE_LIMIT || '1mb',
+  limit: config.REQUEST_SIZE_LIMIT,
   verify: (req, res, buf) => {
-    // Log de payloads suspeitos
-    if (buf.length > 500000) { // 500KB
+    if (buf.length > 500000) {
       logger.warn('Large payload received', { 
         size: buf.length, 
         path: req.path,
@@ -86,7 +85,7 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ 
   extended: true, 
-  limit: process.env.REQUEST_SIZE_LIMIT || '1mb' 
+  limit: config.REQUEST_SIZE_LIMIT 
 }));
 
 // ========================================
@@ -95,7 +94,7 @@ app.use(express.urlencoded({
 
 app.use('/api', healthRouter);
 
-// Health endpoints alternativos (compatibilidade)
+// Health endpoints alternativos
 app.get('/health', (req, res) => res.redirect('/api/liveness'));
 app.get('/ping', (req, res) => res.json({ status: 'pong', timestamp: new Date().toISOString() }));
 
@@ -114,8 +113,8 @@ app.use(rateLimitMiddleware.middleware());
 // Rate limiting específico para endpoints sensíveis
 app.use('/api/emotional', rateLimitMiddleware.strictMiddleware({
   maxRequests: 50,
-  windowSeconds: 300, // 5 minutos
-  blockDurationSeconds: 600 // 10 minutos
+  windowSeconds: 300,
+  blockDurationSeconds: 600
 }));
 
 // ========================================
@@ -134,18 +133,16 @@ app.use(errorMiddleware);
 // INICIALIZAÇÃO DO SERVIDOR
 // ========================================
 
-const PORT = config.PORT || 3001;
-
-app.listen(PORT, async () => {
+app.listen(config.PORT, async () => {
   logger.info('Genesis Luminal Backend started', {
-    port: PORT,
-    environment: process.env.NODE_ENV || 'development',
+    port: config.PORT,
+    environment: config.NODE_ENV,
     frontendUrl: config.FRONTEND_URL,
     claudeConfigured: !!config.CLAUDE_API_KEY,
-    requestTimeout: REQUEST_TIMEOUT_MS,
+    requestTimeout: config.REQUEST_TIMEOUT_MS,
     rateLimit: {
-      maxRequests: rateLimitMiddleware.getStats ? (await rateLimitMiddleware.getStats()).totalRequests : 'N/A',
-      windowSeconds: process.env.RATE_LIMIT_WINDOW_SEC || '900'
+      maxRequests: config.RATE_LIMIT_MAX,
+      windowSeconds: config.RATE_LIMIT_WINDOW_SEC
     }
   });
 
@@ -176,5 +173,4 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
-// Disponibilizar serviços para outros módulos (se necessário)
 export { cacheService, rateLimitMiddleware };

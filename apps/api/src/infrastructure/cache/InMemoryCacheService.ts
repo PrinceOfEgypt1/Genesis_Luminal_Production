@@ -1,8 +1,8 @@
 /**
- * TRILHO B AÇÃO 6 - Cache Service Refatorado
+ * TRILHO B AÇÃO 6 - Cache Service Refatorado (MAP ITERATION CORRIGIDO)
  * 
  * Implementação em memória do ICacheService
- * Separação clara de responsabilidades de infraestrutura
+ * Correção: Compatible Map iteration para targets < ES2015
  */
 
 import { ICacheService, ICacheEntry } from '../interfaces/ICacheService';
@@ -38,7 +38,6 @@ export class InMemoryCacheService implements ICacheService {
       return null;
     }
 
-    // Verificar se expirou
     if (this.isExpired(entry)) {
       this.cache.delete(key);
       this.stats.misses++;
@@ -50,14 +49,13 @@ export class InMemoryCacheService implements ICacheService {
   }
 
   async set<T = any>(key: string, value: T, ttlSeconds: number = this.defaultTtlSeconds): Promise<void> {
-    // Limitar tamanho do cache
     if (this.cache.size >= this.maxSize && !this.cache.has(key)) {
       await this.evictOldest();
     }
 
     const entry: ICacheEntry<T> = {
       value,
-      ttl: ttlSeconds * 1000, // Converter para milliseconds
+      ttl: ttlSeconds * 1000,
       createdAt: Date.now()
     };
 
@@ -108,7 +106,6 @@ export class InMemoryCacheService implements ICacheService {
 
   async isHealthy(): Promise<boolean> {
     try {
-      // Teste básico de funcionamento
       const testKey = '__health_check__';
       await this.set(testKey, 'test', 1);
       const value = await this.get(testKey);
@@ -129,7 +126,10 @@ export class InMemoryCacheService implements ICacheService {
     let oldestKey = '';
     let oldestTime = Date.now();
 
-    for (const [key, entry] of this.cache.entries()) {
+    // CORREÇÃO: Usar Array.from() para compatibilidade
+    const entries = Array.from(this.cache.entries());
+    for (let i = 0; i < entries.length; i++) {
+      const [key, entry] = entries[i];
       if (entry.createdAt < oldestTime) {
         oldestTime = entry.createdAt;
         oldestKey = key;
@@ -152,7 +152,10 @@ export class InMemoryCacheService implements ICacheService {
     const now = Date.now();
     let expiredCount = 0;
 
-    for (const [key, entry] of this.cache.entries()) {
+    // CORREÇÃO: Usar Array.from() para compatibilidade
+    const entries = Array.from(this.cache.entries());
+    for (let i = 0; i < entries.length; i++) {
+      const [key, entry] = entries[i];
       if (now - entry.createdAt > entry.ttl) {
         this.cache.delete(key);
         expiredCount++;
@@ -168,7 +171,6 @@ export class InMemoryCacheService implements ICacheService {
   }
 }
 
-// Factory function para facilitar instanciação
 export function createInMemoryCacheService(
   ttlSeconds = 300,
   maxSize = 1000,
