@@ -1,59 +1,94 @@
-import type { AIProvider } from './AIProvider';
-import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '../../../shared/types/api';
-import { env, apiKey } from '../config/env';
+import fetch from 'node-fetch';
+import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '../../../../packages/shared/types/api';
+import { BaseAIProvider } from './AIProvider';
+import { logger } from '../utils/logger';
 
-function extractText(input: EmotionalAnalysisRequest): string {
-  const i: any = input as any;
-  const raw = i?.text ?? i?.message ?? i?.prompt ?? '';
-  return (typeof raw === 'string' ? raw : String(raw ?? '')).trim();
-}
+export class AnthropicProvider extends BaseAIProvider {
+  protected name = 'Anthropic Claude';
+  
+  private apiKey: string;
+  private model: string;
 
-export class AnthropicProvider implements AIProvider {
-  name = 'anthropic';
+  constructor(apiKey: string, model = 'claude-3-5-sonnet-20240620') {
+    super();
+    this.apiKey = apiKey;
+    this.model = model;
+  }
 
-  async analyze(input: EmotionalAnalysisRequest): Promise<EmotionalAnalysisResponse> {
-    const key = apiKey();
-    if (!key) {
-      const err: any = new Error('MISSING_API_KEY');
-      err.code = 'MISSING_API_KEY';
-      throw err;
+  async analyze(request: EmotionalAnalysisRequest): Promise<EmotionalAnalysisResponse> {
+    this.logRequest(request);
+
+    try {
+      const text = this.extractText(request);
+      if (!text || text.trim().length === 0) {
+        return this.createDefaultResponse();
+      }
+
+      const response = await this.callAnthropicAPI(text);
+      return this.parseResponse(response);
+    } catch (error) {
+      logger.error('Anthropic API error:', error);
+      return this.createDefaultResponse();
     }
-    const text = extractText(input);
+  }
 
-    const body = {
-      model: 'claude-3-5-sonnet-latest',
-      max_tokens: 256,
-      messages: [{ role: 'user', content: `Analise o estado emocional do texto: "${text}"` }],
-    };
+  private extractText(request: EmotionalAnalysisRequest): string {
+    if ('text' in request) {
+      return request.text;
+    }
+    return 'analyze current emotional state';
+  }
 
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+  private async callAnthropicAPI(text: string): Promise<any> {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'content-type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
+        'Content-Type': 'application/json',
+        'x-api-key': this.apiKey,
+        'anthropic-version': '2023-06-01'
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        model: this.model,
+        max_tokens: 100,
+        messages: [
+          {
+            role: 'user',
+            content: `Analyze the emotional state of this text and respond with a JSON object with intensity (0-1), dominantAffect (string), confidence (0-1), recommendation (string), emotionalShift (string), and morphogenicSuggestion (string): "${text}"`
+          }
+        ]
+      })
     });
 
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      const err: any = new Error(`${res.status} ${res.statusText}`);
-      err.code = (data?.error?.type) || `HTTP_${res.status}`;
-      err.details = data;
-      throw err;
+    if (!response.ok) {
+      throw new Error(`Anthropic API error: ${response.status}`);
     }
 
-    // TODO: mapear a resposta real do Claude -> EmotionalAnalysisResponse
-    // Por ora, resposta canônica mínima (campos opcionais omitidos quando incompatíveis).
-    const now = new Date().toISOString();
-    return {
-      intensity: 0.5,
-      timestamp: now,
-      confidence: 0.6,
-      recommendation: 'continue',
-      emotionalShift: 'stable',
-      morphogenicSuggestion: 'fibonacci',
+    return response.json();
+  }
+
+  private parseResponse(response: any): EmotionalAnalysisResponse {
+    try {
+      const content = response.content?.[0]?.text || '';
+      const parsed = JSON.parse(content);
+      
+      return {
+        intensity: parsed.intensity || 0.5,
+        dominantAffect: parsed.dominantAffect || 'neutral',
+        timestamp: new Date().toISOString(),
+        confidence: parsed.confidence || 0.5,
+        recommendation: parsed.recommendation || 'continue',
+        emotionalShift: parsed.emotionalShift || 'stable',
+        morphogenicSuggestion: parsed.morphogenicSuggestion || 'fibonacci'
+      };
+    } catch {
+      return this.createDefaultResponse();
+    }
+  }
+
+  status(): { ok: boolean; provider: string } {
+    return { 
+      ok: Boolean(this.apiKey), 
+      provider: `${this.name} (${this.model})` 
     };
   }
 }
