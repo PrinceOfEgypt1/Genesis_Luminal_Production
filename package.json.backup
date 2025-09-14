@@ -1,47 +1,27 @@
 {
-  "name": "genesis-luminal-claude",
+  "name": "genesis-luminal-monorepo",
   "private": true,
-  "version": "1.0.0",
-  "description": "Genesis Luminal Evoluído - Entidade Digital Senciente",
   "workspaces": [
-    "frontend",
-    "backend",
-    "shared"
+    "apps/*", 
+    "packages/*"
   ],
   "scripts": {
-    "dev": "echo 'Para desenvolvimento, execute: npm run dev:backend em um terminal e npm run dev:frontend em outro' && npm run dev:backend",
-    "dev:frontend": "npm run dev --workspace=frontend",
-    "dev:backend": "npm run dev --workspace=backend",
-    "build": "npm run typecheck --workspace=shared && npm run build --workspace=frontend && npm run build --workspace=backend",
-    "build:shared": "npm run typecheck --workspace=shared",
-    "build:frontend": "npm run build --workspace=frontend",
-    "build:backend": "npm run build --workspace=backend",
-    "lint": "npm run lint --workspace=frontend && npm run lint --workspace=backend",
-    "lint:frontend": "npm run lint --workspace=frontend",
-    "lint:backend": "npm run lint --workspace=backend",
-    "typecheck": "npm run typecheck --workspace=shared && npm run typecheck --workspace=frontend && npm run typecheck --workspace=backend",
-    "typecheck:shared": "npm run typecheck --workspace=shared",
-    "typecheck:frontend": "npm run typecheck --workspace=frontend",
-    "typecheck:backend": "npm run typecheck --workspace=backend",
-    "start": "echo 'Para produção, execute: npm run start:backend em um terminal e npm run start:frontend em outro' && npm run start:backend",
-    "start:frontend": "npm run preview --workspace=frontend",
-    "start:backend": "npm run start --workspace=backend",
-    "test": "npm run test --workspace=frontend --if-present && npm run test --workspace=backend --if-present",
-    "test:frontend": "npm run test --workspace=frontend --if-present",
-    "test:backend": "npm run test --workspace=backend --if-present"
+    "build": "npm run build:packages && npm run build:apps",
+    "build:packages": "npm run build --workspace=packages/validation && npm run build --workspace=packages/shared && npm run build --workspace=packages/ui-components && npm run build --workspace=packages/business-logic",
+    "build:apps": "npm run build --workspace=apps/api && npm run build --workspace=apps/web",
+    "dev": "concurrently \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "npm run dev --workspace=apps/api",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "test": "npm run test:unit && npm run test:integration && npm run test:e2e",
+    "test:unit": "npm run test --workspace=apps/web && npm run test --workspace=apps/api",
+    "test:integration": "npm run test:integration --workspace=apps/api",
+    "test:e2e": "npx playwright test",
+    "test:coverage": "npm run test:unit && npm run coverage --workspace=apps/web && npm run coverage --workspace=apps/api",
+    "lint": "npm run lint --workspaces",
+    "ci": "npm run lint && npm run test:coverage && npm run build"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "^8.43.0",
-    "@typescript-eslint/parser": "^8.43.0",
-    "eslint": "^8.57.1",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-jsx-a11y": "^6.10.2",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "typescript": "^5.3.0"
-  },
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+    "concurrently": "^8.2.2",
+    "@playwright/test": "^1.40.0"
   }
 }

@@ -23,9 +23,9 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "lint": "eslint . --ext ts,tsx --max-warnings 0",
     "lint:fix": "eslint . --ext ts,tsx --fix",
@@ -35,7 +35,9 @@
     "type-check": "tsc --noEmit",
     "perf": "npm run dev --performance",
     "debug": "npm run dev --debug",
-    "optimize": "npm run build -- --mode=production"
+    "optimize": "npm run build -- --mode=production",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run"
   },
   "dependencies": {
     "@react-three/drei": "^9.77.0",
