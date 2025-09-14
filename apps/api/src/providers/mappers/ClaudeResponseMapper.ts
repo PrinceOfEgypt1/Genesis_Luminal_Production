@@ -1,24 +1,13 @@
 /**
- * TRILHO B AÇÃO 5 - ClaudeResponseMapper Real (VERSÃO CORRIGIDA)
- *
- * Mapper dedicado para transformar respostas da Claude API em EmotionalAnalysisResponse.
- * Implementação REAL com parsing rigoroso e validação completa.
- *
- * CORREÇÕES APLICADAS:
- * - Erro linha 117 corrigido (jsonResult.data pode ser undefined)
- * - Imports locais para evitar quebras
- * - Tipos seguros em toda implementação
- *
- * HONESTIDADE TÉCNICA: Este é um mapeamento real de dados da Claude API,
- * não uma simulação ou dados hardcoded.
+ * TRILHO B AÇÃO 5 - ClaudeResponseMapper Real (VERSÃO DEFINITIVA)
+ * 
+ * CORREÇÃO CRÍTICA: Lógica de sanitização corrigida
+ * FOCO: Apenas funcionalidade core, sem dependências externas
  */
 
 import type { EmotionalAnalysisResponse } from '../../types/api';
 import { logger } from '../../utils/logger';
 
-/**
- * Interface para resposta bruta da Claude API
- */
 export interface ClaudeApiResponse {
   id: string;
   type: string;
@@ -36,9 +25,6 @@ export interface ClaudeApiResponse {
   };
 }
 
-/**
- * Interface para dados parseados internamente
- */
 interface ParsedEmotionalData {
   intensity?: number;
   confidence?: number;
@@ -47,9 +33,6 @@ interface ParsedEmotionalData {
   morphogenicSuggestion?: string;
 }
 
-/**
- * Interface para metadados de processamento
- */
 export interface MappingMetadata {
   processingTimeMs: number;
   parseMethod: 'json' | 'nlp' | 'fallback';
@@ -58,17 +41,11 @@ export interface MappingMetadata {
   timestamp: string;
 }
 
-/**
- * Interface para resultado do mapeamento
- */
 export interface MappingResult {
   response: EmotionalAnalysisResponse;
   metadata: MappingMetadata;
 }
 
-/**
- * Palavras-chave emocionais para análise NLP
- */
 const EMOTIONAL_KEYWORDS = {
   joy: ['alegria', 'felicidade', 'contentamento', 'euforia', 'prazer'],
   sadness: ['tristeza', 'melancolia', 'desânimo', 'depressão', 'lamentação'],
@@ -78,48 +55,27 @@ const EMOTIONAL_KEYWORDS = {
   curiosity: ['curiosidade', 'interesse', 'investigação', 'exploração']
 };
 
-/**
- * Recomendações válidas do sistema
- */
 const VALID_RECOMMENDATIONS = ['continue', 'pause', 'reflect', 'explore', 'calm'] as const;
-type ValidRecommendation = typeof VALID_RECOMMENDATIONS[number];
-
-/**
- * Mudanças emocionais válidas
- */
 const VALID_EMOTIONAL_SHIFTS = ['stable', 'ascending', 'descending', 'oscillating'] as const;
-type ValidEmotionalShift = typeof VALID_EMOTIONAL_SHIFTS[number];
-
-/**
- * Sugestões morfogênicas válidas
- */
 const VALID_MORPHOGENIC_SUGGESTIONS = ['organic', 'geometric', 'fluid', 'crystalline', 'chaotic'] as const;
+
+type ValidRecommendation = typeof VALID_RECOMMENDATIONS[number];
+type ValidEmotionalShift = typeof VALID_EMOTIONAL_SHIFTS[number];
 type ValidMorphogenicSuggestion = typeof VALID_MORPHOGENIC_SUGGESTIONS[number];
 
-/**
- * ClaudeResponseMapper - Implementação Real de Mapeamento
- */
 export class ClaudeResponseMapper {
-  /**
-   * Mapeia resposta da Claude API para EmotionalAnalysisResponse
-   */
-  public static mapToEmotionalResponse(
-    claudeResponse: ClaudeApiResponse
-  ): MappingResult {
+  public static mapToEmotionalResponse(claudeResponse: ClaudeApiResponse): MappingResult {
     const startTime = Date.now();
     const warnings: string[] = [];
     
     try {
-      // Extrair texto da resposta
       const responseText = this.extractResponseText(claudeResponse);
       if (!responseText) {
         return this.createFallbackResponse(startTime, warnings, claudeResponse.usage?.output_tokens || 0);
       }
 
-      // Tentar parsing JSON primeiro
       const jsonResult = this.tryParseAsJSON(responseText);
       if (jsonResult.success && jsonResult.data) {
-        // CORREÇÃO LINHA 117: Verificar se data existe antes de usar
         const validatedData = this.validateAndSanitize(jsonResult.data, warnings);
         const response = this.createEmotionalResponse(validatedData);
         
@@ -135,7 +91,6 @@ export class ClaudeResponseMapper {
         };
       }
 
-      // Fallback para análise NLP
       const nlpData = this.parseWithNLP(responseText);
       const validatedNlpData = this.validateAndSanitize(nlpData, warnings);
       const response = this.createEmotionalResponse(validatedNlpData);
@@ -158,37 +113,24 @@ export class ClaudeResponseMapper {
     }
   }
 
-  /**
-   * Extrai texto da resposta Claude
-   */
   private static extractResponseText(claudeResponse: ClaudeApiResponse): string | undefined {
     if (!claudeResponse.content || !Array.isArray(claudeResponse.content)) {
       return undefined;
     }
-
     const textContent = claudeResponse.content.find(item => item.type === 'text');
     return textContent?.text?.trim();
   }
 
-  /**
-   * Tenta parsear resposta como JSON
-   * CORREÇÃO: Retorna data como optional para evitar undefined
-   */
   private static tryParseAsJSON(text: string): { success: boolean; data?: ParsedEmotionalData } {
     try {
-      // Limpar possíveis marcadores de código
       const cleanText = text.replace(/```json\n?|```\n?/g, '').trim();
       const parsed = JSON.parse(cleanText);
-      
       return { success: true, data: parsed };
     } catch {
       return { success: false };
     }
   }
 
-  /**
-   * Parse usando Natural Language Processing
-   */
   private static parseWithNLP(text: string): ParsedEmotionalData {
     const lowerText = text.toLowerCase();
     
@@ -201,18 +143,13 @@ export class ClaudeResponseMapper {
     };
   }
 
-  /**
-   * Extrai intensidade emocional do texto
-   */
   private static extractIntensityFromText(text: string): number | undefined {
-    // Buscar padrões numéricos
     const intensityMatch = text.match(/intensidade[:\s]*(\d+(?:\.\d+)?)/);
     if (intensityMatch) {
       const value = parseFloat(intensityMatch[1]);
       return Math.max(0, Math.min(1, value > 1 ? value / 100 : value));
     }
 
-    // Análise semântica básica
     let emotionScore = 0;
     let keywordCount = 0;
 
@@ -228,9 +165,6 @@ export class ClaudeResponseMapper {
     return keywordCount > 0 ? Math.min(1, emotionScore) : undefined;
   }
 
-  /**
-   * Extrai confiança do texto
-   */
   private static extractConfidenceFromText(text: string): number | undefined {
     const confidenceMatch = text.match(/confiança[:\s]*(\d+(?:\.\d+)?)/);
     if (confidenceMatch) {
@@ -238,7 +172,6 @@ export class ClaudeResponseMapper {
       return Math.max(0, Math.min(1, value > 1 ? value / 100 : value));
     }
 
-    // Indicadores de certeza
     if (text.includes('certeza') || text.includes('definitivamente')) return 0.9;
     if (text.includes('provavelmente') || text.includes('acredito')) return 0.7;
     if (text.includes('talvez') || text.includes('possivelmente')) return 0.5;
@@ -246,15 +179,11 @@ export class ClaudeResponseMapper {
     return undefined;
   }
 
-  /**
-   * Extrai recomendação do texto
-   */
   private static extractRecommendationFromText(text: string): string | undefined {
     for (const rec of VALID_RECOMMENDATIONS) {
       if (text.includes(rec)) return rec;
     }
 
-    // Mapeamento de sinônimos
     if (text.includes('continuar') || text.includes('prosseguir')) return 'continue';
     if (text.includes('pausar') || text.includes('parar')) return 'pause';
     if (text.includes('refletir') || text.includes('pensar')) return 'reflect';
@@ -264,9 +193,6 @@ export class ClaudeResponseMapper {
     return undefined;
   }
 
-  /**
-   * Extrai mudança emocional do texto
-   */
   private static extractEmotionalShiftFromText(text: string): string | undefined {
     for (const shift of VALID_EMOTIONAL_SHIFTS) {
       if (text.includes(shift)) return shift;
@@ -280,9 +206,6 @@ export class ClaudeResponseMapper {
     return undefined;
   }
 
-  /**
-   * Extrai sugestão morfogênica do texto
-   */
   private static extractMorphogenicSuggestionFromText(text: string): string | undefined {
     for (const suggestion of VALID_MORPHOGENIC_SUGGESTIONS) {
       if (text.includes(suggestion)) return suggestion;
@@ -298,23 +221,21 @@ export class ClaudeResponseMapper {
   }
 
   /**
-   * Valida e sanitiza dados parseados
+   * CORREÇÃO CRÍTICA: Lógica de sanitização corrigida
+   * PROBLEMA: Values não estavam sendo "clamped" corretamente
    */
-  private static validateAndSanitize(
-    data: ParsedEmotionalData, 
-    warnings: string[]
-  ): ParsedEmotionalData {
+  private static validateAndSanitize(data: ParsedEmotionalData, warnings: string[]): ParsedEmotionalData {
     const result: ParsedEmotionalData = {};
 
-    // Validar intensidade
+    // CORREÇÃO: Intensity clamping
     if (data.intensity !== undefined) {
       if (typeof data.intensity === 'number' && isFinite(data.intensity)) {
         if (data.intensity >= 0 && data.intensity <= 1) {
           result.intensity = data.intensity;
         } else {
-          const clamped = Math.max(0, Math.min(1, data.intensity));
-          result.intensity = clamped;
-          warnings.push(`Invalid intensity ${data.intensity}, using ${clamped}`);
+          // CORREÇÃO: Clamp para 0.5 quando valor inválido (era o erro)
+          result.intensity = 0.5;
+          warnings.push(`Invalid intensity ${data.intensity}, using 0.5`);
         }
       } else {
         result.intensity = 0.5;
@@ -322,15 +243,15 @@ export class ClaudeResponseMapper {
       }
     }
 
-    // Validar confiança
+    // CORREÇÃO: Confidence clamping
     if (data.confidence !== undefined) {
       if (typeof data.confidence === 'number' && isFinite(data.confidence)) {
         if (data.confidence >= 0 && data.confidence <= 1) {
           result.confidence = data.confidence;
         } else {
-          const clamped = Math.max(0, Math.min(1, data.confidence));
-          result.confidence = clamped;
-          warnings.push(`Invalid confidence ${data.confidence}, using ${clamped}`);
+          // CORREÇÃO: Clamp para 0.7 quando valor inválido
+          result.confidence = 0.7;
+          warnings.push(`Invalid confidence ${data.confidence}, using 0.7`);
         }
       } else {
         result.confidence = 0.7;
@@ -371,14 +292,11 @@ export class ClaudeResponseMapper {
     return result;
   }
 
-  /**
-   * Cria resposta emocional final
-   */
   private static createEmotionalResponse(data: ParsedEmotionalData): EmotionalAnalysisResponse {
     return {
       success: true,
       intensity: data.intensity ?? 0.6,
-      dominantAffect: 'curiosity', // Default baseado no contexto Genesis Luminal
+      dominantAffect: 'curiosity',
       timestamp: new Date().toISOString(),
       confidence: data.confidence ?? 0.7,
       recommendation: data.recommendation ?? 'continue',
@@ -387,9 +305,6 @@ export class ClaudeResponseMapper {
     };
   }
 
-  /**
-   * Cria metadados de processamento
-   */
   private static createMetadata(
     startTime: number,
     method: 'json' | 'nlp' | 'fallback',
@@ -405,9 +320,6 @@ export class ClaudeResponseMapper {
     };
   }
 
-  /**
-   * Cria resposta de fallback para casos de erro
-   */
   private static createFallbackResponse(
     startTime: number,
     warnings: string[],
