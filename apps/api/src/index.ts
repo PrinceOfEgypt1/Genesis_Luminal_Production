@@ -1,14 +1,11 @@
 import { sanitizeEmotional } from './middleware/sanitizeEmotional';
 /**
- * GENESIS LUMINAL BACKEND
- * Servidor principal com integração Claude API
- * CORREÇÃO: Rate limit aplicado APÓS rotas de saúde
+ * GENESIS LUMINAL BACKEND - TRILHO B Ação 6
+ * Servidor principal com arquitetura corrigida
  */
 
 import express from 'express';
 import cors from 'cors';
-// ✅ CORREÇÃO: Import helmet compatível com CommonJS
-const helmet = require('helmet');
 import compression from 'compression';
 import { config } from './config/environment';
 import { setupRoutes } from './routes';
@@ -16,6 +13,9 @@ import { healthRouter } from './routes/health';
 import { errorMiddleware } from './middleware/error';
 import { rateLimitMiddleware } from './middleware/rateLimit';
 import { logger } from './utils/logger';
+
+// ✅ HELMET IMPORT CORRETO
+import helmet from 'helmet';
 
 const app = express();
 
@@ -39,7 +39,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// ✅ CORREÇÃO: Security & Performance middleware com helmet compatível
+// ✅ SECURITY & PERFORMANCE MIDDLEWARE CORRETO
 app.use(helmet());
 app.use(compression());
 app.use(cors({
@@ -47,15 +47,15 @@ app.use(cors({
   credentials: true
 }));
 
-// Body parsing com limite reduzido
+// Body parsing
 app.use(express.json({ limit: '1mb' }));
 app.use('/api/emotional/analyze', sanitizeEmotional);
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-// ✅ CORREÇÃO CRÍTICA: Health routes ANTES do rate limiting
+// Health routes ANTES do rate limiting
 app.use('/api', healthRouter);
 
-// ✅ Rate limiting aplicado APÓS rotas de saúde
+// Rate limiting
 app.use(rateLimitMiddleware);
 
 // Application routes
@@ -71,6 +71,5 @@ app.listen(PORT, () => {
   logger.info(`🔡 Frontend URL: ${config.FRONTEND_URL}`);
   logger.info(`🧠 Claude API: ${config.CLAUDE_API_KEY ? 'Configured' : 'Missing'}`);
   logger.info(`⏱️ Request timeout: ${REQUEST_TIMEOUT_MS}ms`);
-  logger.info(`🛡️ Health endpoints: /api/liveness, /api/readiness, /api/status`);
-  logger.info(`✅ CORREÇÃO: Rate limit aplicado APÓS health checks`);
+  logger.info(`✅ TRILHO B Ação 6: Arquitetura crosscutting implementada`);
 });

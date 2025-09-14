@@ -1,6 +1,23 @@
-import { jest } from '@jest/globals';
+/**
+ * Jest Setup - TRILHO B Ação 6
+ * Setup corrigido para resolver type errors
+ */
 
-// Mock do logger Winston
+import { config } from '../config/environment';
+
+// Mock Redis client
+jest.mock('redis', () => ({
+  createClient: jest.fn(() => ({
+    connect: jest.fn().mockResolvedValue(true), // ✅ CORRIGIDO: valor boolean
+    get: jest.fn(),
+    set: jest.fn(),
+    setEx: jest.fn(),
+    exists: jest.fn(),
+    flushAll: jest.fn()
+  }))
+}));
+
+// Mock logger
 jest.mock('../utils/logger', () => ({
   logger: {
     info: jest.fn(),
@@ -10,15 +27,9 @@ jest.mock('../utils/logger', () => ({
   }
 }));
 
-// Mock do Redis
-jest.mock('redis', () => ({
-  createClient: jest.fn(() => ({
-    connect: jest.fn().mockResolvedValue(undefined),
-    get: jest.fn(),
-    setEx: jest.fn(),
-    disconnect: jest.fn()
-  }))
-}));
+// Set test environment
+process.env.NODE_ENV = 'test';
+process.env.CLAUDE_API_KEY = 'test-key';
 
-// Configuração de timeout para testes de integração
+// Setup test timeout
 jest.setTimeout(10000);

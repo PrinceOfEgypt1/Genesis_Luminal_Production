@@ -1,42 +1,49 @@
-import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '@/shared/types/api';
+/**
+ * Claude Service - TRILHO B Ação 6
+ * Service principal com dependencies corrigidas
+ */
+
+import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '../types/shared';
 import { ProviderRouter } from '../providers/ProviderRouter';
-import { extractTextFromRequest } from '../providers/AIProvider';
+import { config } from '../config/environment';
+import { logger } from '../utils/logger';
 
-class ClaudeService {
-  private router = new ProviderRouter();
+export class ClaudeService {
+  private router: ProviderRouter;
 
-  async analyzeEmotionalState(input: EmotionalAnalysisRequest): Promise<EmotionalAnalysisResponse> {
-    // ✅ CORREÇÃO: Usar função segura de extração de texto
-    const text = extractTextFromRequest(input);
-    
-    if (!text && !('currentState' in input)) {
+  constructor() {
+    this.router = new ProviderRouter(config.CLAUDE_API_KEY);
+  }
+
+  async analyzeEmotionalState(request: EmotionalAnalysisRequest): Promise<EmotionalAnalysisResponse> {
+    try {
+      logger.info('Analyzing emotional state');
+      
+      const response = await this.router.analyze(request);
+      
+      // ✅ Garantir que response tenha success property
       return {
-        intensity: 0.0,
-        dominantAffect: 'curiosity',
-        timestamp: new Date().toISOString(),
-        confidence: 0.0,
-        recommendation: 'provide_input',
-        emotionalShift: 'stable',
-        morphogenicSuggestion: 'fibonacci',
+        success: true, // ✅ ADICIONADO
+        ...response
       };
+
+    } catch (error) {
+      logger.error('Claude service error:', error);
+      throw error;
     }
-
-    // Manter o objeto original para respeitar o contrato do shared
-    return this.router.analyze(input);
   }
 
-  status() {
-    return this.router.getStatus();
+  // ✅ MÉTODOS CORRETOS
+  async getProviderStatus(): string {
+    return this.router.getCurrentProvider().getProviderName();
   }
 
-  getCurrentProvider(): string {
-    return this.router.getCurrentProvider();
+  async switchToFallback(): Promise<string> {
+    const provider = this.router.switchToFallback();
+    return provider.getProviderName();
   }
 
-  switchToFallback(): void {
-    return this.router.switchToFallback();
+  async isHealthy(): Promise<boolean> {
+    return await this.router.isHealthy();
   }
 }
-
-const claudeService = new ClaudeService();
-export default claudeService;
