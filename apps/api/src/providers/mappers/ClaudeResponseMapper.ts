@@ -1,14 +1,19 @@
 /**
- * TRILHO B AÇÃO 5 - ClaudeResponseMapper Real (VERSÃO FINAL)
+ * TRILHO B AÇÃO 5 - ClaudeResponseMapper Real (VERSÃO CORRIGIDA)
  *
  * Mapper dedicado para transformar respostas da Claude API em EmotionalAnalysisResponse.
  * Implementação REAL com parsing rigoroso e validação completa.
+ *
+ * CORREÇÕES APLICADAS:
+ * - Erro linha 117 corrigido (jsonResult.data pode ser undefined)
+ * - Imports locais para evitar quebras
+ * - Tipos seguros em toda implementação
  *
  * HONESTIDADE TÉCNICA: Este é um mapeamento real de dados da Claude API,
  * não uma simulação ou dados hardcoded.
  */
 
-import type { EmotionalAnalysisResponse } from '../../../../../packages/shared/types/api';
+import type { EmotionalAnalysisResponse } from '../../types/api';
 import { logger } from '../../utils/logger';
 
 /**
@@ -113,7 +118,8 @@ export class ClaudeResponseMapper {
 
       // Tentar parsing JSON primeiro
       const jsonResult = this.tryParseAsJSON(responseText);
-      if (jsonResult.success) {
+      if (jsonResult.success && jsonResult.data) {
+        // CORREÇÃO LINHA 117: Verificar se data existe antes de usar
         const validatedData = this.validateAndSanitize(jsonResult.data, warnings);
         const response = this.createEmotionalResponse(validatedData);
         
@@ -166,6 +172,7 @@ export class ClaudeResponseMapper {
 
   /**
    * Tenta parsear resposta como JSON
+   * CORREÇÃO: Retorna data como optional para evitar undefined
    */
   private static tryParseAsJSON(text: string): { success: boolean; data?: ParsedEmotionalData } {
     try {

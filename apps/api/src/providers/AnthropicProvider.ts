@@ -1,14 +1,15 @@
-import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '../../../../packages/shared/types/api';
-import { AIProvider } from './AIProvider';
+import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '../types/api';
 import { logger } from '../utils/logger';
 import { ClaudeResponseMapper, type ClaudeApiResponse } from './mappers/ClaudeResponseMapper';
 
-export class AnthropicProvider extends AIProvider {
+/**
+ * AnthropicProvider - Implementação corrigida com imports locais
+ */
+export class AnthropicProvider {
   private readonly apiKey: string;
   private readonly baseUrl = 'https://api.anthropic.com/v1/messages';
 
   constructor(apiKey: string) {
-    super();
     this.apiKey = apiKey;
   }
 
