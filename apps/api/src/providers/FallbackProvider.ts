@@ -1,62 +1,83 @@
-import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '../../../../packages/shared/types/api';
-import { BaseAIProvider } from './AIProvider';
+import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse, EmotionalDNA } from '../../../../packages/shared/types/api';
+import { AIProvider, extractTextFromRequest } from './AIProvider';
 import { logger } from '../utils/logger';
 
-export class FallbackProvider extends BaseAIProvider {
-  protected name = 'Fallback Local';
-
+export class FallbackProvider implements AIProvider {
   async analyze(request: EmotionalAnalysisRequest): Promise<EmotionalAnalysisResponse> {
-    this.logRequest(request);
-    logger.info('Using fallback provider (no external API)');
+    logger.info('Using fallback emotional analysis');
+
+    try {
+      // ✅ CORREÇÃO: Usar função segura de extração de texto
+      const text = extractTextFromRequest(request);
+      
+      // Análise simples baseada em palavras-chave
+      const analysis = this.analyzeTextSimple(text);
+      
+      return {
+        intensity: analysis.intensity,
+        dominantAffect: analysis.dominantAffect,
+        timestamp: new Date().toISOString(),
+        confidence: 0.4, // Baixa confiança para fallback
+        recommendation: 'exploring_curiosity',
+        emotionalShift: 'stable',
+        morphogenicSuggestion: 'fibonacci'
+      };
+    } catch (error) {
+      logger.error('Fallback analysis error:', error);
+      
+      return {
+        intensity: 0.5,
+        dominantAffect: 'curiosity',
+        timestamp: new Date().toISOString(),
+        confidence: 0.1,
+        recommendation: 'system_fallback',
+        emotionalShift: 'stable',
+        morphogenicSuggestion: 'fibonacci'
+      };
+    }
+  }
+
+  private analyzeTextSimple(text: string): { intensity: number; dominantAffect: keyof EmotionalDNA } {
+    if (!text) {
+      return { intensity: 0.5, dominantAffect: 'curiosity' };
+    }
+
+    const textLower = text.toLowerCase();
     
-    const text = this.extractText(request);
-    const analysis = this.simulateAnalysis(text);
-    
-    return {
-      ...analysis,
-      timestamp: new Date().toISOString()
+    // Palavras-chave para cada emoção
+    const emotionKeywords = {
+      joy: ['happy', 'alegria', 'feliz', 'good', 'great', 'amazing', 'wonderful'],
+      nostalgia: ['memory', 'past', 'remember', 'old', 'nostalgic', 'memória', 'passado'],
+      curiosity: ['what', 'how', 'why', 'curious', 'wonder', 'explore', 'curioso'],
+      serenity: ['calm', 'peace', 'tranquil', 'serene', 'relaxed', 'calmo', 'paz'],
+      ecstasy: ['ecstatic', 'amazing', 'incredible', 'fantastic', 'awesome', 'incrível'],
+      mystery: ['mystery', 'unknown', 'secret', 'hidden', 'mysterious', 'mistério'],
+      power: ['strong', 'power', 'confident', 'force', 'powerful', 'forte', 'poder']
     };
+
+    let maxScore = 0;
+    let dominantAffect: keyof EmotionalDNA = 'curiosity';
+
+    for (const [emotion, keywords] of Object.entries(emotionKeywords)) {
+      const score = keywords.reduce((acc, keyword) => {
+        return acc + (textLower.includes(keyword) ? 1 : 0);
+      }, 0);
+
+      if (score > maxScore) {
+        maxScore = score;
+        dominantAffect = emotion as keyof EmotionalDNA; // ✅ Type assertion segura
+      }
+    }
+
+    const intensity = Math.min(0.3 + (maxScore * 0.2), 1.0);
+    
+    return { intensity, dominantAffect };
   }
 
-  private extractText(request: EmotionalAnalysisRequest): string {
-    if ('text' in request) {
-      return request.text;
-    }
-    return '';
-  }
-
-  private simulateAnalysis(text: string): Omit<EmotionalAnalysisResponse, 'timestamp'> {
-    // Análise simples baseada no comprimento e conteúdo do texto
-    const textLength = text.length;
-    const hasExclamation = text.includes('!');
-    const hasQuestion = text.includes('?');
-    const wordCount = text.split(/\s+/).length;
-
-    let intensity = Math.min(textLength / 100, 1);
-    let dominantAffect = 'neutral';
-    let confidence = 0.3; // Baixa confiança para fallback
-
-    if (hasExclamation) {
-      intensity += 0.2;
-      dominantAffect = 'excitement';
-    }
-    if (hasQuestion) {
-      dominantAffect = 'curiosity';
-    }
-    if (wordCount > 20) {
-      intensity += 0.1;
-    }
-
-    // Garantir limites
-    intensity = Math.min(Math.max(intensity, 0), 1);
-
+  getStatus(): { ok: boolean; provider: string } {
     return {
-      intensity,
-      dominantAffect,
-      confidence,
-      recommendation: intensity > 0.7 ? 'engage' : 'continue',
-      emotionalShift: intensity > 0.5 ? 'rising' : 'stable',
-      morphogenicSuggestion: dominantAffect === 'curiosity' ? 'spiral' : 'fibonacci'
+      ok: true,
+      provider: 'fallback'
     };
   }
 }

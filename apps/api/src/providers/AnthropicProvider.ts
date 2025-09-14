@@ -1,46 +1,46 @@
-import fetch from 'node-fetch';
 import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '../../../../packages/shared/types/api';
-import { BaseAIProvider } from './AIProvider';
+import { AIProvider, extractTextFromRequest, createFallbackResponse } from './AIProvider';
 import { logger } from '../utils/logger';
+import { config } from '../config/environment';
 
-export class AnthropicProvider extends BaseAIProvider {
-  protected name = 'Anthropic Claude';
-  
-  private apiKey: string;
-  private model: string;
+export class AnthropicProvider implements AIProvider {
+  private readonly apiKey: string;
+  private readonly apiUrl: string;
+  private readonly model: string;
 
-  constructor(apiKey: string, model = 'claude-3-5-sonnet-20240620') {
-    super();
-    this.apiKey = apiKey;
-    this.model = model;
+  constructor() {
+    this.apiKey = config.CLAUDE_API_KEY || '';
+    this.apiUrl = config.CLAUDE_API_URL;
+    this.model = config.CLAUDE_MODEL;
   }
 
   async analyze(request: EmotionalAnalysisRequest): Promise<EmotionalAnalysisResponse> {
-    this.logRequest(request);
+    if (!this.apiKey) {
+      logger.warn('Claude API key not configured, using fallback');
+      return createFallbackResponse();
+    }
 
     try {
-      const text = this.extractText(request);
-      if (!text || text.trim().length === 0) {
-        return this.createDefaultResponse();
+      // ✅ CORREÇÃO: Usar função segura de extração de texto
+      const text = extractTextFromRequest(request);
+      
+      if (!text) {
+        logger.warn('No text content found in request');
+        return createFallbackResponse();
       }
 
       const response = await this.callAnthropicAPI(text);
       return this.parseResponse(response);
     } catch (error) {
       logger.error('Anthropic API error:', error);
-      return this.createDefaultResponse();
+      return createFallbackResponse();
     }
-  }
-
-  private extractText(request: EmotionalAnalysisRequest): string {
-    if ('text' in request) {
-      return request.text;
-    }
-    return 'analyze current emotional state';
   }
 
   private async callAnthropicAPI(text: string): Promise<any> {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const { default: fetch } = await import('node-fetch');
+    
+    const response = await fetch(this.apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -49,13 +49,11 @@ export class AnthropicProvider extends BaseAIProvider {
       },
       body: JSON.stringify({
         model: this.model,
-        max_tokens: 100,
-        messages: [
-          {
-            role: 'user',
-            content: `Analyze the emotional state of this text and respond with a JSON object with intensity (0-1), dominantAffect (string), confidence (0-1), recommendation (string), emotionalShift (string), and morphogenicSuggestion (string): "${text}"`
-          }
-        ]
+        max_tokens: 1024,
+        messages: [{
+          role: 'user',
+          content: `Analyze the emotional state from this text and respond with a JSON object containing: intensity (0-1), dominantAffect (one of: joy, nostalgia, curiosity, serenity, ecstasy, mystery, power), confidence (0-1), recommendation (string), emotionalShift (string), morphogenicSuggestion (string). Text: "${text}"`
+        }]
       })
     });
 
@@ -66,29 +64,30 @@ export class AnthropicProvider extends BaseAIProvider {
     return response.json();
   }
 
-  private parseResponse(response: any): EmotionalAnalysisResponse {
+  private parseResponse(apiResponse: any): EmotionalAnalysisResponse {
     try {
-      const content = response.content?.[0]?.text || '';
+      const content = apiResponse.content?.[0]?.text || '{}';
       const parsed = JSON.parse(content);
       
       return {
-        intensity: parsed.intensity || 0.5,
-        dominantAffect: parsed.dominantAffect || 'neutral',
+        intensity: typeof parsed.intensity === 'number' ? parsed.intensity : 0.5,
+        dominantAffect: parsed.dominantAffect || 'curiosity',
         timestamp: new Date().toISOString(),
-        confidence: parsed.confidence || 0.5,
-        recommendation: parsed.recommendation || 'continue',
+        confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.7,
+        recommendation: parsed.recommendation || 'exploring_curiosity',
         emotionalShift: parsed.emotionalShift || 'stable',
         morphogenicSuggestion: parsed.morphogenicSuggestion || 'fibonacci'
       };
-    } catch {
-      return this.createDefaultResponse();
+    } catch (error) {
+      logger.warn('Failed to parse Anthropic response, using fallback');
+      return createFallbackResponse();
     }
   }
 
-  status(): { ok: boolean; provider: string } {
-    return { 
-      ok: Boolean(this.apiKey), 
-      provider: `${this.name} (${this.model})` 
+  getStatus(): { ok: boolean; provider: string } {
+    return {
+      ok: !!this.apiKey,
+      provider: 'anthropic'
     };
   }
 }

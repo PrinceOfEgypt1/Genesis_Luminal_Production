@@ -1,77 +1,67 @@
-import { config } from '../config/environment';
+import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '../../../../packages/shared/types/api';
 import { AnthropicProvider } from './AnthropicProvider';
 import { FallbackProvider } from './FallbackProvider';
-import type { AIProvider } from './AIProvider';
-import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '../../../../packages/shared/types/api';
 import { logger } from '../utils/logger';
+import { config } from '../config/environment';
 
 export class ProviderRouter {
-  private providers: AIProvider[];
-  private currentProvider: AIProvider;
+  private anthropicProvider: AnthropicProvider;
+  private fallbackProvider: FallbackProvider;
+  private currentProvider: 'anthropic' | 'fallback';
 
   constructor() {
-    this.providers = this.initializeProviders();
-    this.currentProvider = this.selectBestProvider();
+    this.anthropicProvider = new AnthropicProvider();
+    this.fallbackProvider = new FallbackProvider();
     
-    logger.info('ProviderRouter initialized', {
-      providersCount: this.providers.length,
-      currentProvider: this.currentProvider.status().provider
-    });
+    // ✅ CORREÇÃO: Usar config.CLAUDE_OFFLINE_MODE que agora existe
+    if (config.CLAUDE_API_KEY && !config.CLAUDE_OFFLINE_MODE) {
+      this.currentProvider = 'anthropic';
+      logger.info('Using Anthropic provider');
+    } else {
+      this.currentProvider = 'fallback';
+      if (config.CLAUDE_OFFLINE_MODE) {
+        logger.info('Claude offline mode enabled, using fallback provider');
+      } else {
+        logger.warn('Claude API key not configured, using fallback provider');
+      }
+    }
   }
 
   async analyze(request: EmotionalAnalysisRequest): Promise<EmotionalAnalysisResponse> {
     try {
-      return await this.currentProvider.analyze(request);
+      if (this.currentProvider === 'anthropic') {
+        const result = await this.anthropicProvider.analyze(request);
+        
+        // Se Anthropic falhar, fazer fallback automaticamente
+        if (!result || result.confidence === undefined) {
+          logger.warn('Anthropic provider failed, switching to fallback');
+          return await this.fallbackProvider.analyze(request);
+        }
+        
+        return result;
+      } else {
+        return await this.fallbackProvider.analyze(request);
+      }
     } catch (error) {
-      logger.warn('Primary provider failed, trying fallback', { error });
-      return await this.getFallbackProvider().analyze(request);
+      logger.error('Provider router error:', error);
+      return await this.fallbackProvider.analyze(request);
     }
   }
 
-  status() {
-    return {
-      current: this.currentProvider.status(),
-      providers: this.providers.map(p => p.status())
-    };
-  }
-
-  private initializeProviders(): AIProvider[] {
-    const providers: AIProvider[] = [];
-
-    // Anthropic Provider
-    if (config.CLAUDE_API_KEY && !config.CLAUDE_OFFLINE_MODE) {
-      providers.push(new AnthropicProvider(
-        config.CLAUDE_API_KEY, 
-        config.CLAUDE_MODEL
-      ));
+  getStatus(): { ok: boolean; provider: string } {
+    if (this.currentProvider === 'anthropic') {
+      return this.anthropicProvider.getStatus();
+    } else {
+      return this.fallbackProvider.getStatus();
     }
-
-    // Always include fallback
-    providers.push(new FallbackProvider());
-
-    return providers;
   }
 
-  private selectBestProvider(): AIProvider {
-    // Prefer Anthropic if available and configured
-    const anthropicProvider = this.providers.find(p => 
-      p.status().provider.includes('Anthropic')
-    );
-    
-    if (anthropicProvider && anthropicProvider.status().ok) {
-      return anthropicProvider;
-    }
-
-    // Fall back to first available provider
-    return this.providers[0];
+  switchToFallback(): void {
+    this.currentProvider = 'fallback';
+    logger.info('Switched to fallback provider');
   }
 
-  private getFallbackProvider(): AIProvider {
-    return this.providers.find(p => 
-      p.status().provider.includes('Fallback')
-    ) || this.providers[this.providers.length - 1];
+  getCurrentProvider(): string {
+    return this.currentProvider;
   }
 }
-
-// Singleton instance
-export const providerRouter = new ProviderRouter();

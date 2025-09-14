@@ -1,20 +1,42 @@
 import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '../../../../packages/shared/types/api';
-import { providerRouter } from '../providers/ProviderRouter';
-import { logger } from '../utils/logger';
+import { ProviderRouter } from '../providers/ProviderRouter';
+import { extractTextFromRequest } from '../providers/AIProvider';
 
 class ClaudeService {
-  async analyzeEmotionalState(request: EmotionalAnalysisRequest): Promise<EmotionalAnalysisResponse> {
-    logger.info('ClaudeService.analyzeEmotionalState called');
-    return providerRouter.analyze(request);
+  private router = new ProviderRouter();
+
+  async analyzeEmotionalState(input: EmotionalAnalysisRequest): Promise<EmotionalAnalysisResponse> {
+    // ✅ CORREÇÃO: Usar função segura de extração de texto
+    const text = extractTextFromRequest(input);
+    
+    if (!text && !('currentState' in input)) {
+      return {
+        intensity: 0.0,
+        dominantAffect: 'curiosity',
+        timestamp: new Date().toISOString(),
+        confidence: 0.0,
+        recommendation: 'provide_input',
+        emotionalShift: 'stable',
+        morphogenicSuggestion: 'fibonacci',
+      };
+    }
+
+    // Manter o objeto original para respeitar o contrato do shared
+    return this.router.analyze(input);
   }
 
   status() {
-    return providerRouter.status().current;
+    return this.router.getStatus();
   }
 
-  getDetailedStatus() {
-    return providerRouter.status();
+  getCurrentProvider(): string {
+    return this.router.getCurrentProvider();
+  }
+
+  switchToFallback(): void {
+    return this.router.switchToFallback();
   }
 }
 
-export default new ClaudeService();
+const claudeService = new ClaudeService();
+export default claudeService;
