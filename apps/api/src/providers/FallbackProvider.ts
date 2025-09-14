@@ -12,7 +12,7 @@ export class FallbackProvider implements AIProvider {
   async analyze(request: EmotionalAnalysisRequest): Promise<EmotionalAnalysisResponse> {
     try {
       const text = extractTextFromRequest(request);
-      logger.info('Using fallback analysis for:', text);
+      logger.info('Using fallback analysis', { text });
 
       // Análise básica baseada em palavras-chave
       const intensity = this.calculateIntensity(text);

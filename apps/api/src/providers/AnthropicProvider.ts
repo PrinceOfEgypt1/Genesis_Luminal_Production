@@ -41,7 +41,7 @@ export class AnthropicProvider implements AIProvider {
         throw new Error(`Claude API error: ${response.status}`);
       }
 
-      const claudeResponse: ClaudeApiResponse = await response.json();
+      const claudeResponse: any = await response.json();
       
       return {
         success: true, // ✅ ADICIONADO

@@ -34,7 +34,7 @@ export class ClaudeService {
   }
 
   // ✅ MÉTODOS CORRETOS
-  async getProviderStatus(): string {
+  async getProviderStatus(): Promise<string> {
     return this.router.getCurrentProvider().getProviderName();
   }
 
