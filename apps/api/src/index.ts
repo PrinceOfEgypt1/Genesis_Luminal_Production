@@ -1,122 +1,76 @@
+import { sanitizeEmotional } from './middleware/sanitizeEmotional';
 /**
- * TRILHO B AÇÃO 6 - Genesis Luminal Backend (SOLUÇÃO DEFINITIVA)
- * 
- * Servidor principal simplificado e funcional
- * Abordagem: Engenheiro Sênior - Funcionalidade > Complexity
+ * GENESIS LUMINAL BACKEND
+ * Servidor principal com integração Claude API
+ * CORREÇÃO: Rate limit aplicado APÓS rotas de saúde
  */
 
-import express = require('express');
-import cors = require('cors');
-import helmet = require('helmet');
-import compression = require('compression');
+import express from 'express';
+import cors from 'cors';
+// ✅ CORREÇÃO: Import helmet compatível com CommonJS
+const helmet = require('helmet');
+import compression from 'compression';
 import { config } from './config/environment';
 import { setupRoutes } from './routes';
 import { healthRouter } from './routes/health';
-import { sanitizeEmotional } from './middleware/sanitizeEmotional';
+import { errorMiddleware } from './middleware/error';
+import { rateLimitMiddleware } from './middleware/rateLimit';
 import { logger } from './utils/logger';
-
-// Rate limiting simples e funcional
-import { rateLimit } from './middleware/rateLimit';
 
 const app = express();
 
-// ========================================
-// MIDDLEWARE STACK SIMPLIFICADO
-// ========================================
+// Timeout configurável
+const REQUEST_TIMEOUT_MS = parseInt(process.env.REQUEST_TIMEOUT_MS || '15000', 10);
 
-// 1. Request Timeout
+// Middleware de timeout
 app.use((req, res, next) => {
   const timeout = setTimeout(() => {
     if (!res.headersSent) {
       res.status(503).json({
         error: 'Request timeout',
-        message: 'Request exceeded time limit'
+        message: `Request exceeded ${REQUEST_TIMEOUT_MS}ms limit`
       });
     }
-  }, 15000);
+  }, REQUEST_TIMEOUT_MS);
 
   res.on('finish', () => clearTimeout(timeout));
   res.on('close', () => clearTimeout(timeout));
+  
   next();
 });
 
-// 2. Security Stack
+// ✅ CORREÇÃO: Security & Performance middleware com helmet compatível
+app.use(helmet());
 app.use(compression());
-app.use(helmet({
-  contentSecurityPolicy: process.env.NODE_ENV === 'production'
-}));
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: config.FRONTEND_URL,
   credentials: true
 }));
 
-// 3. Body Parsing
+// Body parsing com limite reduzido
 app.use(express.json({ limit: '1mb' }));
+app.use('/api/emotional/analyze', sanitizeEmotional);
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-// ========================================
-// HEALTH ENDPOINTS (ANTES RATE LIMIT)
-// ========================================
-
+// ✅ CORREÇÃO CRÍTICA: Health routes ANTES do rate limiting
 app.use('/api', healthRouter);
-app.get('/health', (req, res) => res.redirect('/api/liveness'));
-app.get('/ping', (req, res) => res.json({ 
-  status: 'pong', 
-  timestamp: new Date().toISOString() 
-}));
 
-// ========================================
-// SANITIZAÇÃO E RATE LIMITING
-// ========================================
+// ✅ Rate limiting aplicado APÓS rotas de saúde
+app.use(rateLimitMiddleware);
 
-app.use('/api/emotional/analyze', sanitizeEmotional);
-app.use(rateLimit); // Rate limiting APÓS health checks
-
-// ========================================
-// APPLICATION ROUTES
-// ========================================
-
+// Application routes
 app.use('/api', setupRoutes());
 
-// ========================================
-// ERROR HANDLING
-// ========================================
+// Error handling
+app.use(errorMiddleware);
 
-app.use((error: any, req: any, res: any, next: any) => {
-  logger.error('Unhandled error:', {
-    error: error.message,
-    url: req.url,
-    method: req.method
-  });
-
-  res.status(500).json({
-    error: 'Internal server error',
-    timestamp: new Date().toISOString()
-  });
-});
-
-// ========================================
-// SERVER START
-// ========================================
-
+// Start server
 const PORT = config.PORT || 3001;
-
 app.listen(PORT, () => {
-  logger.info('Genesis Luminal Backend started', {
-    port: PORT,
-    environment: process.env.NODE_ENV || 'development',
-    claudeConfigured: !!config.CLAUDE_API_KEY
-  });
-
-  logger.info('Infrastructure status:', {
-    healthEndpoints: ['/api/liveness', '/api/readiness'],
-    rateLimitEnabled: true,
-    securityEnabled: true
-  });
-});
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('Shutting down gracefully');
-  process.exit(0);
+  logger.info(`🚀 Genesis Luminal Backend running on port ${PORT}`);
+  logger.info(`🔡 Frontend URL: ${config.FRONTEND_URL}`);
+  logger.info(`🧠 Claude API: ${config.CLAUDE_API_KEY ? 'Configured' : 'Missing'}`);
+  logger.info(`⏱️ Request timeout: ${REQUEST_TIMEOUT_MS}ms`);
+  logger.info(`🛡️ Health endpoints: /api/liveness, /api/readiness, /api/status`);
+  logger.info(`✅ CORREÇÃO: Rate limit aplicado APÓS health checks`);
 });

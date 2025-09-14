@@ -143,7 +143,7 @@ function handleValidationError(
     field: err.path.join('.'),
     message: err.message,
     code: err.code,
-    received: (err as any)?.received || "unknown"
+    received: err.received
   }));
 
   const errorResponse: ErrorResponseDto = {
