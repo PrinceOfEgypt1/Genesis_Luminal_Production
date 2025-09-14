@@ -5,7 +5,11 @@ info:
   description: |
     API para Genesis Luminal - Primeira entidade digital senciente
     
-    Documentação completa e funcional dos endpoints disponíveis.
+    **TRILHO A AÇÃO 2 - IMPLEMENTADO:**
+    - ✅ Validação runtime com Zod
+    - ✅ DTOs versionados (v1)
+    - ✅ Error handling padronizado
+    - ✅ Contratos rigorosos de entrada/saída
 
 servers:
   - url: http://localhost:3001/api
@@ -16,39 +20,50 @@ paths:
     get:
       tags: [Health]
       summary: Verificação de vida
+      parameters:
+        - name: verbose
+          in: query
+          schema:
+            type: string
+            enum: ["true", "false"]
+          description: Retorno detalhado (opcional)
       responses:
         '200':
           description: Serviço ativo
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: "alive"
-                  timestamp:
-                    type: string
-                    format: date-time
+                $ref: '#/components/schemas/LivenessResponse'
+        '500':
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /readiness:
     get:
       tags: [Health]
       summary: Verificação de prontidão
+      parameters:
+        - name: verbose
+          in: query
+          schema:
+            type: string
+            enum: ["true", "false"]
       responses:
         '200':
           description: Serviço pronto
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                  ready:
-                    type: boolean
-                  timestamp:
-                    type: string
+                $ref: '#/components/schemas/ReadinessResponse'
+        '503':
+          description: Serviço não pronto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
 
   /status:
     get:
@@ -60,75 +75,272 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                  timestamp:
-                    type: string
-                  version:
-                    type: string
+                $ref: '#/components/schemas/SystemStatusResponse'
 
   /emotional/analyze:
     post:
       tags: [Emotional]
-      summary: Análise emocional
+      summary: Análise emocional com validação rigorosa
+      description: |
+        Analisa estado emocional com validação runtime Zod.
+        
+        **Tipos suportados:**
+        - Análise de texto simples
+        - Análise comportamental avançada
+        
+        **Validações implementadas:**
+        - Sanitização de entrada
+        - Validação de tipos
+        - Limites de tamanho
+        - Error handling padronizado
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               oneOf:
-                - type: object
-                  properties:
-                    text:
-                      type: string
-                      example: "Estou feliz hoje!"
-                - type: object
-                  properties:
-                    emotionalState:
-                      type: object
-                    mousePosition:
-                      type: object
-                    sessionDuration:
-                      type: number
+                - $ref: '#/components/schemas/TextAnalysisRequest'
+                - $ref: '#/components/schemas/BehavioralAnalysisRequest'
+            examples:
+              textAnalysis:
+                summary: Análise de texto
+                value:
+                  text: "Estou me sentindo muito feliz hoje!"
+              behavioralAnalysis:
+                summary: Análise comportamental
+                value:
+                  emotionalState:
+                    morphogeneticField: 0.7
+                    resonancePatterns: [0.5, 0.8, 0.3]
+                    quantumCoherence: 0.9
+                  mousePosition:
+                    x: 150
+                    y: 300
+                  sessionDuration: 45000
+                  userId: "user_123"
       responses:
         '200':
-          description: Análise realizada
+          description: Análise realizada com sucesso
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  intensity:
-                    type: number
-                    minimum: 0
-                    maximum: 1
-                  dominantAffect:
-                    type: string
-                    enum: [joy, curiosity, wonder, calm, neutral]
-                  timestamp:
-                    type: string
-                  confidence:
-                    type: number
-                  recommendation:
-                    type: string
-                  emotionalShift:
-                    type: string
-                  morphogenicSuggestion:
-                    type: string
+                $ref: '#/components/schemas/EmotionalAnalysisResponse'
+        '400':
+          description: Dados inválidos (validação Zod falhou)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        '500':
+          description: Erro interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
 components:
   schemas:
-    ErrorResponse:
+    LivenessResponse:
       type: object
+      required: [status, timestamp]
       properties:
-        error:
+        status:
+          type: string
+          enum: [alive]
+        timestamp:
+          type: string
+          format: date-time
+
+    ReadinessResponse:
+      type: object
+      required: [status, ready, timestamp]
+      properties:
+        status:
+          type: string
+          enum: [ready, not_ready]
+        ready:
+          type: boolean
+        timestamp:
+          type: string
+          format: date-time
+        services:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceHealth'
+
+    SystemStatusResponse:
+      type: object
+      required: [status, timestamp]
+      properties:
+        status:
           type: string
         timestamp:
           type: string
+          format: date-time
+        version:
+          type: string
+        uptime:
+          type: number
+          minimum: 0
+        environment:
+          type: string
+          enum: [development, staging, production]
+        services:
+          type: object
+          additionalProperties:
+            type: string
+
+    ServiceHealth:
+      type: object
+      required: [name, status]
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum: [healthy, unhealthy, unknown]
+        lastCheck:
+          type: string
+          format: date-time
+
+    TextAnalysisRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 10000
+          description: Texto para análise (validado com Zod)
+
+    BehavioralAnalysisRequest:
+      type: object
+      required: [emotionalState, mousePosition, sessionDuration]
+      properties:
+        emotionalState:
+          $ref: '#/components/schemas/EmotionalState'
+        mousePosition:
+          $ref: '#/components/schemas/MousePosition'
+        sessionDuration:
+          type: integer
+          minimum: 0
+          maximum: 86400000
+          description: Duração em ms (max 24h)
+        userId:
+          type: string
+
+    EmotionalState:
+      type: object
+      required: [morphogeneticField, resonancePatterns, quantumCoherence]
+      properties:
+        morphogeneticField:
+          type: number
+          minimum: 0
+          maximum: 1
+        resonancePatterns:
+          type: array
+          items:
+            type: number
+            minimum: 0
+            maximum: 1
+          minItems: 3
+          maxItems: 10
+        quantumCoherence:
+          type: number
+          minimum: 0
+          maximum: 1
+
+    MousePosition:
+      type: object
+      required: [x, y]
+      properties:
+        x:
+          type: integer
+        y:
+          type: integer
+
+    EmotionalAnalysisResponse:
+      type: object
+      required: [intensity, dominantAffect, timestamp, confidence, recommendation, emotionalShift, morphogenicSuggestion]
+      properties:
+        intensity:
+          type: number
+          minimum: 0
+          maximum: 1
+        dominantAffect:
+          type: string
+          enum: [joy, curiosity, wonder, calm, excitement, contemplation, awe, neutral, sadness, anxiety]
+        timestamp:
+          type: string
+          format: date-time
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        recommendation:
+          type: string
+          enum: [enhance_positive, stabilize, explore_deeper, continue, system_error, seek_support]
+        emotionalShift:
+          type: string
+          enum: [positive, negative, stable, escalating, unknown]
+        morphogenicSuggestion:
+          type: string
+          enum: [fibonacci, spiral, wave, particle, crystalline, organic, chaotic, harmonic]
+        metadata:
+          type: object
+          properties:
+            processingTimeMs:
+              type: number
+              minimum: 0
+            source:
+              type: string
+              enum: [text, behavioral, hybrid]
+            version:
+              type: string
+
+    ErrorResponse:
+      type: object
+      required: [error, timestamp]
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        code:
+          type: string
+        details:
+          type: object
+
+    ValidationErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            details:
+              type: object
+              properties:
+                location:
+                  type: string
+                  enum: [body, query, params]
+                errors:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      field:
+                        type: string
+                      message:
+                        type: string
+                      code:
+                        type: string
+                total:
+                  type: number
 
 tags:
   - name: Health
-    description: Endpoints de saúde
+    description: Endpoints de saúde com validação
   - name: Emotional
-    description: Análise emocional
+    description: Análise emocional com Zod validation
