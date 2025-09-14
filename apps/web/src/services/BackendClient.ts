@@ -1,8 +1,13 @@
+/**
+ * Cliente para comunicação com API Genesis Luminal
+ * Corrigido: Import path para nova estrutura de monorepo
+ */
+
 import { 
   EmotionalAnalysisRequest,
   EmotionalAnalysisResponse,
   HealthCheckResponse
-} from '../../../shared/types/api';
+} from '../../../../packages/shared/types/api';
 
 export class BackendClient {
   private baseUrl: string;
