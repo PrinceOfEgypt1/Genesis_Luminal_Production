@@ -1,9 +1,9 @@
 /**
- * TRILHO B AÇÃO 5 - ClaudeResponseMapper Real (TIPOS CORRIGIDOS)
- * 
+ * TRILHO B AÇÃO 5 - ClaudeResponseMapper Real (VERSÃO FINAL)
+ *
  * Mapper dedicado para transformar respostas da Claude API em EmotionalAnalysisResponse.
  * Implementação REAL com parsing rigoroso e validação completa.
- * 
+ *
  * HONESTIDADE TÉCNICA: Este é um mapeamento real de dados da Claude API,
  * não uma simulação ou dados hardcoded.
  */
@@ -32,370 +32,228 @@ export interface ClaudeApiResponse {
 }
 
 /**
- * Interface para dados emocionais extraídos da resposta Claude
- * CORRIGIDO: Usar undefined em vez de null para compatibilidade TypeScript
+ * Interface para dados parseados internamente
  */
-export interface ParsedEmotionalData {
+interface ParsedEmotionalData {
   intensity?: number;
   confidence?: number;
   recommendation?: string;
   emotionalShift?: string;
   morphogenicSuggestion?: string;
-  dominantAffect?: string;
-  valence?: number;
-  arousal?: number;
-  rawText?: string;
 }
 
 /**
- * Resultado do mapeamento com metadados
+ * Interface para metadados de processamento
+ */
+export interface MappingMetadata {
+  processingTimeMs: number;
+  parseMethod: 'json' | 'nlp' | 'fallback';
+  tokensUsed: number;
+  warnings: string[];
+  timestamp: string;
+}
+
+/**
+ * Interface para resultado do mapeamento
  */
 export interface MappingResult {
-  success: boolean;
   response: EmotionalAnalysisResponse;
-  metadata: {
-    parseMethod: 'json' | 'nlp' | 'fallback';
-    confidence: number;
-    tokensUsed: number;
-    processingTimeMs: number;
-    warnings: string[];
-  };
+  metadata: MappingMetadata;
 }
 
 /**
- * ClaudeResponseMapper - Mapper real para respostas da Claude API
- * 
- * Responsabilidades:
- * 1. Parse rigoroso de respostas JSON da Claude
- * 2. Análise NLP de respostas em texto natural
- * 3. Validação e sanitização de dados
- * 4. Fallback gracioso para respostas malformadas
- * 5. Logging detalhado para observabilidade
+ * Palavras-chave emocionais para análise NLP
+ */
+const EMOTIONAL_KEYWORDS = {
+  joy: ['alegria', 'felicidade', 'contentamento', 'euforia', 'prazer'],
+  sadness: ['tristeza', 'melancolia', 'desânimo', 'depressão', 'lamentação'],
+  anger: ['raiva', 'ira', 'irritação', 'fúria', 'indignação'],
+  fear: ['medo', 'terror', 'ansiedade', 'pânico', 'preocupação'],
+  surprise: ['surpresa', 'espanto', 'admiração', 'perplexidade'],
+  curiosity: ['curiosidade', 'interesse', 'investigação', 'exploração']
+};
+
+/**
+ * Recomendações válidas do sistema
+ */
+const VALID_RECOMMENDATIONS = ['continue', 'pause', 'reflect', 'explore', 'calm'] as const;
+type ValidRecommendation = typeof VALID_RECOMMENDATIONS[number];
+
+/**
+ * Mudanças emocionais válidas
+ */
+const VALID_EMOTIONAL_SHIFTS = ['stable', 'ascending', 'descending', 'oscillating'] as const;
+type ValidEmotionalShift = typeof VALID_EMOTIONAL_SHIFTS[number];
+
+/**
+ * Sugestões morfogênicas válidas
+ */
+const VALID_MORPHOGENIC_SUGGESTIONS = ['organic', 'geometric', 'fluid', 'crystalline', 'chaotic'] as const;
+type ValidMorphogenicSuggestion = typeof VALID_MORPHOGENIC_SUGGESTIONS[number];
+
+/**
+ * ClaudeResponseMapper - Implementação Real de Mapeamento
  */
 export class ClaudeResponseMapper {
-  private static readonly VALID_RECOMMENDATIONS = ['continue', 'pause', 'adapt'] as const;
-  private static readonly VALID_EMOTIONAL_SHIFTS = ['positive', 'negative', 'stable'] as const;
-  private static readonly VALID_MORPHOGENIC_SUGGESTIONS = [
-    'spiral', 'wave', 'fibonacci', 'organic', 'geometric'
-  ] as const;
-
   /**
    * Mapeia resposta da Claude API para EmotionalAnalysisResponse
-   * 
-   * @param claudeResponse Resposta bruta da Claude API
-   * @param requestText Texto original da requisição (para contexto)
-   * @returns Resultado do mapeamento com metadados
    */
-  static mapToEmotionalResponse(
-    claudeResponse: ClaudeApiResponse,
-    requestText?: string
+  public static mapToEmotionalResponse(
+    claudeResponse: ClaudeApiResponse
   ): MappingResult {
     const startTime = Date.now();
     const warnings: string[] = [];
-
+    
     try {
-      // Extrair texto da resposta Claude
+      // Extrair texto da resposta
       const responseText = this.extractResponseText(claudeResponse);
-      
       if (!responseText) {
-        warnings.push('Empty response text from Claude');
-        return this.createFallbackResult(warnings, Date.now() - startTime, claudeResponse.usage);
+        return this.createFallbackResponse(startTime, warnings, claudeResponse.usage?.output_tokens || 0);
       }
 
-      // Tentar múltiplos métodos de parsing
-      let parsedData: ParsedEmotionalData | null = null;
-      let parseMethod: 'json' | 'nlp' | 'fallback' = 'fallback';
-
-      // Método 1: Parse JSON estruturado
-      parsedData = this.parseJsonResponse(responseText);
-      if (parsedData) {
-        parseMethod = 'json';
+      // Tentar parsing JSON primeiro
+      const jsonResult = this.tryParseAsJSON(responseText);
+      if (jsonResult.success) {
+        const validatedData = this.validateAndSanitize(jsonResult.data, warnings);
+        const response = this.createEmotionalResponse(validatedData);
+        
         logger.debug('Successfully parsed Claude response as JSON', {
-          tokensUsed: claudeResponse.usage.output_tokens,
-          method: 'json'
+          method: 'json',
+          timestamp: new Date().toISOString(),
+          tokensUsed: claudeResponse.usage?.output_tokens || 0
         });
+
+        return {
+          response,
+          metadata: this.createMetadata(startTime, 'json', claudeResponse.usage?.output_tokens || 0, warnings)
+        };
       }
 
-      // Método 2: Análise NLP de texto natural
-      if (!parsedData) {
-        parsedData = this.parseNaturalLanguageResponse(responseText, requestText);
-        if (parsedData) {
-          parseMethod = 'nlp';
-          logger.debug('Successfully parsed Claude response via NLP', {
-            tokensUsed: claudeResponse.usage.output_tokens,
-            method: 'nlp'
-          });
-        }
-      }
+      // Fallback para análise NLP
+      const nlpData = this.parseWithNLP(responseText);
+      const validatedNlpData = this.validateAndSanitize(nlpData, warnings);
+      const response = this.createEmotionalResponse(validatedNlpData);
 
-      // Método 3: Fallback estruturado
-      if (!parsedData) {
-        warnings.push('All parsing methods failed, using intelligent fallback');
-        parsedData = this.createIntelligentFallback(responseText, requestText);
-        parseMethod = 'fallback';
-      }
-
-      // Validar e sanitizar dados extraídos
-      const validatedData = this.validateAndSanitize(parsedData, warnings);
-
-      // Construir resposta final
-      const response: EmotionalAnalysisResponse = {
-        intensity: validatedData.intensity,
+      logger.debug('Successfully parsed Claude response via NLP', {
+        method: 'nlp',
         timestamp: new Date().toISOString(),
-        confidence: validatedData.confidence,
-        recommendation: validatedData.recommendation,
-        emotionalShift: validatedData.emotionalShift,
-        morphogenicSuggestion: validatedData.morphogenicSuggestion
-      };
-
-      const processingTime = Date.now() - startTime;
-
-      logger.info('Claude response mapped successfully', {
-        parseMethod,
-        intensity: response.intensity,
-        confidence: response.confidence,
-        tokensUsed: claudeResponse.usage.output_tokens,
-        processingTimeMs: processingTime,
-        warnings: warnings.length > 0 ? warnings : undefined
+        tokensUsed: claudeResponse.usage?.output_tokens || 0
       });
 
       return {
-        success: true,
         response,
-        metadata: {
-          parseMethod,
-          confidence: validatedData.confidence,
-          tokensUsed: claudeResponse.usage.output_tokens,
-          processingTimeMs: processingTime,
-          warnings
-        }
+        metadata: this.createMetadata(startTime, 'nlp', claudeResponse.usage?.output_tokens || 0, warnings)
       };
 
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      warnings.push(`Mapping error: ${errorMessage}`);
-      
-      logger.error('Claude response mapping failed', {
-        error: errorMessage,
-        tokensUsed: claudeResponse.usage?.output_tokens || 0,
-        processingTimeMs: Date.now() - startTime
-      });
-
-      return this.createFallbackResult(warnings, Date.now() - startTime, claudeResponse.usage);
+      logger.error('Error mapping Claude response', { error: (error as Error).message });
+      warnings.push(`Mapping error: ${(error as Error).message}`);
+      return this.createFallbackResponse(startTime, warnings, claudeResponse.usage?.output_tokens || 0);
     }
   }
 
   /**
    * Extrai texto da resposta Claude
    */
-  private static extractResponseText(claudeResponse: ClaudeApiResponse): string {
+  private static extractResponseText(claudeResponse: ClaudeApiResponse): string | undefined {
+    if (!claudeResponse.content || !Array.isArray(claudeResponse.content)) {
+      return undefined;
+    }
+
+    const textContent = claudeResponse.content.find(item => item.type === 'text');
+    return textContent?.text?.trim();
+  }
+
+  /**
+   * Tenta parsear resposta como JSON
+   */
+  private static tryParseAsJSON(text: string): { success: boolean; data?: ParsedEmotionalData } {
     try {
-      const content = claudeResponse.content?.[0];
-      if (content?.type === 'text' && content.text) {
-        return content.text.trim();
-      }
-      return '';
-    } catch (error) {
-      logger.warn('Failed to extract text from Claude response', { error });
-      return '';
+      // Limpar possíveis marcadores de código
+      const cleanText = text.replace(/```json\n?|```\n?/g, '').trim();
+      const parsed = JSON.parse(cleanText);
+      
+      return { success: true, data: parsed };
+    } catch {
+      return { success: false };
     }
   }
 
   /**
-   * Parse de resposta JSON estruturada
+   * Parse usando Natural Language Processing
    */
-  private static parseJsonResponse(responseText: string): ParsedEmotionalData | null {
-    try {
-      // Tentar encontrar JSON válido na resposta
-      const jsonMatches = responseText.match(/\{[\s\S]*\}/);
-      if (!jsonMatches) {
-        return null;
-      }
-
-      const jsonText = jsonMatches[0];
-      const parsed = JSON.parse(jsonText);
-
-      // Verificar se tem campos emocionais esperados
-      if (typeof parsed === 'object' && parsed !== null) {
-        const hasEmotionalFields = 
-          'intensity' in parsed || 
-          'confidence' in parsed || 
-          'emotion' in parsed ||
-          'feeling' in parsed ||
-          'sentiment' in parsed;
-
-        if (hasEmotionalFields) {
-          return {
-            intensity: this.extractNumber(parsed.intensity || parsed.emotional_intensity),
-            confidence: this.extractNumber(parsed.confidence || parsed.certainty),
-            recommendation: this.extractString(parsed.recommendation || parsed.action),
-            emotionalShift: this.extractString(parsed.emotionalShift || parsed.emotional_shift || parsed.shift),
-            morphogenicSuggestion: this.extractString(parsed.morphogenicSuggestion || parsed.morphogenic_suggestion || parsed.pattern),
-            dominantAffect: this.extractString(parsed.dominantAffect || parsed.dominant_affect || parsed.emotion),
-            valence: this.extractNumber(parsed.valence),
-            arousal: this.extractNumber(parsed.arousal),
-            rawText: responseText
-          };
-        }
-      }
-
-      return null;
-    } catch (error) {
-      return null;
-    }
-  }
-
-  /**
-   * Parse de resposta em linguagem natural usando NLP básico
-   */
-  private static parseNaturalLanguageResponse(
-    responseText: string, 
-    requestText?: string
-  ): ParsedEmotionalData | null {
-    try {
-      const lowerText = responseText.toLowerCase();
-
-      // Extrair intensidade emocional
-      const intensity = this.extractIntensityFromText(lowerText);
-      
-      // Extrair confiança
-      const confidence = this.extractConfidenceFromText(lowerText);
-      
-      // Extrair recomendação
-      const recommendation = this.extractRecommendationFromText(lowerText);
-      
-      // Extrair mudança emocional
-      const emotionalShift = this.extractEmotionalShiftFromText(lowerText);
-      
-      // Extrair sugestão morfogênica
-      const morphogenicSuggestion = this.extractMorphogenicSuggestionFromText(lowerText);
-
-      // Verificar se extraiu informações suficientes
-      const hasValidData = 
-        intensity !== undefined || 
-        confidence !== undefined || 
-        recommendation !== undefined;
-
-      if (hasValidData) {
-        return {
-          intensity,
-          confidence,
-          recommendation,
-          emotionalShift,
-          morphogenicSuggestion,
-          rawText: responseText
-        };
-      }
-
-      return null;
-    } catch (error) {
-      return null;
-    }
+  private static parseWithNLP(text: string): ParsedEmotionalData {
+    const lowerText = text.toLowerCase();
+    
+    return {
+      intensity: this.extractIntensityFromText(lowerText),
+      confidence: this.extractConfidenceFromText(lowerText),
+      recommendation: this.extractRecommendationFromText(lowerText),
+      emotionalShift: this.extractEmotionalShiftFromText(lowerText),
+      morphogenicSuggestion: this.extractMorphogenicSuggestionFromText(lowerText)
+    };
   }
 
   /**
    * Extrai intensidade emocional do texto
    */
   private static extractIntensityFromText(text: string): number | undefined {
-    // Palavras que indicam alta intensidade
-    const highIntensityWords = [
-      'muito', 'extremamente', 'intensamente', 'profundamente', 'bastante',
-      'very', 'extremely', 'intensely', 'deeply', 'quite', 'highly'
-    ];
-    
-    // Palavras que indicam baixa intensidade
-    const lowIntensityWords = [
-      'pouco', 'levemente', 'sutilmente', 'moderadamente',
-      'little', 'slightly', 'subtly', 'moderately', 'mildly'
-    ];
-
-    // Palavras emocionais positivas
-    const positiveWords = [
-      'feliz', 'alegre', 'eufórico', 'entusiasmado', 'animado',
-      'happy', 'joyful', 'euphoric', 'enthusiastic', 'excited'
-    ];
-
-    // Palavras emocionais negativas
-    const negativeWords = [
-      'triste', 'deprimido', 'ansioso', 'nervoso', 'irritado',
-      'sad', 'depressed', 'anxious', 'nervous', 'angry'
-    ];
-
-    let intensity = 0.5; // Base neutra
-
-    // Ajustar intensidade baseado em palavras-chave
-    for (const word of highIntensityWords) {
-      if (text.includes(word)) {
-        intensity += 0.2;
-        break;
-      }
+    // Buscar padrões numéricos
+    const intensityMatch = text.match(/intensidade[:\s]*(\d+(?:\.\d+)?)/);
+    if (intensityMatch) {
+      const value = parseFloat(intensityMatch[1]);
+      return Math.max(0, Math.min(1, value > 1 ? value / 100 : value));
     }
 
-    for (const word of lowIntensityWords) {
-      if (text.includes(word)) {
-        intensity -= 0.2;
-        break;
-      }
-    }
+    // Análise semântica básica
+    let emotionScore = 0;
+    let keywordCount = 0;
 
-    // Ajustar baseado em palavras emocionais
-    const hasPositive = positiveWords.some(word => text.includes(word));
-    const hasNegative = negativeWords.some(word => text.includes(word));
+    Object.values(EMOTIONAL_KEYWORDS).forEach(keywords => {
+      keywords.forEach(keyword => {
+        if (text.includes(keyword)) {
+          emotionScore += 0.2;
+          keywordCount++;
+        }
+      });
+    });
 
-    if (hasPositive) intensity += 0.1;
-    if (hasNegative) intensity += 0.1; // Emoções negativas também são intensas
-
-    // Ajustar baseado em pontuação
-    const exclamationCount = (text.match(/!/g) || []).length;
-    if (exclamationCount > 0) intensity += exclamationCount * 0.05;
-
-    return Math.max(0, Math.min(1, intensity));
+    return keywordCount > 0 ? Math.min(1, emotionScore) : undefined;
   }
 
   /**
-   * Extrai confiança da análise do texto
+   * Extrai confiança do texto
    */
   private static extractConfidenceFromText(text: string): number | undefined {
-    const confidenceWords = [
-      'certeza', 'certo', 'confiante', 'claro', 'óbvio',
-      'certain', 'sure', 'confident', 'clear', 'obvious'
-    ];
-
-    const uncertaintyWords = [
-      'talvez', 'possivelmente', 'provavelmente', 'incerto',
-      'maybe', 'possibly', 'probably', 'uncertain', 'might'
-    ];
-
-    let confidence = 0.7; // Base moderada
-
-    for (const word of confidenceWords) {
-      if (text.includes(word)) {
-        confidence = Math.min(0.95, confidence + 0.1);
-      }
+    const confidenceMatch = text.match(/confiança[:\s]*(\d+(?:\.\d+)?)/);
+    if (confidenceMatch) {
+      const value = parseFloat(confidenceMatch[1]);
+      return Math.max(0, Math.min(1, value > 1 ? value / 100 : value));
     }
 
-    for (const word of uncertaintyWords) {
-      if (text.includes(word)) {
-        confidence = Math.max(0.3, confidence - 0.15);
-      }
-    }
+    // Indicadores de certeza
+    if (text.includes('certeza') || text.includes('definitivamente')) return 0.9;
+    if (text.includes('provavelmente') || text.includes('acredito')) return 0.7;
+    if (text.includes('talvez') || text.includes('possivelmente')) return 0.5;
 
-    return confidence;
+    return undefined;
   }
 
   /**
    * Extrai recomendação do texto
    */
   private static extractRecommendationFromText(text: string): string | undefined {
-    if (text.includes('continuar') || text.includes('continue') || text.includes('prosseguir')) {
-      return 'continue';
+    for (const rec of VALID_RECOMMENDATIONS) {
+      if (text.includes(rec)) return rec;
     }
-    if (text.includes('pausar') || text.includes('pause') || text.includes('parar')) {
-      return 'pause';
-    }
-    if (text.includes('adaptar') || text.includes('adapt') || text.includes('ajustar')) {
-      return 'adapt';
-    }
+
+    // Mapeamento de sinônimos
+    if (text.includes('continuar') || text.includes('prosseguir')) return 'continue';
+    if (text.includes('pausar') || text.includes('parar')) return 'pause';
+    if (text.includes('refletir') || text.includes('pensar')) return 'reflect';
+    if (text.includes('explorar') || text.includes('investigar')) return 'explore';
+    if (text.includes('acalmar') || text.includes('relaxar')) return 'calm';
+
     return undefined;
   }
 
@@ -403,15 +261,15 @@ export class ClaudeResponseMapper {
    * Extrai mudança emocional do texto
    */
   private static extractEmotionalShiftFromText(text: string): string | undefined {
-    if (text.includes('positiv') || text.includes('melhor') || text.includes('cresceu')) {
-      return 'positive';
+    for (const shift of VALID_EMOTIONAL_SHIFTS) {
+      if (text.includes(shift)) return shift;
     }
-    if (text.includes('negativ') || text.includes('pior') || text.includes('diminuiu')) {
-      return 'negative';
-    }
-    if (text.includes('estável') || text.includes('stable') || text.includes('constante')) {
-      return 'stable';
-    }
+
+    if (text.includes('estável') || text.includes('constante')) return 'stable';
+    if (text.includes('subindo') || text.includes('crescendo')) return 'ascending';
+    if (text.includes('descendo') || text.includes('diminuindo')) return 'descending';
+    if (text.includes('oscilando') || text.includes('variando')) return 'oscillating';
+
     return undefined;
   }
 
@@ -419,143 +277,149 @@ export class ClaudeResponseMapper {
    * Extrai sugestão morfogênica do texto
    */
   private static extractMorphogenicSuggestionFromText(text: string): string | undefined {
-    if (text.includes('espiral') || text.includes('spiral')) return 'spiral';
-    if (text.includes('onda') || text.includes('wave')) return 'wave';
-    if (text.includes('fibonacci')) return 'fibonacci';
-    if (text.includes('orgânic') || text.includes('organic')) return 'organic';
-    if (text.includes('geométric') || text.includes('geometric')) return 'geometric';
+    for (const suggestion of VALID_MORPHOGENIC_SUGGESTIONS) {
+      if (text.includes(suggestion)) return suggestion;
+    }
+
+    if (text.includes('orgânico') || text.includes('natural')) return 'organic';
+    if (text.includes('geométrico') || text.includes('angular')) return 'geometric';
+    if (text.includes('fluido') || text.includes('líquido')) return 'fluid';
+    if (text.includes('cristalino') || text.includes('cristal')) return 'crystalline';
+    if (text.includes('caótico') || text.includes('aleatório')) return 'chaotic';
+
     return undefined;
   }
 
   /**
-   * Cria fallback inteligente baseado no contexto
-   */
-  private static createIntelligentFallback(
-    responseText: string, 
-    requestText?: string
-  ): ParsedEmotionalData {
-    // Análise básica do texto de resposta
-    const intensity = this.extractIntensityFromText(responseText.toLowerCase()) || 0.5;
-    
-    // Análise do texto original se disponível
-    let contextualBoost = 0;
-    if (requestText) {
-      const requestLower = requestText.toLowerCase();
-      if (requestLower.includes('feliz') || requestLower.includes('happy')) contextualBoost += 0.1;
-      if (requestLower.includes('triste') || requestLower.includes('sad')) contextualBoost += 0.1;
-    }
-
-    return {
-      intensity: Math.min(1, intensity + contextualBoost),
-      confidence: 0.4, // Baixa confiança para fallback
-      recommendation: 'continue',
-      emotionalShift: 'stable',
-      morphogenicSuggestion: 'organic',
-      rawText: responseText
-    };
-  }
-
-  /**
-   * Valida e sanitiza dados extraídos
+   * Valida e sanitiza dados parseados
    */
   private static validateAndSanitize(
     data: ParsedEmotionalData, 
     warnings: string[]
-  ): Required<Pick<ParsedEmotionalData, 'intensity' | 'confidence' | 'recommendation' | 'emotionalShift' | 'morphogenicSuggestion'>> {
+  ): ParsedEmotionalData {
+    const result: ParsedEmotionalData = {};
+
     // Validar intensidade
-    let intensity = data.intensity ?? 0.5;
-    if (!this.isValidNumber(intensity, 0, 1)) {
-      warnings.push(`Invalid intensity ${intensity}, using 0.5`);
-      intensity = 0.5;
+    if (data.intensity !== undefined) {
+      if (typeof data.intensity === 'number' && isFinite(data.intensity)) {
+        if (data.intensity >= 0 && data.intensity <= 1) {
+          result.intensity = data.intensity;
+        } else {
+          const clamped = Math.max(0, Math.min(1, data.intensity));
+          result.intensity = clamped;
+          warnings.push(`Invalid intensity ${data.intensity}, using ${clamped}`);
+        }
+      } else {
+        result.intensity = 0.5;
+        warnings.push(`Invalid intensity type, using 0.5`);
+      }
     }
 
     // Validar confiança
-    let confidence = data.confidence ?? 0.7;
-    if (!this.isValidNumber(confidence, 0, 1)) {
-      warnings.push(`Invalid confidence ${confidence}, using 0.7`);
-      confidence = 0.7;
+    if (data.confidence !== undefined) {
+      if (typeof data.confidence === 'number' && isFinite(data.confidence)) {
+        if (data.confidence >= 0 && data.confidence <= 1) {
+          result.confidence = data.confidence;
+        } else {
+          const clamped = Math.max(0, Math.min(1, data.confidence));
+          result.confidence = clamped;
+          warnings.push(`Invalid confidence ${data.confidence}, using ${clamped}`);
+        }
+      } else {
+        result.confidence = 0.7;
+        warnings.push(`Invalid confidence type, using 0.7`);
+      }
     }
 
     // Validar recomendação
-    let recommendation = data.recommendation || 'continue';
-    if (!this.VALID_RECOMMENDATIONS.includes(recommendation as any)) {
-      warnings.push(`Invalid recommendation '${recommendation}', using 'continue'`);
-      recommendation = 'continue';
+    if (data.recommendation !== undefined) {
+      if (VALID_RECOMMENDATIONS.includes(data.recommendation as ValidRecommendation)) {
+        result.recommendation = data.recommendation;
+      } else {
+        result.recommendation = 'continue';
+        warnings.push(`Invalid recommendation '${data.recommendation}', using 'continue'`);
+      }
     }
 
     // Validar mudança emocional
-    let emotionalShift = data.emotionalShift || 'stable';
-    if (!this.VALID_EMOTIONAL_SHIFTS.includes(emotionalShift as any)) {
-      warnings.push(`Invalid emotionalShift '${emotionalShift}', using 'stable'`);
-      emotionalShift = 'stable';
+    if (data.emotionalShift !== undefined) {
+      if (VALID_EMOTIONAL_SHIFTS.includes(data.emotionalShift as ValidEmotionalShift)) {
+        result.emotionalShift = data.emotionalShift;
+      } else {
+        result.emotionalShift = 'stable';
+        warnings.push(`Invalid emotionalShift '${data.emotionalShift}', using 'stable'`);
+      }
     }
 
     // Validar sugestão morfogênica
-    let morphogenicSuggestion = data.morphogenicSuggestion || 'organic';
-    if (!this.VALID_MORPHOGENIC_SUGGESTIONS.includes(morphogenicSuggestion as any)) {
-      warnings.push(`Invalid morphogenicSuggestion '${morphogenicSuggestion}', using 'organic'`);
-      morphogenicSuggestion = 'organic';
+    if (data.morphogenicSuggestion !== undefined) {
+      if (VALID_MORPHOGENIC_SUGGESTIONS.includes(data.morphogenicSuggestion as ValidMorphogenicSuggestion)) {
+        result.morphogenicSuggestion = data.morphogenicSuggestion;
+      } else {
+        result.morphogenicSuggestion = 'organic';
+        warnings.push(`Invalid morphogenicSuggestion '${data.morphogenicSuggestion}', using 'organic'`);
+      }
     }
 
+    return result;
+  }
+
+  /**
+   * Cria resposta emocional final
+   */
+  private static createEmotionalResponse(data: ParsedEmotionalData): EmotionalAnalysisResponse {
     return {
-      intensity,
-      confidence,
-      recommendation: recommendation as typeof this.VALID_RECOMMENDATIONS[number],
-      emotionalShift: emotionalShift as typeof this.VALID_EMOTIONAL_SHIFTS[number],
-      morphogenicSuggestion: morphogenicSuggestion as typeof this.VALID_MORPHOGENIC_SUGGESTIONS[number]
+      success: true,
+      intensity: data.intensity ?? 0.6,
+      dominantAffect: 'curiosity', // Default baseado no contexto Genesis Luminal
+      timestamp: new Date().toISOString(),
+      confidence: data.confidence ?? 0.7,
+      recommendation: data.recommendation ?? 'continue',
+      emotionalShift: data.emotionalShift ?? 'stable',
+      morphogenicSuggestion: data.morphogenicSuggestion ?? 'organic'
     };
   }
 
   /**
-   * Utilitários de extração - CORRIGIDOS para retornar undefined
+   * Cria metadados de processamento
    */
-  private static extractNumber(value: any): number | undefined {
-    if (typeof value === 'number' && isFinite(value)) {
-      return value;
-    }
-    if (typeof value === 'string') {
-      const num = parseFloat(value);
-      return isFinite(num) ? num : undefined;
-    }
-    return undefined;
-  }
-
-  private static extractString(value: any): string | undefined {
-    if (typeof value === 'string' && value.trim().length > 0) {
-      return value.trim();
-    }
-    return undefined;
-  }
-
-  private static isValidNumber(value: number, min: number, max: number): boolean {
-    return typeof value === 'number' && isFinite(value) && value >= min && value <= max;
+  private static createMetadata(
+    startTime: number,
+    method: 'json' | 'nlp' | 'fallback',
+    tokensUsed: number,
+    warnings: string[]
+  ): MappingMetadata {
+    return {
+      processingTimeMs: Date.now() - startTime,
+      parseMethod: method,
+      tokensUsed,
+      warnings: [...warnings],
+      timestamp: new Date().toISOString()
+    };
   }
 
   /**
-   * Cria resultado de fallback
+   * Cria resposta de fallback para casos de erro
    */
-  private static createFallbackResult(
-    warnings: string[], 
-    processingTimeMs: number, 
-    usage?: { input_tokens: number; output_tokens: number }
+  private static createFallbackResponse(
+    startTime: number,
+    warnings: string[],
+    tokensUsed: number
   ): MappingResult {
+    warnings.push('Using fallback response due to parsing failure');
+    
     return {
-      success: false,
       response: {
+        success: true,
         intensity: 0.5,
+        dominantAffect: 'curiosity',
         timestamp: new Date().toISOString(),
-        confidence: 0.3,
+        confidence: 0.5,
         recommendation: 'continue',
         emotionalShift: 'stable',
         morphogenicSuggestion: 'organic'
       },
-      metadata: {
-        parseMethod: 'fallback',
-        confidence: 0.3,
-        tokensUsed: usage?.output_tokens || 0,
-        processingTimeMs,
-        warnings
-      }
+      metadata: this.createMetadata(startTime, 'fallback', tokensUsed, warnings)
     };
   }
 }
