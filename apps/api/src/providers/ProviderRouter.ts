@@ -5,7 +5,7 @@
  * usando ProviderFactory para instanciação. Segue Single Responsibility Principle.
  */
 
-import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '../../../../packages/shared/types/api';
+import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '@/shared/types/api';
 import type { 
   AIProvider, 
   ProviderType, 

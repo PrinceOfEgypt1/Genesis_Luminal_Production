@@ -6,7 +6,7 @@
  */
 
 import { BaseAIProvider } from './AIProvider';
-import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '../../../../packages/shared/types/api';
+import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '@/shared/types/api';
 import type { CircuitBreakerConfig } from './ProviderTypes';
 import { logger } from '../utils/logger';
 

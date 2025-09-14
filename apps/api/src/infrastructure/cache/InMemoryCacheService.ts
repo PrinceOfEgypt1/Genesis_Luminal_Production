@@ -1,180 +1,81 @@
 /**
- * TRILHO B AÇÃO 6 - Cache Service Refatorado (MAP ITERATION CORRIGIDO)
+ * TRILHO B AÇÃO 6 - Cache Service Simplificado
  * 
- * Implementação em memória do ICacheService
- * Correção: Compatible Map iteration para targets < ES2015
+ * Implementação funcional sem complexidade desnecessária
  */
 
-import { ICacheService, ICacheEntry } from '../interfaces/ICacheService';
 import { logger } from '../../utils/logger';
 
-export class InMemoryCacheService implements ICacheService {
-  private cache = new Map<string, ICacheEntry>();
-  private stats = {
-    hits: 0,
-    misses: 0,
-    sets: 0,
-    deletes: 0
-  };
+export interface CacheEntry {
+  value: any;
+  expiry: number;
+}
 
-  constructor(
-    private readonly defaultTtlSeconds: number = 300,
-    private readonly maxSize: number = 1000,
-    private readonly cleanupIntervalMs: number = 60000
-  ) {
-    this.startCleanupInterval();
-    logger.info('InMemoryCacheService initialized', {
-      defaultTtl: defaultTtlSeconds,
-      maxSize,
-      cleanupInterval: cleanupIntervalMs
+export class InMemoryCacheService {
+  private cache = new Map<string, CacheEntry>();
+
+  constructor(private defaultTtlSeconds = 300) {
+    // Cleanup a cada minuto
+    setInterval(() => this.cleanup(), 60000);
+    logger.info('InMemoryCacheService initialized');
+  }
+
+  async get(key: string): Promise<any> {
+    const entry = this.cache.get(key);
+    
+    if (!entry) return null;
+    
+    if (Date.now() > entry.expiry) {
+      this.cache.delete(key);
+      return null;
+    }
+    
+    return entry.value;
+  }
+
+  async set(key: string, value: any, ttlSeconds = this.defaultTtlSeconds): Promise<void> {
+    this.cache.set(key, {
+      value,
+      expiry: Date.now() + (ttlSeconds * 1000)
     });
   }
 
-  async get<T = any>(key: string): Promise<T | null> {
-    const entry = this.cache.get(key);
-    
-    if (!entry) {
-      this.stats.misses++;
-      return null;
-    }
-
-    if (this.isExpired(entry)) {
-      this.cache.delete(key);
-      this.stats.misses++;
-      return null;
-    }
-
-    this.stats.hits++;
-    return entry.value as T;
-  }
-
-  async set<T = any>(key: string, value: T, ttlSeconds: number = this.defaultTtlSeconds): Promise<void> {
-    if (this.cache.size >= this.maxSize && !this.cache.has(key)) {
-      await this.evictOldest();
-    }
-
-    const entry: ICacheEntry<T> = {
-      value,
-      ttl: ttlSeconds * 1000,
-      createdAt: Date.now()
-    };
-
-    this.cache.set(key, entry);
-    this.stats.sets++;
-    
-    logger.debug('Cache entry set', { key, ttl: ttlSeconds });
-  }
-
   async delete(key: string): Promise<boolean> {
-    const deleted = this.cache.delete(key);
-    if (deleted) {
-      this.stats.deletes++;
-      logger.debug('Cache entry deleted', { key });
-    }
-    return deleted;
+    return this.cache.delete(key);
   }
 
   async clear(): Promise<void> {
-    const size = this.cache.size;
     this.cache.clear();
-    logger.info('Cache cleared', { previousSize: size });
-  }
-
-  async has(key: string): Promise<boolean> {
-    const entry = this.cache.get(key);
-    if (!entry) return false;
-    
-    if (this.isExpired(entry)) {
-      this.cache.delete(key);
-      return false;
-    }
-    
-    return true;
-  }
-
-  async getStats() {
-    const totalRequests = this.stats.hits + this.stats.misses;
-    const hitRate = totalRequests > 0 ? this.stats.hits / totalRequests : 0;
-
-    return {
-      size: this.cache.size,
-      hits: this.stats.hits,
-      misses: this.stats.misses,
-      hitRate: parseFloat(hitRate.toFixed(3))
-    };
   }
 
   async isHealthy(): Promise<boolean> {
     try {
-      const testKey = '__health_check__';
-      await this.set(testKey, 'test', 1);
-      const value = await this.get(testKey);
-      await this.delete(testKey);
-      
+      await this.set('__health__', 'test', 1);
+      const value = await this.get('__health__');
+      await this.delete('__health__');
       return value === 'test';
-    } catch (error) {
-      logger.error('Cache health check failed', { error });
+    } catch {
       return false;
     }
   }
 
-  private isExpired(entry: ICacheEntry): boolean {
-    return Date.now() - entry.createdAt > entry.ttl;
-  }
-
-  private async evictOldest(): Promise<void> {
-    let oldestKey = '';
-    let oldestTime = Date.now();
-
-    // CORREÇÃO: Usar Array.from() para compatibilidade
-    const entries = Array.from(this.cache.entries());
-    for (let i = 0; i < entries.length; i++) {
-      const [key, entry] = entries[i];
-      if (entry.createdAt < oldestTime) {
-        oldestTime = entry.createdAt;
-        oldestKey = key;
-      }
-    }
-
-    if (oldestKey) {
-      await this.delete(oldestKey);
-      logger.debug('Cache eviction performed', { evictedKey: oldestKey });
-    }
-  }
-
-  private startCleanupInterval(): void {
-    setInterval(() => {
-      this.cleanup();
-    }, this.cleanupIntervalMs);
-  }
-
-  private cleanup(): void {
+  private cleanup() {
     const now = Date.now();
-    let expiredCount = 0;
+    let expired = 0;
 
-    // CORREÇÃO: Usar Array.from() para compatibilidade
-    const entries = Array.from(this.cache.entries());
-    for (let i = 0; i < entries.length; i++) {
-      const [key, entry] = entries[i];
-      if (now - entry.createdAt > entry.ttl) {
+    for (const [key, entry] of this.cache.entries()) {
+      if (now > entry.expiry) {
         this.cache.delete(key);
-        expiredCount++;
+        expired++;
       }
     }
 
-    if (expiredCount > 0) {
-      logger.debug('Cache cleanup completed', { 
-        expiredEntries: expiredCount,
-        remainingEntries: this.cache.size 
-      });
+    if (expired > 0) {
+      logger.debug('Cache cleanup', { expiredEntries: expired });
     }
   }
 }
 
-export function createInMemoryCacheService(
-  ttlSeconds = 300,
-  maxSize = 1000,
-  cleanupIntervalMs = 60000
-): ICacheService {
-  return new InMemoryCacheService(ttlSeconds, maxSize, cleanupIntervalMs);
+export function createCacheService(ttlSeconds = 300) {
+  return new InMemoryCacheService(ttlSeconds);
 }

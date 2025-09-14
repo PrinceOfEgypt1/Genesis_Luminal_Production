@@ -8,7 +8,7 @@
 import type { 
   EmotionalAnalysisRequest, 
   EmotionalAnalysisResponse 
-} from '../../../../packages/shared/types/api';
+} from '@/shared/types/api';
 import type { 
   ProviderStatus, 
   CircuitBreakerConfig,

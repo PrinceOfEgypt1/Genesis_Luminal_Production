@@ -3,7 +3,7 @@
  * Implementa Dependency Inversion Principle (DIP)
  */
 
-import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '../../../../../packages/shared/types/api';
+import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '@/shared/types/api';
 
 export interface IEmotionalAnalyzer {
   /**

@@ -3,7 +3,7 @@
  * Abstrai persistência de dados emocionais
  */
 
-import type { EmotionalDNA } from '../../../../../packages/shared/types/api';
+import type { EmotionalDNA } from '@/shared/types/api';
 
 export interface IEmotionalRepository {
   /**

@@ -1,176 +1,122 @@
 /**
- * TRILHO B AÇÃO 6 - Genesis Luminal Backend Refatorado (CORRIGIDO)
+ * TRILHO B AÇÃO 6 - Genesis Luminal Backend (SOLUÇÃO DEFINITIVA)
  * 
- * Servidor principal com infraestrutura crosscutting separada
- * Correção: Type compatibility e imports
+ * Servidor principal simplificado e funcional
+ * Abordagem: Engenheiro Sênior - Funcionalidade > Complexity
  */
 
-import * as express from 'express';
+import express = require('express');
+import cors = require('cors');
+import helmet = require('helmet');
+import compression = require('compression');
 import { config } from './config/environment';
 import { setupRoutes } from './routes';
 import { healthRouter } from './routes/health';
-import { errorMiddleware } from './infrastructure/middleware/error';
 import { sanitizeEmotional } from './middleware/sanitizeEmotional';
 import { logger } from './utils/logger';
 
-// TRILHO B AÇÃO 6 - Infraestrutura Crosscutting Modular
-import { createSecurityMiddleware, getEnvironmentSecurityConfig } from './infrastructure/security/SecurityMiddleware';
-import { createRateLimitMiddleware } from './infrastructure/middleware/RateLimitMiddleware';
-import { createInMemoryCacheService } from './infrastructure/cache/InMemoryCacheService';
-
-// Inicializar infraestrutura crosscutting
-const securityMiddleware = createSecurityMiddleware();
-const rateLimitMiddleware = createRateLimitMiddleware({
-  maxRequests: config.RATE_LIMIT_MAX,
-  windowSeconds: config.RATE_LIMIT_WINDOW_SEC,
-  blockDurationSeconds: config.RATE_LIMIT_BLOCK_SEC,
-  excludePaths: ['/api/liveness', '/api/readiness', '/api/health', '/api/status']
-});
-const cacheService = createInMemoryCacheService(
-  config.CACHE_TTL_SEC,
-  config.CACHE_MAX_SIZE
-);
+// Rate limiting simples e funcional
+import { rateLimit } from './middleware/rateLimit';
 
 const app = express();
 
 // ========================================
-// MIDDLEWARES DE INFRAESTRUTURA
+// MIDDLEWARE STACK SIMPLIFICADO
 // ========================================
 
 // 1. Request Timeout
 app.use((req, res, next) => {
   const timeout = setTimeout(() => {
     if (!res.headersSent) {
-      logger.warn('Request timeout', { 
-        url: req.url, 
-        method: req.method,
-        timeout: config.REQUEST_TIMEOUT_MS 
-      });
       res.status(503).json({
         error: 'Request timeout',
-        message: `Request exceeded ${config.REQUEST_TIMEOUT_MS}ms limit`
+        message: 'Request exceeded time limit'
       });
     }
-  }, config.REQUEST_TIMEOUT_MS);
+  }, 15000);
 
   res.on('finish', () => clearTimeout(timeout));
   res.on('close', () => clearTimeout(timeout));
-  
   next();
 });
 
-// 2. Trust Proxy
-if (config.TRUST_PROXY) {
-  app.set('trust proxy', true);
-}
-
-// 3. Security Middleware (CORS, Helmet, Compression)
-// CORREÇÃO: Usar configuração default se getEnvironmentSecurityConfig retornar vazio
-const securityConfig = getEnvironmentSecurityConfig();
-const securityMiddlewares = securityMiddleware.configure(Object.keys(securityConfig).length > 0 ? securityConfig : undefined);
-securityMiddlewares.forEach(middleware => app.use(middleware));
-
-// 4. Body Parsing
-app.use(express.json({ 
-  limit: config.REQUEST_SIZE_LIMIT,
-  verify: (req, res, buf) => {
-    if (buf.length > 500000) {
-      logger.warn('Large payload received', { 
-        size: buf.length, 
-        path: req.path,
-        contentType: req.get('Content-Type')
-      });
-    }
-  }
+// 2. Security Stack
+app.use(compression());
+app.use(helmet({
+  contentSecurityPolicy: process.env.NODE_ENV === 'production'
 }));
-app.use(express.urlencoded({ 
-  extended: true, 
-  limit: config.REQUEST_SIZE_LIMIT 
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true
 }));
+
+// 3. Body Parsing
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // ========================================
-// ROTAS DE SAÚDE (ANTES DO RATE LIMITING)
+// HEALTH ENDPOINTS (ANTES RATE LIMIT)
 // ========================================
 
 app.use('/api', healthRouter);
-
-// Health endpoints alternativos
 app.get('/health', (req, res) => res.redirect('/api/liveness'));
-app.get('/ping', (req, res) => res.json({ status: 'pong', timestamp: new Date().toISOString() }));
-
-// ========================================
-// SANITIZAÇÃO ESPECÍFICA
-// ========================================
-
-app.use('/api/emotional/analyze', sanitizeEmotional);
-
-// ========================================
-// RATE LIMITING (APÓS HEALTH CHECKS)
-// ========================================
-
-app.use(rateLimitMiddleware.middleware());
-
-// Rate limiting específico para endpoints sensíveis
-app.use('/api/emotional', rateLimitMiddleware.strictMiddleware({
-  maxRequests: 50,
-  windowSeconds: 300,
-  blockDurationSeconds: 600
+app.get('/ping', (req, res) => res.json({ 
+  status: 'pong', 
+  timestamp: new Date().toISOString() 
 }));
 
 // ========================================
-// ROTAS DA APLICAÇÃO
+// SANITIZAÇÃO E RATE LIMITING
+// ========================================
+
+app.use('/api/emotional/analyze', sanitizeEmotional);
+app.use(rateLimit); // Rate limiting APÓS health checks
+
+// ========================================
+// APPLICATION ROUTES
 // ========================================
 
 app.use('/api', setupRoutes());
 
 // ========================================
-// MIDDLEWARE DE ERRO (ÚLTIMO)
+// ERROR HANDLING
 // ========================================
 
-app.use(errorMiddleware);
+app.use((error: any, req: any, res: any, next: any) => {
+  logger.error('Unhandled error:', {
+    error: error.message,
+    url: req.url,
+    method: req.method
+  });
+
+  res.status(500).json({
+    error: 'Internal server error',
+    timestamp: new Date().toISOString()
+  });
+});
 
 // ========================================
-// INICIALIZAÇÃO DO SERVIDOR
+// SERVER START
 // ========================================
 
-app.listen(config.PORT, async () => {
+const PORT = config.PORT || 3001;
+
+app.listen(PORT, () => {
   logger.info('Genesis Luminal Backend started', {
-    port: config.PORT,
-    environment: config.NODE_ENV,
-    frontendUrl: config.FRONTEND_URL,
-    claudeConfigured: !!config.CLAUDE_API_KEY,
-    requestTimeout: config.REQUEST_TIMEOUT_MS,
-    rateLimit: {
-      maxRequests: config.RATE_LIMIT_MAX,
-      windowSeconds: config.RATE_LIMIT_WINDOW_SEC
-    }
+    port: PORT,
+    environment: process.env.NODE_ENV || 'development',
+    claudeConfigured: !!config.CLAUDE_API_KEY
   });
 
-  // Verificar saúde da infraestrutura
-  const cacheHealthy = await cacheService.isHealthy();
-  logger.info('Infrastructure health check', {
-    cache: cacheHealthy ? 'healthy' : 'unhealthy'
-  });
-
-  logger.info('Protected endpoints:', {
-    health: ['/api/liveness', '/api/readiness', '/api/status'],
-    rateLimited: ['/api/emotional/*'],
-    strictRateLimit: ['/api/emotional/analyze']
+  logger.info('Infrastructure status:', {
+    healthEndpoints: ['/api/liveness', '/api/readiness'],
+    rateLimitEnabled: true,
+    securityEnabled: true
   });
 });
 
-// ========================================
-// GRACEFUL SHUTDOWN
-// ========================================
-
+// Graceful shutdown
 process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, shutting down gracefully');
+  logger.info('Shutting down gracefully');
   process.exit(0);
 });
-
-process.on('SIGINT', () => {
-  logger.info('SIGINT received, shutting down gracefully');
-  process.exit(0);
-});
-
-export { cacheService, rateLimitMiddleware };

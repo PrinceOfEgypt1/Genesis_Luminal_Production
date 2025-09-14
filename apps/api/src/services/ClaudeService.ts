@@ -1,4 +1,4 @@
-import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '../../../../packages/shared/types/api';
+import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '@/shared/types/api';
 import { ProviderRouter } from '../providers/ProviderRouter';
 import { extractTextFromRequest } from '../providers/AIProvider';
 
