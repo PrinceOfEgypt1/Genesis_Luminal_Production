@@ -1,6 +1,27 @@
 /**
- * Entidade de domínio para health checks
+ * Health Domain Entity - Clean Architecture
+ * ATUALIZADO: Entidade de domínio completa para health checks
  */
+
+export enum HealthStatus {
+  HEALTHY = 'healthy',
+  UNHEALTHY = 'unhealthy',
+  UNKNOWN = 'unknown'
+}
+
+export enum SystemStatus {
+  OPERATIONAL = 'operational',
+  DEGRADED = 'degraded',
+  DOWN = 'down'
+}
+
+export interface ServiceHealth {
+  name: string;
+  status: HealthStatus;
+  lastCheck: Date;
+  responseTime?: number;
+  details?: Record<string, any>;
+}
 
 export class HealthEntity {
   constructor(
@@ -10,47 +31,58 @@ export class HealthEntity {
   ) {}
 
   static create(services: ServiceHealth[]): HealthEntity {
-    const overallStatus = services.every(s => s.status === 'healthy') 
+    const overallStatus = services.every(s => s.status === HealthStatus.HEALTHY) 
       ? HealthStatus.HEALTHY 
-      : services.some(s => s.status === 'degraded')
-      ? HealthStatus.DEGRADED
-      : HealthStatus.UNHEALTHY;
-
-    return new HealthEntity(new Date(), overallStatus, services);
+      : services.some(s => s.status === HealthStatus.UNHEALTHY)
+      ? HealthStatus.UNHEALTHY
+      : HealthStatus.UNKNOWN;
+    
+    return new HealthEntity(
+      new Date(),
+      overallStatus,
+      services
+    );
   }
 
-  isHealthy(): boolean {
+  public isHealthy(): boolean {
     return this.status === HealthStatus.HEALTHY;
   }
 
-  getUnhealthyServices(): ServiceHealth[] {
-    return this.services.filter(s => s.status !== 'healthy');
+  public getUnhealthyServices(): ServiceHealth[] {
+    return this.services.filter(s => s.status !== HealthStatus.HEALTHY);
   }
 
-  toResponse() {
+  public getSystemStatus(): SystemStatus {
+    if (this.status === HealthStatus.HEALTHY) {
+      return SystemStatus.OPERATIONAL;
+    }
+    
+    const unhealthyCount = this.getUnhealthyServices().length;
+    const totalCount = this.services.length;
+    
+    // Se mais de 50% dos serviços estão falhando, sistema está DOWN
+    if (unhealthyCount / totalCount > 0.5) {
+      return SystemStatus.DOWN;
+    }
+    
+    return SystemStatus.DEGRADED;
+  }
+
+  public toJSON() {
     return {
-      status: this.status,
       timestamp: this.timestamp.toISOString(),
+      status: this.status,
+      systemStatus: this.getSystemStatus(),
+      isHealthy: this.isHealthy(),
       services: this.services.map(s => ({
-        name: s.name,
-        status: s.status,
-        responseTime: s.responseTime,
-        lastCheck: s.lastCheck?.toISOString()
-      }))
+        ...s,
+        lastCheck: s.lastCheck.toISOString()
+      })),
+      summary: {
+        total: this.services.length,
+        healthy: this.services.filter(s => s.status === HealthStatus.HEALTHY).length,
+        unhealthy: this.getUnhealthyServices().length
+      }
     };
   }
-}
-
-export enum HealthStatus {
-  HEALTHY = 'healthy',
-  DEGRADED = 'degraded',
-  UNHEALTHY = 'unhealthy'
-}
-
-export interface ServiceHealth {
-  name: string;
-  status: 'healthy' | 'degraded' | 'unhealthy';
-  responseTime?: number;
-  lastCheck?: Date;
-  error?: string;
 }

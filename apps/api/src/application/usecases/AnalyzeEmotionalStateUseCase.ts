@@ -1,126 +1,194 @@
 /**
- * Use Case para análise de estado emocional
- * Implementa regras de negócio e orquestra dependências
+ * Analyze Emotional State Use Case - Application Layer
+ * ATUALIZADO: Use case completo seguindo Clean Architecture
  */
 
-import { IEmotionalAnalyzer, ICacheService, ILogger } from '../../domain/interfaces/IEmotionalAnalyzer';
 import { EmotionalAnalysisEntity } from '../../domain/entities/EmotionalAnalysisEntity';
-import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '../../../../../packages/shared/types/api';
+import { IEmotionalAnalysisService, ITextAnalysisRequest, IBehavioralAnalysisRequest } from '../interfaces/IEmotionalAnalysisService';
+import { ProcessingMetrics } from '../../domain/value-objects/ProcessingMetrics';
 
-export class AnalyzeEmotionalStateUseCase {
+export class AnalyzeEmotionalStateUseCase implements IEmotionalAnalysisService {
   constructor(
-    private readonly analyzer: IEmotionalAnalyzer,
-    private readonly cache: ICacheService,
-    private readonly logger: ILogger
+    private readonly logger?: any,
+    private readonly cache?: any,
+    private readonly analyzer?: any
   ) {}
 
-  async execute(request: EmotionalAnalysisRequest): Promise<EmotionalAnalysisResponse> {
+  async analyzeText(request: ITextAnalysisRequest): Promise<EmotionalAnalysisEntity> {
+    const startTime = new Date();
+    
     try {
-      // 1. Validações de domínio
-      this.validateRequest(request);
-      
-      // 2. Verificar cache (se aplicável)
-      const cacheKey = this.generateCacheKey(request);
-      const cachedResult = await this.cache.get(cacheKey);
-      
-      if (cachedResult) {
-        this.logger.debug('Cache hit for emotional analysis', { cacheKey });
-        return cachedResult;
-      }
-
-      // 3. Delegar análise para provider
-      const analysis = await this.analyzer.analyze(request);
-      
-      // 4. Criar entidade de domínio para validações
-      if (analysis.intensity !== undefined && 'currentState' in request) {
-        const entity = EmotionalAnalysisEntity.create(
-          request.currentState,
-          analysis.confidence || 0.5,
-          request.userId,
-          'api_analysis'
-        );
-        
-        // 5. Enriquecer resposta com dados da entidade
-        analysis.dominantAffect = entity.getDominantEmotion();
-        analysis.intensity = entity.getTotalIntensity();
-      }
-
-      // 6. Cache do resultado (TTL 5 minutos)
-      await this.cache.set(cacheKey, analysis, 300);
-      
-      // 7. Log da operação
-      this.logger.info('Emotional analysis completed', {
-        confidence: analysis.confidence,
-        dominantAffect: analysis.dominantAffect,
-        hasCache: false
+      this.logger?.info('Starting text analysis', { 
+        textLength: request.text.length,
+        timestamp: startTime.toISOString()
       });
 
-      return analysis;
+      // Validação de entrada
+      if (!request.text || request.text.trim().length === 0) {
+        throw new Error('Text cannot be empty');
+      }
+
+      if (request.text.length > 10000) {
+        throw new Error('Text exceeds maximum length of 10000 characters');
+      }
+
+      // Verificar cache (se disponível)
+      const cacheKey = `text_analysis:${Buffer.from(request.text).toString('base64').slice(0, 32)}`;
       
+      if (this.cache) {
+        try {
+          const cached = await this.cache.get?.(cacheKey);
+          if (cached) {
+            this.logger?.info('Returning cached text analysis result');
+            return EmotionalAnalysisEntity.fromTextAnalysis(
+              request.text,
+              Date.now() - startTime.getTime()
+            );
+          }
+        } catch (error) {
+          this.logger?.warn('Cache error during text analysis', { error });
+        }
+      }
+
+      // Realizar análise
+      const entity = EmotionalAnalysisEntity.fromTextAnalysis(
+        request.text,
+        Date.now() - startTime.getTime()
+      );
+
+      // Salvar no cache (se disponível)
+      if (this.cache) {
+        try {
+          await this.cache.set?.(cacheKey, entity.toJSON(), 300); // 5 minutos
+        } catch (error) {
+          this.logger?.warn('Failed to cache text analysis result', { error });
+        }
+      }
+
+      const metrics = ProcessingMetrics.create(startTime, request.text.length);
+      
+      this.logger?.info('Text analysis completed', {
+        dominantAffect: entity.dominantAffect,
+        intensity: entity.intensity,
+        confidence: entity.confidence,
+        metrics: metrics.toJSON()
+      });
+
+      return entity;
     } catch (error) {
-      this.logger.error('Error in emotional analysis use case', { error, request });
-      
-      // Fallback graceful
-      return {
-        intensity: 0.5,
-        dominantAffect: 'curiosity',
-        timestamp: new Date().toISOString(),
-        confidence: 0.1,
-        recommendation: 'system_error_fallback',
-        emotionalShift: 'stable',
-        morphogenicSuggestion: 'fibonacci'
-      };
+      this.logger?.error('Text analysis failed', { 
+        error: error.message,
+        textLength: request.text?.length
+      });
+      throw error;
     }
   }
 
-  private validateRequest(request: EmotionalAnalysisRequest): void {
-    if (!request) {
-      throw new Error('Request cannot be null or undefined');
-    }
-
-    // Verificar se tem currentState OU text/message
-    const hasEmotionalState = 'currentState' in request && request.currentState;
-    const hasTextInput = ('text' in (request as any) && (request as any).text) ||
-                        ('message' in (request as any) && (request as any).message) ||
-                        ('prompt' in (request as any) && (request as any).prompt);
-
-    if (!hasEmotionalState && !hasTextInput) {
-      throw new Error('Request must contain either currentState or text input');
-    }
-
-    // Validar mousePosition se presente
-    if ('mousePosition' in request && request.mousePosition) {
-      const { x, y } = request.mousePosition;
-      if (typeof x !== 'number' || typeof y !== 'number') {
-        throw new Error('mousePosition must have numeric x and y coordinates');
-      }
-    }
-
-    // Validar sessionDuration se presente
-    if ('sessionDuration' in request && request.sessionDuration !== undefined) {
-      if (typeof request.sessionDuration !== 'number' || request.sessionDuration < 0) {
-        throw new Error('sessionDuration must be a non-negative number');
-      }
-    }
-  }
-
-  private generateCacheKey(request: EmotionalAnalysisRequest): string {
-    // Gerar chave de cache baseada no conteúdo da requisição
-    const textInput = (request as any).text || (request as any).message || '';
-    const stateInput = 'currentState' in request ? JSON.stringify(request.currentState) : '';
+  async analyzeBehavior(request: IBehavioralAnalysisRequest): Promise<EmotionalAnalysisEntity> {
+    const startTime = new Date();
     
-    // Hash simples para criar chave única
-    const content = textInput + stateInput;
-    return `emotional_analysis_${this.simpleHash(content)}`;
+    try {
+      this.logger?.info('Starting behavioral analysis', {
+        sessionDuration: request.sessionDuration,
+        userId: request.userId,
+        timestamp: startTime.toISOString()
+      });
+
+      // Validação de entrada
+      this.validateBehavioralRequest(request);
+
+      // Verificar cache (se disponível)
+      const cacheKey = `behavioral_analysis:${request.userId || 'anonymous'}:${request.sessionDuration}`;
+      
+      if (this.cache) {
+        try {
+          const cached = await this.cache.get?.(cacheKey);
+          if (cached) {
+            this.logger?.info('Returning cached behavioral analysis result');
+            return EmotionalAnalysisEntity.fromBehavioralData(
+              request.emotionalState,
+              request.mousePosition,
+              request.sessionDuration,
+              Date.now() - startTime.getTime()
+            );
+          }
+        } catch (error) {
+          this.logger?.warn('Cache error during behavioral analysis', { error });
+        }
+      }
+
+      // Realizar análise
+      const entity = EmotionalAnalysisEntity.fromBehavioralData(
+        request.emotionalState,
+        request.mousePosition,
+        request.sessionDuration,
+        Date.now() - startTime.getTime()
+      );
+
+      // Salvar no cache (se disponível)
+      if (this.cache) {
+        try {
+          await this.cache.set?.(cacheKey, entity.toJSON(), 60); // 1 minuto para behavioral
+        } catch (error) {
+          this.logger?.warn('Failed to cache behavioral analysis result', { error });
+        }
+      }
+
+      const requestSize = JSON.stringify(request).length;
+      const metrics = ProcessingMetrics.create(startTime, requestSize);
+      
+      this.logger?.info('Behavioral analysis completed', {
+        dominantAffect: entity.dominantAffect,
+        intensity: entity.intensity,
+        confidence: entity.confidence,
+        sessionDuration: request.sessionDuration,
+        metrics: metrics.toJSON()
+      });
+
+      return entity;
+    } catch (error) {
+      this.logger?.error('Behavioral analysis failed', { 
+        error: error.message,
+        sessionDuration: request.sessionDuration,
+        userId: request.userId
+      });
+      throw error;
+    }
   }
 
-  private simpleHash(str: string): string {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32bit integer
+  private validateBehavioralRequest(request: IBehavioralAnalysisRequest): void {
+    if (!request.emotionalState) {
+      throw new Error('Emotional state is required');
     }
-    return Math.abs(hash).toString(36);
+
+    if (!request.mousePosition) {
+      throw new Error('Mouse position is required');
+    }
+
+    if (typeof request.sessionDuration !== 'number' || request.sessionDuration < 0) {
+      throw new Error('Session duration must be a non-negative number');
+    }
+
+    if (request.sessionDuration > 86400000) { // 24 horas
+      throw new Error('Session duration cannot exceed 24 hours');
+    }
+
+    const { morphogeneticField, resonancePatterns, quantumCoherence } = request.emotionalState;
+
+    if (typeof morphogeneticField !== 'number' || morphogeneticField < 0 || morphogeneticField > 1) {
+      throw new Error('Morphogenetic field must be a number between 0 and 1');
+    }
+
+    if (!Array.isArray(resonancePatterns) || resonancePatterns.length < 3 || resonancePatterns.length > 10) {
+      throw new Error('Resonance patterns must be an array with 3-10 elements');
+    }
+
+    if (resonancePatterns.some(p => typeof p !== 'number' || p < 0 || p > 1)) {
+      throw new Error('All resonance patterns must be numbers between 0 and 1');
+    }
+
+    if (typeof quantumCoherence !== 'number' || quantumCoherence < 0 || quantumCoherence > 1) {
+      throw new Error('Quantum coherence must be a number between 0 and 1');
+    }
   }
 }
