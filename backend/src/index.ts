@@ -5,6 +5,7 @@
  * 
  * CORREÇÃO: Rate limit aplicado APÓS rotas de saúde
  * MELHORIA: Security middleware separado seguindo SRP
+ * FIX: Export default para compatibilidade com testes
  */
 
 import express from 'express';
@@ -93,43 +94,49 @@ app.use('/api', setupRoutes());
 app.use(errorMiddleware);
 
 // ========================================
-// INICIALIZAÇÃO DO SERVIDOR
+// INICIALIZAÇÃO DO SERVIDOR (apenas se não for teste)
 // ========================================
 
 const PORT = config.PORT || 3001;
 
-app.listen(PORT, () => {
-  logger.info('🚀 ===== GENESIS LUMINAL BACKEND INICIADO =====');
-  logger.info(`📡 Servidor rodando na porta: ${PORT}`);
-  logger.info(`🌐 Frontend URL: ${config.FRONTEND_URL}`);
-  logger.info(`🧠 Claude API: ${config.CLAUDE_API_KEY ? 'Configurado' : 'Missing'}`);
-  logger.info(`⏱️ Request timeout: ${REQUEST_TIMEOUT_MS}ms`);
-  logger.info(`🛡️ Ambiente: ${config.NODE_ENV}`);
-  logger.info(`🔒 Security middleware: Ativo`);
-  logger.info(`📊 Health endpoints: /api/liveness, /api/readiness, /api/status`);
-  logger.info(`⚡ Rate limiting: Ativo (exceto health checks)`);
-  logger.info('✅ TRILHO B - Ação 6: Infraestrutura Crosscutting separada');
-  logger.info('🎯 ===== SERVIDOR PRONTO PARA RECEBER REQUESTS =====');
-});
+// Só inicia servidor se não estiver sendo importado para testes
+if (require.main === module) {
+  app.listen(PORT, () => {
+    logger.info('🚀 ===== GENESIS LUMINAL BACKEND INICIADO =====');
+    logger.info(`📡 Servidor rodando na porta: ${PORT}`);
+    logger.info(`🌐 Frontend URL: ${config.FRONTEND_URL}`);
+    logger.info(`🧠 Claude API: ${config.CLAUDE_API_KEY ? 'Configurado' : 'Missing'}`);
+    logger.info(`⏱️ Request timeout: ${REQUEST_TIMEOUT_MS}ms`);
+    logger.info(`🛡️ Ambiente: ${config.NODE_ENV}`);
+    logger.info(`🔒 Security middleware: Ativo`);
+    logger.info(`📊 Health endpoints: /api/liveness, /api/readiness, /api/status`);
+    logger.info(`⚡ Rate limiting: Ativo (exceto health checks)`);
+    logger.info('✅ TRILHO B - Ação 6: Infraestrutura Crosscutting separada');
+    logger.info('🎯 ===== SERVIDOR PRONTO PARA RECEBER REQUESTS =====');
+  });
 
-// Graceful shutdown
-process.on('SIGINT', () => {
-  logger.info('🛑 Recebido SIGINT, iniciando graceful shutdown...');
-  process.exit(0);
-});
+  // Graceful shutdown
+  process.on('SIGINT', () => {
+    logger.info('🛑 Recebido SIGINT, iniciando graceful shutdown...');
+    process.exit(0);
+  });
 
-process.on('SIGTERM', () => {
-  logger.info('🛑 Recebido SIGTERM, iniciando graceful shutdown...');
-  process.exit(0);
-});
+  process.on('SIGTERM', () => {
+    logger.info('🛑 Recebido SIGTERM, iniciando graceful shutdown...');
+    process.exit(0);
+  });
 
-// Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-  logger.error('💥 Uncaught Exception:', error);
-  process.exit(1);
-});
+  // Handle uncaught exceptions
+  process.on('uncaughtException', (error) => {
+    logger.error('💥 Uncaught Exception:', error);
+    process.exit(1);
+  });
 
-process.on('unhandledRejection', (reason, promise) => {
-  logger.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
-  process.exit(1);
-});
+  process.on('unhandledRejection', (reason, promise) => {
+    logger.error('💥 Unhandled Rejection at:', promise, 'reason:', reason);
+    process.exit(1);
+  });
+}
+
+// ✅ EXPORT DEFAULT para compatibilidade com testes
+export default app;
