@@ -1,12 +1,12 @@
 /**
- * GENESIS LUMINAL - RATE LIMITING GRANULAR OWASP
+ * GENESIS LUMINAL - RATE LIMITING GRANULAR OWASP [CORRIGIDO]
  * Sistema avançado de rate limiting por tipo de rota
  * Implementa proteção contra ataques de DDoS e abuse
  */
 
 import { Request, Response, NextFunction } from 'express';
 import { RateLimiterMemory } from 'rate-limiter-flexible';
-import { RATE_LIMITS, ROUTE_RATE_MAPPING } from '../config/security';
+import { RATE_LIMITS, ROUTE_RATE_MAPPING, RateLimitType } from '../config/security';
 import { logger } from '../utils/logger';
 
 /**
@@ -63,22 +63,24 @@ function getClientKey(req: Request): string {
 }
 
 /**
- * FUNÇÃO PARA DETERMINAR TIPO DE RATE LIMIT DA ROTA
+ * FUNÇÃO PARA DETERMINAR TIPO DE RATE LIMIT DA ROTA [CORRIGIDA]
  */
-function getRateLimitType(path: string): keyof typeof RATE_LIMITS {
+function getRateLimitType(path: string): RateLimitType {
   for (const mapping of ROUTE_RATE_MAPPING) {
     if (mapping.pattern.test(path)) {
+      // ✅ CORREÇÃO: mapping.limit já é do tipo RateLimitType correto
       return mapping.limit;
     }
   }
-  return 'normal'; // fallback
+  // ✅ CORREÇÃO: Fallback explícito com tipo correto
+  return 'normal' as RateLimitType;
 }
 
 /**
- * MIDDLEWARE DE RATE LIMITING GRANULAR
+ * MIDDLEWARE DE RATE LIMITING GRANULAR [CORRIGIDO]
  * Aplica diferentes limites baseado no tipo de endpoint
  */
-export async function granularRateLimit(req: Request, res: Response, next: NextFunction) {
+export async function granularRateLimit(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const rateLimitType = getRateLimitType(req.path);
     const limiter = rateLimiters[rateLimitType];
@@ -103,6 +105,7 @@ export async function granularRateLimit(req: Request, res: Response, next: NextF
     res.setHeader('X-RateLimit-Reset', new Date(Date.now() + resRateLimit.msBeforeNext || 0).toISOString());
     res.setHeader('X-RateLimit-Type', rateLimitType);
 
+    // ✅ CORREÇÃO: Sempre chamar next() para continuar o pipeline
     next();
     
   } catch (rejRes: any) {
@@ -138,21 +141,23 @@ export async function granularRateLimit(req: Request, res: Response, next: NextF
       health: 'Monitoring endpoint rate limit exceeded.' // Não deve acontecer com limites altos
     };
 
-    return res.status(429).json({
+    // ✅ CORREÇÃO: Return para sair da função após enviar resposta
+    res.status(429).json({
       error: 'Too Many Requests',
       message: errorMessages[rateLimitType],
       retryAfter: retryAfterSeconds,
       type: rateLimitType,
       timestamp: new Date().toISOString()
     });
+    return; // Explicit return para TypeScript
   }
 }
 
 /**
- * MIDDLEWARE ESPECÍFICO PARA HEALTH CHECKS
+ * MIDDLEWARE ESPECÍFICO PARA HEALTH CHECKS [CORRIGIDO]
  * Sem rate limiting para endpoints críticos de monitoring
  */
-export function healthCheckRateLimit(req: Request, res: Response, next: NextFunction) {
+export function healthCheckRateLimit(req: Request, res: Response, next: NextFunction): void {
   // Health checks passam direto sem limitação
   // Apenas log para auditoria
   logger.debug('Health check access', {
@@ -163,14 +168,15 @@ export function healthCheckRateLimit(req: Request, res: Response, next: NextFunc
     timestamp: new Date().toISOString()
   });
   
+  // ✅ CORREÇÃO: Sempre chamar next()
   next();
 }
 
 /**
- * MIDDLEWARE DE RATE LIMITING ADAPTATIVO
+ * MIDDLEWARE DE RATE LIMITING ADAPTATIVO [CORRIGIDO]
  * Ajusta limites baseado na carga do sistema
  */
-export function adaptiveRateLimit(req: Request, res: Response, next: NextFunction) {
+export function adaptiveRateLimit(req: Request, res: Response, next: NextFunction): Promise<void> {
   // Para implementação futura: ajustar rate limits baseado em:
   // - CPU usage
   // - Memory usage  

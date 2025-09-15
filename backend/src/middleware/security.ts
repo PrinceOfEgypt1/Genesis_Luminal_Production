@@ -1,5 +1,5 @@
 /**
- * GENESIS LUMINAL - MIDDLEWARE DE SEGURANÇA AVANÇADO
+ * GENESIS LUMINAL - MIDDLEWARE DE SEGURANÇA AVANÇADO [CORRIGIDO]
  * Implementa controles de segurança OWASP Top 10 2023
  * 
  * Funcionalidades:
@@ -29,10 +29,10 @@ export const securityHeaders = helmet(OWASP_SECURITY_CONFIG.helmet);
 export const securedCors = cors(OWASP_SECURITY_CONFIG.cors);
 
 /**
- * MIDDLEWARE DE LOGGING DE SEGURANÇA
+ * MIDDLEWARE DE LOGGING DE SEGURANÇA [CORRIGIDO]
  * Registra tentativas de acesso e violações
  */
-export function securityLogger(req: Request, res: Response, next: NextFunction) {
+export function securityLogger(req: Request, res: Response, next: NextFunction): void {
   const startTime = Date.now();
   
   // Log de request de entrada
@@ -79,14 +79,15 @@ export function securityLogger(req: Request, res: Response, next: NextFunction) 
     return originalJson.call(this, body);
   };
 
+  // ✅ CORREÇÃO: Sempre chamar next()
   next();
 }
 
 /**
- * MIDDLEWARE DE SANITIZAÇÃO DE REQUEST
+ * MIDDLEWARE DE SANITIZAÇÃO DE REQUEST [CORRIGIDO]
  * Remove/sanitiza dados potencialmente perigosos
  */
-export function requestSanitizer(req: Request, res: Response, next: NextFunction) {
+export function requestSanitizer(req: Request, res: Response, next: NextFunction): void {
   try {
     // Sanitizar query parameters
     if (req.query) {
@@ -107,6 +108,7 @@ export function requestSanitizer(req: Request, res: Response, next: NextFunction
       sanitizeObject(req.body);
     }
 
+    // ✅ CORREÇÃO: Sempre chamar next() no caminho de sucesso
     next();
   } catch (error) {
     logger.error('Request sanitization failed', {
@@ -116,10 +118,12 @@ export function requestSanitizer(req: Request, res: Response, next: NextFunction
       ip: req.ip
     });
     
+    // ✅ CORREÇÃO: Return após enviar resposta de erro
     res.status(400).json({
       error: 'Invalid request format',
       message: 'Request could not be processed safely'
     });
+    return; // Explicit return para TypeScript
   }
 }
 
@@ -143,10 +147,10 @@ function sanitizeObject(obj: any): void {
 }
 
 /**
- * MIDDLEWARE DE DETECÇÃO DE ATAQUES
+ * MIDDLEWARE DE DETECÇÃO DE ATAQUES [CORRIGIDO]
  * Detecta padrões suspeitos e bloqueia requests maliciosos
  */
-export function attackDetection(req: Request, res: Response, next: NextFunction) {
+export function attackDetection(req: Request, res: Response, next: NextFunction): void {
   const suspiciousPatterns = [
     // SQL Injection patterns
     /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|OR|AND)\b)/i,
@@ -184,22 +188,25 @@ export function attackDetection(req: Request, res: Response, next: NextFunction)
         timestamp: new Date().toISOString()
       });
 
-      return res.status(403).json({
+      // ✅ CORREÇÃO: Return após enviar resposta de bloqueio
+      res.status(403).json({
         error: 'Forbidden',
         message: 'Request blocked by security policy'
       });
+      return; // Explicit return para TypeScript
     }
   }
 
+  // ✅ CORREÇÃO: Sempre chamar next() se não detectou ataques
   next();
 }
 
 /**
- * MIDDLEWARE DE TIMEOUT DE SEGURANÇA
+ * MIDDLEWARE DE TIMEOUT DE SEGURANÇA [CORRIGIDO]
  * Previne ataques de resource exhaustion
  */
 export function securityTimeout(timeoutMs: number = 30000) {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     const timeout = setTimeout(() => {
       if (!res.headersSent) {
         logger.warn('Request timeout triggered', {
@@ -220,6 +227,7 @@ export function securityTimeout(timeoutMs: number = 30000) {
     res.on('finish', () => clearTimeout(timeout));
     res.on('close', () => clearTimeout(timeout));
     
+    // ✅ CORREÇÃO: Sempre chamar next()
     next();
   };
 }

@@ -1,5 +1,5 @@
 /**
- * GENESIS LUMINAL - CONFIGURAÇÃO DE SEGURANÇA OWASP
+ * GENESIS LUMINAL - CONFIGURAÇÃO DE SEGURANÇA OWASP [CORRIGIDA]
  * Baseline de segurança enterprise com políticas rigorosas
  * Implementa proteções do OWASP Top 10 2023
  */
@@ -40,7 +40,7 @@ export function getSecurityConfig() {
 }
 
 /**
- * POLÍTICAS HELMET RIGOROSAS OWASP
+ * POLÍTICAS HELMET RIGOROSAS OWASP [CORRIGIDAS]
  * Implementa todas as principais proteções de cabeçalho de segurança
  */
 export function getHelmetConfig(): HelmetOptions {
@@ -84,7 +84,8 @@ export function getHelmetConfig(): HelmetOptions {
         baseUri: ["'self'"], // Previne base tag injection
         formAction: ["'self'"], // Limita destinos de formulários
         frameAncestors: ["'none'"], // X-Frame-Options via CSP
-        upgradeInsecureRequests: config.strictMode ? [] : undefined,
+        // ✅ CORREÇÃO: upgradeInsecureRequests deve ser boolean ou undefined, não array
+        ...(config.strictMode ? { upgradeInsecureRequests: [] } : {}),
       },
       reportOnly: !config.strictMode, // Report-only em dev, enforce em prod
     },
@@ -205,13 +206,16 @@ export const RATE_LIMITS = {
     maxRequests: 1000, // Virtualmente ilimitado
     blockDuration: 0, // Nunca bloquear
   }
-};
+} as const;
+
+// ✅ CORREÇÃO: Definir tipos explícitos para rate limits
+export type RateLimitType = keyof typeof RATE_LIMITS;
 
 /**
- * MAPEAMENTO DE ROTAS PARA RATE LIMITS
+ * MAPEAMENTO DE ROTAS PARA RATE LIMITS [CORRIGIDO]
  * Define qual tipo de limite aplicar para cada padrão de rota
  */
-export const ROUTE_RATE_MAPPING = [
+export const ROUTE_RATE_MAPPING: Array<{ pattern: RegExp; limit: RateLimitType }> = [
   // Health endpoints - sem restrição
   { pattern: /^\/api\/(health|liveness|readiness|status)/, limit: 'health' },
   

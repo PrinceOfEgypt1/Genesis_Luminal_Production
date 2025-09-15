@@ -1,5 +1,5 @@
 /**
- * GENESIS LUMINAL - MIDDLEWARE DE VALIDAÇÃO ROBUSTA
+ * GENESIS LUMINAL - MIDDLEWARE DE VALIDAÇÃO ROBUSTA [CORRIGIDO]
  * Validação de entrada em 100% dos endpoints usando Zod
  * Implementa práticas de segurança OWASP para input validation
  */
@@ -47,7 +47,7 @@ export const ApiHeadersSchema = z.object({
 }).passthrough(); // Permite outros headers
 
 /**
- * FACTORY PARA CRIAR MIDDLEWARE DE VALIDAÇÃO
+ * FACTORY PARA CRIAR MIDDLEWARE DE VALIDAÇÃO [CORRIGIDA]
  * Cria middleware personalizado para cada tipo de validação
  */
 export function createValidationMiddleware(options: {
@@ -56,7 +56,8 @@ export function createValidationMiddleware(options: {
   params?: ZodSchema;
   headers?: ZodSchema;
 }) {
-  return async (req: Request, res: Response, next: NextFunction) => {
+  // ✅ CORREÇÃO: Return explícito da função middleware
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const validationErrors: string[] = [];
 
@@ -120,14 +121,17 @@ export function createValidationMiddleware(options: {
           timestamp: new Date().toISOString()
         });
 
-        return res.status(400).json({
+        // ✅ CORREÇÃO: Return após enviar resposta de erro
+        res.status(400).json({
           error: 'Validation Error',
           message: 'Request data does not meet security requirements',
           details: validationErrors,
           timestamp: new Date().toISOString()
         });
+        return; // Explicit return para TypeScript
       }
 
+      // ✅ CORREÇÃO: Sempre chamar next() no caminho de sucesso
       next();
     } catch (error) {
       logger.error('Validation middleware error', {
@@ -137,10 +141,12 @@ export function createValidationMiddleware(options: {
         ip: req.ip
       });
 
+      // ✅ CORREÇÃO: Return após enviar resposta de erro
       res.status(500).json({
         error: 'Internal Server Error',
         message: 'Validation process failed'
       });
+      return; // Explicit return para TypeScript
     }
   };
 }
@@ -167,10 +173,10 @@ export const validateApiHeaders = createValidationMiddleware({
 });
 
 /**
- * MIDDLEWARE DE SANITIZAÇÃO AVANÇADA
+ * MIDDLEWARE DE SANITIZAÇÃO AVANÇADA [CORRIGIDO]
  * Limpa e normaliza dados após validação
  */
-export function advancedSanitization(req: Request, res: Response, next: NextFunction) {
+export function advancedSanitization(req: Request, res: Response, next: NextFunction): void {
   try {
     // Sanitizar strings no body
     if (req.body && typeof req.body === 'object') {
@@ -187,6 +193,7 @@ export function advancedSanitization(req: Request, res: Response, next: NextFunc
       sanitizeObjectStrings(req.params);
     }
 
+    // ✅ CORREÇÃO: Sempre chamar next() no caminho de sucesso
     next();
   } catch (error) {
     logger.error('Advanced sanitization failed', {
@@ -195,10 +202,12 @@ export function advancedSanitization(req: Request, res: Response, next: NextFunc
       method: req.method
     });
 
+    // ✅ CORREÇÃO: Return após enviar resposta de erro
     res.status(400).json({
       error: 'Data Processing Error',
       message: 'Request data could not be safely processed'
     });
+    return; // Explicit return para TypeScript
   }
 }
 
@@ -226,11 +235,12 @@ function sanitizeObjectStrings(obj: any): void {
 }
 
 /**
- * MIDDLEWARE PARA LIMITAR TAMANHO DE PAYLOAD
+ * MIDDLEWARE PARA LIMITAR TAMANHO DE PAYLOAD [CORRIGIDO]
  * Previne ataques de DoS via payloads grandes
  */
 export function payloadSizeLimit(maxSizeBytes: number = 1024 * 1024) { // 1MB default
-  return (req: Request, res: Response, next: NextFunction) => {
+  // ✅ CORREÇÃO: Return explícito da função middleware
+  return (req: Request, res: Response, next: NextFunction): void => {
     const payloadSize = parseInt(req.get('content-length') || '0', 10);
     
     if (payloadSize > maxSizeBytes) {
@@ -243,12 +253,15 @@ export function payloadSizeLimit(maxSizeBytes: number = 1024 * 1024) { // 1MB de
         ip: req.ip
       });
 
-      return res.status(413).json({
+      // ✅ CORREÇÃO: Return após enviar resposta de erro
+      res.status(413).json({
         error: 'Payload Too Large',
         message: `Request size ${payloadSize} bytes exceeds limit of ${maxSizeBytes} bytes`
       });
+      return; // Explicit return para TypeScript
     }
 
+    // ✅ CORREÇÃO: Sempre chamar next() se payload OK
     next();
   };
 }
