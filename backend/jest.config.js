@@ -1,6 +1,8 @@
 /**
- * Configuração Jest para Genesis Luminal Backend
- * Suporte completo para TypeScript com ts-jest
+ * Configuração Jest Moderna - Genesis Luminal Backend
+ * ✅ Sem warnings de configuração
+ * ✅ Compatível com ts-jest v29+
+ * ✅ Configuração moderna e limpa
  */
 
 module.exports = {
@@ -10,24 +12,30 @@ module.exports = {
   // Ambiente de teste
   testEnvironment: 'node',
   
-  // Diretórios de origem dos testes
+  // Diretórios de origem
   roots: ['<rootDir>/src'],
   
   // Padrões de arquivo de teste
   testMatch: [
     '**/__tests__/**/*.test.ts',
-    '**/__tests__/**/*.test.js',
-    '**/?(*.)+(spec|test).ts',
-    '**/?(*.)+(spec|test).js'
+    '**/__tests__/**/*.test.js'
   ],
   
-  // Extensões de arquivo para resolver
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+  // Extensões suportadas
+  moduleFileExtensions: ['ts', 'js', 'json'],
   
-  // Transformações de arquivo
+  // ✅ CONFIGURAÇÃO MODERNA ts-jest (sem warnings)
   transform: {
-    '^.+\\.ts$': 'ts-jest',
-    '^.+\\.tsx$': 'ts-jest',
+    '^.+\\.ts$': ['ts-jest', {
+      // Configuração inline moderna
+      tsconfig: 'tsconfig.json',
+      isolatedModules: false
+    }]
+  },
+  
+  // ✅ CORREÇÃO: moduleNameMapping → moduleNameMapper
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1'
   },
   
   // Cobertura de código
@@ -35,49 +43,24 @@ module.exports = {
     'src/**/*.ts',
     '!src/**/*.d.ts',
     '!src/__tests__/**',
-    '!src/index.ts', // Excluir arquivo principal que só inicia servidor
+    '!src/index.ts'
   ],
   
-  // Diretório de saída da cobertura
-  coverageDirectory: 'coverage',
-  
-  // Relatórios de cobertura
-  coverageReporters: [
-    'text',
-    'lcov',
-    'html'
-  ],
-  
-  // Setup após ambiente
-  setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
-  
-  // Timeout para testes
+  // Configurações de teste
   testTimeout: 10000,
-  
-  // Ignorar transformações para node_modules
-  transformIgnorePatterns: [
-    'node_modules/(?!(.*\\.mjs$))'
-  ],
-  
-  // Configuração do ts-jest
-  globals: {
-    'ts-jest': {
-      tsconfig: 'tsconfig.json',
-      isolatedModules: true
-    }
-  },
-  
-  // Módulos mock
-  moduleNameMapping: {
-    '^@/(.*)$': '<rootDir>/src/$1'
-  },
-  
-  // Limpar mocks automaticamente
   clearMocks: true,
-  
-  // Restaurar mocks automaticamente
   restoreMocks: true,
   
-  // Verbose output
-  verbose: true
+  // Setup
+  setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
+  
+  // Relatórios
+  coverageDirectory: 'coverage',
+  coverageReporters: ['text', 'lcov', 'html'],
+  
+  // Performance
+  maxWorkers: '50%',
+  
+  // Verbose apenas se necessário
+  verbose: false
 };
