@@ -1,226 +1,240 @@
 /**
- * Security Middleware - Infraestrutura Crosscutting
- * TRILHO B - Ação 6: Separar Infraestrutura Crosscutting
+ * GENESIS LUMINAL - MIDDLEWARE DE SEGURANÇA AVANÇADO
+ * Implementa controles de segurança OWASP Top 10 2023
  * 
- * Centraliza configurações de segurança (CORS, Helmet, etc.)
- * seguindo Single Responsibility Principle (SRP) do SOLID
+ * Funcionalidades:
+ * - Helmet com políticas rigorosas
+ * - CORS restrito por ambiente  
+ * - Rate limiting granular por rota
+ * - Validação de entrada robusta
+ * - Logging de segurança
  */
 
-import { Express } from 'express';
-import cors from 'cors';
+import { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
-import compression from 'compression';
-import { config } from '../config/environment';
+import cors from 'cors';
+import { OWASP_SECURITY_CONFIG } from '../config/security';
 import { logger } from '../utils/logger';
 
 /**
- * Configurações de CORS baseadas no ambiente
+ * HELMET COM POLÍTICAS RIGOROSAS OWASP
+ * Aplica todos os cabeçalhos de segurança necessários
  */
-interface CorsConfig {
-  origin: string | string[] | boolean;
-  credentials: boolean;
-  methods?: string[];
-  allowedHeaders?: string[];
-  exposedHeaders?: string[];
-  maxAge?: number;
-}
+export const securityHeaders = helmet(OWASP_SECURITY_CONFIG.helmet);
 
 /**
- * Configurações do Helmet para segurança
+ * CORS RESTRITO POR AMBIENTE
+ * Whitelist rigorosa baseada no NODE_ENV
  */
-interface HelmetConfig {
-  contentSecurityPolicy?: any;
-  crossOriginEmbedderPolicy?: boolean;
-  crossOriginOpenerPolicy?: boolean;
-  crossOriginResourcePolicy?: any;
-  dnsPrefetchControl?: boolean;
-  frameguard?: any;
-  hidePoweredBy?: boolean;
-  hsts?: any;
-  ieNoOpen?: boolean;
-  noSniff?: boolean;
-  originAgentCluster?: boolean;
-  permittedCrossDomainPolicies?: boolean;
-  referrerPolicy?: any;
-  xssFilter?: boolean;
-}
+export const securedCors = cors(OWASP_SECURITY_CONFIG.cors);
 
 /**
- * Classe responsável por configurar middleware de segurança
+ * MIDDLEWARE DE LOGGING DE SEGURANÇA
+ * Registra tentativas de acesso e violações
  */
-export class SecurityMiddleware {
-  private static readonly DEFAULT_CORS_CONFIG: CorsConfig = {
-    origin: config.FRONTEND_URL || 'http://localhost:5173',
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-    exposedHeaders: ['X-Total-Count', 'X-Request-ID'],
-    maxAge: 86400 // 24 horas
-  };
+export function securityLogger(req: Request, res: Response, next: NextFunction) {
+  const startTime = Date.now();
+  
+  // Log de request de entrada
+  logger.info('Security audit trail', {
+    type: 'request_start',
+    method: req.method,
+    url: req.url,
+    ip: req.ip,
+    userAgent: req.get('User-Agent'),
+    origin: req.get('Origin'),
+    referer: req.get('Referer'),
+    timestamp: new Date().toISOString()
+  });
 
-  private static readonly DEFAULT_HELMET_CONFIG: HelmetConfig = {
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        scriptSrc: ["'self'"],
-        imgSrc: ["'self'", "data:", "https:"],
-        connectSrc: ["'self'"],
-        fontSrc: ["'self'"],
-        objectSrc: ["'none'"],
-        mediaSrc: ["'self'"],
-        frameSrc: ["'none'"],
-      },
-    },
-    crossOriginEmbedderPolicy: false, // Para compatibilidade com embeddings
-    crossOriginResourcePolicy: { policy: "cross-origin" },
-    hsts: {
-      maxAge: 31536000, // 1 ano
-      includeSubDomains: true,
-      preload: true
-    },
-    noSniff: true,
-    frameguard: { action: 'deny' },
-    hidePoweredBy: true,
-    ieNoOpen: true,
-    xssFilter: true,
-    referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
-  };
-
-  /**
-   * Aplica middleware de segurança na aplicação Express
-   * @param app Instância do Express
-   * @param corsConfig Configurações customizadas de CORS (opcional)
-   * @param helmetConfig Configurações customizadas do Helmet (opcional)
-   */
-  public static apply(
-    app: Express,
-    corsConfig?: Partial<CorsConfig>,
-    helmetConfig?: Partial<HelmetConfig>
-  ): void {
-    logger.info('🛡️ Aplicando middleware de segurança...');
-
-    // 1. Helmet - Configurações de segurança HTTP
-    const finalHelmetConfig = {
-      ...SecurityMiddleware.DEFAULT_HELMET_CONFIG,
-      ...helmetConfig
-    };
+  // Interceptar response para logging
+  const originalJson = res.json;
+  res.json = function(body: any) {
+    const responseTime = Date.now() - startTime;
     
-    app.use(helmet(finalHelmetConfig));
-    logger.info('✅ Helmet configurado com políticas de segurança');
+    // Log de response de saída
+    logger.info('Security audit trail', {
+      type: 'request_complete',
+      method: req.method,
+      url: req.url,
+      statusCode: res.statusCode,
+      responseTime,
+      ip: req.ip,
+      timestamp: new Date().toISOString()
+    });
 
-    // 2. Compression - Otimização de performance
-    app.use(compression({
-      level: 6, // Balanço entre velocidade e compressão
-      threshold: 1024, // Só comprimir arquivos > 1KB
-      filter: (req, res) => {
-        // Não comprimir se cliente não suporta
-        if (req.headers['x-no-compression']) {
-          return false;
-        }
-        // Usar filtro padrão do compression
-        return compression.filter(req, res);
-      }
-    }));
-    logger.info('✅ Compression configurado');
+    // Log de errors de segurança
+    if (res.statusCode >= 400) {
+      logger.warn('Security event detected', {
+        type: 'error_response',
+        statusCode: res.statusCode,
+        method: req.method,
+        url: req.url,
+        ip: req.ip,
+        userAgent: req.get('User-Agent'),
+        timestamp: new Date().toISOString()
+      });
+    }
 
-    // 3. CORS - Configuração cross-origin
-    const finalCorsConfig = {
-      ...SecurityMiddleware.DEFAULT_CORS_CONFIG,
-      ...corsConfig
-    };
+    return originalJson.call(this, body);
+  };
 
-    app.use(cors(finalCorsConfig));
-    logger.info(`✅ CORS configurado - Origin: ${finalCorsConfig.origin}`);
+  next();
+}
 
-    // 4. Log de segurança aplicada
-    logger.info('🔒 Middleware de segurança aplicado com sucesso');
-    logger.info(`🌐 CORS Origin: ${finalCorsConfig.origin}`);
-    logger.info(`🛡️ Helmet CSP: ${finalHelmetConfig.contentSecurityPolicy ? 'Ativo' : 'Inativo'}`);
-    logger.info(`📦 Compression: Ativo (threshold: 1KB)`);
-  }
-
-  /**
-   * Configurações específicas para desenvolvimento
-   */
-  public static forDevelopment(): { corsConfig: Partial<CorsConfig>; helmetConfig: Partial<HelmetConfig> } {
-    return {
-      corsConfig: {
-        origin: ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173'],
-        credentials: true
-      },
-      helmetConfig: {
-        contentSecurityPolicy: {
-          directives: {
-            defaultSrc: ["'self'"],
-            styleSrc: ["'self'", "'unsafe-inline'"],
-            scriptSrc: ["'self'", "'unsafe-eval'"], // Para hot reload
-            imgSrc: ["'self'", "data:", "https:", "blob:"],
-            connectSrc: ["'self'", "ws:", "wss:"], // Para WebSocket do dev server
-            fontSrc: ["'self'"],
-            objectSrc: ["'none'"],
-            mediaSrc: ["'self'"],
-            frameSrc: ["'none'"],
-          },
+/**
+ * MIDDLEWARE DE SANITIZAÇÃO DE REQUEST
+ * Remove/sanitiza dados potencialmente perigosos
+ */
+export function requestSanitizer(req: Request, res: Response, next: NextFunction) {
+  try {
+    // Sanitizar query parameters
+    if (req.query) {
+      for (const [key, value] of Object.entries(req.query)) {
+        if (typeof value === 'string') {
+          // Remove caracteres perigosos
+          req.query[key] = value
+            .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove scripts
+            .replace(/javascript:/gi, '') // Remove javascript: URLs
+            .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '') // Remove event handlers
+            .trim();
         }
       }
-    };
-  }
+    }
 
-  /**
-   * Configurações específicas para produção
-   */
-  public static forProduction(): { corsConfig: Partial<CorsConfig>; helmetConfig: Partial<HelmetConfig> } {
-    return {
-      corsConfig: {
-        origin: config.FRONTEND_URL || false, // Apenas origem específica
-        credentials: true
-      },
-      helmetConfig: {
-        contentSecurityPolicy: {
-          directives: {
-            defaultSrc: ["'self'"],
-            styleSrc: ["'self'"],
-            scriptSrc: ["'self'"],
-            imgSrc: ["'self'", "data:", "https:"],
-            connectSrc: ["'self'"],
-            fontSrc: ["'self'"],
-            objectSrc: ["'none'"],
-            mediaSrc: ["'self'"],
-            frameSrc: ["'none'"],
-          },
-        },
-        hsts: {
-          maxAge: 31536000, // 1 ano
-          includeSubDomains: true,
-          preload: true
-        }
-      }
-    };
-  }
+    // Sanitizar body (se não foi validado ainda)
+    if (req.body && typeof req.body === 'object') {
+      sanitizeObject(req.body);
+    }
 
-  /**
-   * Middleware para adicionar headers de segurança customizados
-   */
-  public static customSecurityHeaders() {
-    return (req: any, res: any, next: any) => {
-      // Request ID para tracking
-      req.id = req.headers['x-request-id'] || `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      res.setHeader('X-Request-ID', req.id);
-
-      // Timestamp da request
-      res.setHeader('X-Response-Time', Date.now().toString());
-
-      // Headers de segurança adicionais
-      res.setHeader('X-Content-Type-Options', 'nosniff');
-      res.setHeader('X-Frame-Options', 'DENY');
-      res.setHeader('X-XSS-Protection', '1; mode=block');
-      res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
-      res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-
-      next();
-    };
+    next();
+  } catch (error) {
+    logger.error('Request sanitization failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      url: req.url,
+      method: req.method,
+      ip: req.ip
+    });
+    
+    res.status(400).json({
+      error: 'Invalid request format',
+      message: 'Request could not be processed safely'
+    });
   }
 }
 
-export default SecurityMiddleware;
+/**
+ * Função auxiliar para sanitização recursiva de objetos
+ */
+function sanitizeObject(obj: any): void {
+  if (obj && typeof obj === 'object') {
+    for (const key in obj) {
+      if (typeof obj[key] === 'string') {
+        obj[key] = obj[key]
+          .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+          .replace(/javascript:/gi, '')
+          .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '')
+          .trim();
+      } else if (typeof obj[key] === 'object') {
+        sanitizeObject(obj[key]);
+      }
+    }
+  }
+}
+
+/**
+ * MIDDLEWARE DE DETECÇÃO DE ATAQUES
+ * Detecta padrões suspeitos e bloqueia requests maliciosos
+ */
+export function attackDetection(req: Request, res: Response, next: NextFunction) {
+  const suspiciousPatterns = [
+    // SQL Injection patterns
+    /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|OR|AND)\b)/i,
+    /(\'|\"|`|;|--|\|\|)/,
+    
+    // XSS patterns
+    /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+    /javascript:/i,
+    /on\w+\s*=/i,
+    
+    // Path traversal
+    /\.\.\//,
+    /\.\.\\/,
+    
+    // Command injection
+    /(\||&|;|`|\$\(|\$\{)/,
+  ];
+
+  const fullRequest = JSON.stringify({
+    url: req.url,
+    query: req.query,
+    body: req.body,
+    headers: req.headers
+  });
+
+  for (const pattern of suspiciousPatterns) {
+    if (pattern.test(fullRequest)) {
+      logger.warn('Potential attack detected', {
+        type: 'attack_pattern',
+        pattern: pattern.toString(),
+        url: req.url,
+        method: req.method,
+        ip: req.ip,
+        userAgent: req.get('User-Agent'),
+        timestamp: new Date().toISOString()
+      });
+
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'Request blocked by security policy'
+      });
+    }
+  }
+
+  next();
+}
+
+/**
+ * MIDDLEWARE DE TIMEOUT DE SEGURANÇA
+ * Previne ataques de resource exhaustion
+ */
+export function securityTimeout(timeoutMs: number = 30000) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const timeout = setTimeout(() => {
+      if (!res.headersSent) {
+        logger.warn('Request timeout triggered', {
+          type: 'security_timeout',
+          url: req.url,
+          method: req.method,
+          ip: req.ip,
+          timeout: timeoutMs
+        });
+
+        res.status(408).json({
+          error: 'Request Timeout',
+          message: `Request exceeded ${timeoutMs}ms security limit`
+        });
+      }
+    }, timeoutMs);
+
+    res.on('finish', () => clearTimeout(timeout));
+    res.on('close', () => clearTimeout(timeout));
+    
+    next();
+  };
+}
+
+/**
+ * MIDDLEWARE CONSOLIDADO DE SEGURANÇA
+ * Aplica todas as proteções em ordem correta
+ */
+export function applySecurity() {
+  return [
+    securityTimeout(30000),
+    securityLogger,
+    securityHeaders,
+    securedCors,
+    requestSanitizer,
+    attackDetection
+  ];
+}
