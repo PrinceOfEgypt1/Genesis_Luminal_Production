@@ -1,10 +1,8 @@
 /**
  * GENESIS LUMINAL - SECRET VALIDATOR
- * Validação e detecção de secrets em código
+ * Validação e detecção de secrets em código (versão inicial)
  */
 
-import { logger } from './logger';
-import crypto from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -18,7 +16,6 @@ interface SecretPattern {
 interface SecretDetectionResult {
   file: string;
   line: number;
-  column: number;
   match: string;
   pattern: SecretPattern;
   maskedMatch: string;
@@ -26,30 +23,6 @@ interface SecretDetectionResult {
 
 class SecretValidator {
   private readonly patterns: SecretPattern[] = [
-    {
-      name: 'AWS Access Key',
-      pattern: /AKIA[0-9A-Z]{16}/g,
-      severity: 'high',
-      description: 'AWS Access Key ID'
-    },
-    {
-      name: 'AWS Secret Key',
-      pattern: /[0-9a-zA-Z/+]{40}/g,
-      severity: 'high',
-      description: 'AWS Secret Access Key'
-    },
-    {
-      name: 'Azure Storage Key',
-      pattern: /[0-9a-zA-Z+/]{88}==/g,
-      severity: 'high',
-      description: 'Azure Storage Account Key'
-    },
-    {
-      name: 'Google API Key',
-      pattern: /AIza[0-9A-Za-z\\-_]{35}/g,
-      severity: 'high',
-      description: 'Google API Key'
-    },
     {
       name: 'Anthropic API Key',
       pattern: /sk-ant-api03-[a-zA-Z0-9\-_]{95}[a-zA-Z0-9]/g,
@@ -63,28 +36,16 @@ class SecretValidator {
       description: 'OpenAI API Key'
     },
     {
+      name: 'AWS Access Key',
+      pattern: /AKIA[0-9A-Z]{16}/g,
+      severity: 'high',
+      description: 'AWS Access Key ID'
+    },
+    {
       name: 'Generic API Key',
       pattern: /[a-zA-Z0-9_-]*[Aa][Pp][Ii][_-]?[Kk][Ee][Yy]['"]*\s*[:=]\s*['"][a-zA-Z0-9_-]{16,}['"]/g,
       severity: 'medium',
       description: 'Generic API Key pattern'
-    },
-    {
-      name: 'Generic Secret',
-      pattern: /[a-zA-Z0-9_-]*[Ss][Ee][Cc][Rr][Ee][Tt]['"]*\s*[:=]\s*['"][a-zA-Z0-9_-]{16,}['"]/g,
-      severity: 'medium',
-      description: 'Generic Secret pattern'
-    },
-    {
-      name: 'Generic Token',
-      pattern: /[a-zA-Z0-9_-]*[Tt][Oo][Kk][Ee][Nn]['"]*\s*[:=]\s*['"][a-zA-Z0-9._-]{16,}['"]/g,
-      severity: 'medium',
-      description: 'Generic Token pattern'
-    },
-    {
-      name: 'Generic Password',
-      pattern: /[a-zA-Z0-9_-]*[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]['"]*\s*[:=]\s*['"][a-zA-Z0-9@#$%^&*!_-]{8,}['"]/g,
-      severity: 'low',
-      description: 'Generic Password pattern'
     }
   ];
 
@@ -92,12 +53,8 @@ class SecretValidator {
     /test[_-]?key/i,
     /example[_-]?key/i,
     /fake[_-]?key/i,
-    /dummy[_-]?key/i,
     /placeholder/i,
-    /your[_-]?key[_-]?here/i,
-    /replace[_-]?me/i,
-    /TODO/i,
-    /FIXME/i
+    /your[_-]?key[_-]?here/i
   ];
 
   private readonly excludeFiles: string[] = [
@@ -106,8 +63,7 @@ class SecretValidator {
     'dist',
     'build',
     '.env.example',
-    'package-lock.json',
-    'yarn.lock'
+    'package-lock.json'
   ];
 
   maskSecret(secret: string): string {
@@ -143,29 +99,24 @@ class SecretValidator {
     try {
       const content = await fs.readFile(filePath, 'utf-8');
       const results: SecretDetectionResult[] = [];
-      const lines = content.split('\n');
 
       for (const pattern of this.patterns) {
-        pattern.pattern.lastIndex = 0; // Reset regex state
+        pattern.pattern.lastIndex = 0;
         let match;
 
         while ((match = pattern.pattern.exec(content)) !== null) {
           const matchText = match[0];
           
-          // Skip if excluded
           if (this.isExcluded(content, matchText)) {
             continue;
           }
 
-          // Find line and column
           const beforeMatch = content.substring(0, match.index);
           const lineNumber = beforeMatch.split('\n').length;
-          const column = beforeMatch.split('\n').pop()?.length || 0;
 
           results.push({
             file: filePath,
             line: lineNumber,
-            column: column + 1,
             match: matchText,
             pattern: pattern,
             maskedMatch: this.maskSecret(matchText)
@@ -175,12 +126,30 @@ class SecretValidator {
 
       return results;
     } catch (error) {
-      logger.error(`Failed to scan file ${filePath}:`, error);
+      console.error(`Failed to scan file ${filePath}:`, error);
       return [];
     }
   }
 
-  async scanDirectory(directory: string): Promise<SecretDetectionResult[]> {
+  generateReport(results: SecretDetectionResult[]): string {
+    if (results.length === 0) {
+      return '✅ No secrets detected in scanned files.';
+    }
+
+    let report = `🚨 SECRET DETECTION REPORT\n`;
+    report += `Total secrets found: ${results.length}\n\n`;
+
+    for (const result of results) {
+      report += `📄 ${result.file}:${result.line}\n`;
+      report += `   Pattern: ${result.pattern.name}\n`;
+      report += `   Match: ${result.maskedMatch}\n\n`;
+    }
+
+    return report;
+  }
+
+  async validateProject(projectPath: string): Promise<SecretDetectionResult[]> {
+    console.log(`Validating project for secrets: ${projectPath}`);
     const results: SecretDetectionResult[] = [];
 
     async function scanRecursive(dir: string) {
@@ -190,7 +159,7 @@ class SecretValidator {
         for (const entry of entries) {
           const fullPath = path.join(dir, entry.name);
 
-          if (entry.isDirectory()) {
+          if (entry.isDirectory() && !this.shouldSkipFile(fullPath)) {
             await scanRecursive(fullPath);
           } else if (entry.isFile()) {
             const fileResults = await this.scanFile(fullPath);
@@ -198,57 +167,12 @@ class SecretValidator {
           }
         }
       } catch (error) {
-        logger.error(`Failed to scan directory ${dir}:`, error);
+        console.error(`Failed to scan directory ${dir}:`, error);
       }
     }
 
-    await scanRecursive(directory);
+    await scanRecursive.call(this, projectPath);
     return results;
-  }
-
-  generateReport(results: SecretDetectionResult[]): string {
-    if (results.length === 0) {
-      return '✅ No secrets detected in scanned files.';
-    }
-
-    const groupedBySeverity = results.reduce((acc, result) => {
-      const severity = result.pattern.severity;
-      if (!acc[severity]) acc[severity] = [];
-      acc[severity].push(result);
-      return acc;
-    }, {} as Record<string, SecretDetectionResult[]>);
-
-    let report = `🚨 SECRET DETECTION REPORT\n`;
-    report += `Total secrets found: ${results.length}\n\n`;
-
-    for (const severity of ['high', 'medium', 'low'] as const) {
-      const secrets = groupedBySeverity[severity] || [];
-      if (secrets.length === 0) continue;
-
-      report += `${severity.toUpperCase()} SEVERITY (${secrets.length}):\n`;
-      for (const secret of secrets) {
-        report += `  📄 ${secret.file}:${secret.line}:${secret.column}\n`;
-        report += `     Pattern: ${secret.pattern.name}\n`;
-        report += `     Match: ${secret.maskedMatch}\n`;
-        report += `     Description: ${secret.pattern.description}\n\n`;
-      }
-    }
-
-    return report;
-  }
-
-  async validateEnvironmentFile(envPath: string): Promise<SecretDetectionResult[]> {
-    logger.info(`Validating environment file: ${envPath}`);
-    return this.scanFile(envPath);
-  }
-
-  async validateProject(projectPath: string): Promise<SecretDetectionResult[]> {
-    logger.info(`Validating project for secrets: ${projectPath}`);
-    return this.scanDirectory(projectPath);
-  }
-
-  generateSecretHash(secret: string): string {
-    return crypto.createHash('sha256').update(secret).digest('hex').substring(0, 16);
   }
 }
 

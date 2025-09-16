@@ -1,10 +1,11 @@
 /**
  * GENESIS LUMINAL - ENVIRONMENT CONFIGURATION
- * Atualizado com Secret Manager Integration
- * PRESERVA TODAS AS FUNCIONALIDADES EXISTENTES
+ * Configuração com Secret Manager Integration
+ * PRESERVA TODAS AS FUNCIONALIDADES EXISTENTES + Secret Manager
  */
 
 import { getSecretManager } from './secretManager';
+import { logger } from '../utils/logger';
 
 export interface Config {
   NODE_ENV: string;
@@ -12,11 +13,16 @@ export interface Config {
   FRONTEND_URL: string;
   CLAUDE_API_KEY: string;
   REQUEST_TIMEOUT_MS: number;
+  SECRET_MANAGER_PROVIDER: string;
+  AZURE_KEY_VAULT_NAME?: string;
+  AWS_REGION?: string;
+  GCP_PROJECT_ID?: string;
 }
 
 class ConfigService {
   private static instance: ConfigService;
   private configCache: Partial<Config> = {};
+  private secretManager = getSecretManager();
 
   private constructor() {}
 
@@ -29,37 +35,30 @@ class ConfigService {
 
   async getSecret(key: string, fallbackEnvKey?: string): Promise<string> {
     try {
-      console.log(`🔍 Looking up secret: ${key}`);
-      
-      // Primeiro tentar do Secret Manager
-      const secretManager = getSecretManager();
-      const secretValue = await secretManager.getSecret(key);
+      // Tentar buscar do Secret Manager primeiro
+      const secretValue = await this.secretManager.getSecret(key);
       
       if (secretValue) {
-        console.log(`✅ Secret loaded from Secret Manager: ${key}`);
+        logger.info(`Secret loaded from Secret Manager: ${key}`);
         return secretValue;
       }
 
       // Fallback para variável de ambiente
-      const envKey = fallbackEnvKey || key;
-      const envValue = process.env[envKey];
-      
+      const envValue = process.env[fallbackEnvKey || key];
       if (envValue) {
-        console.warn(`⚠️ Secret loaded from environment (fallback): ${envKey}`);
+        logger.warn(`Secret loaded from environment (fallback): ${key}`);
         return envValue;
       }
 
-      throw new Error(`Secret not found: ${key} (also tried ${envKey})`);
+      throw new Error(`Secret not found: ${key}`);
     } catch (error) {
-      console.error(`❌ Failed to load secret: ${key}`, error);
-      
-      // Último fallback desesperado
+      logger.error(`Failed to load secret: ${key}`, error);
+      // Último fallback para desenvolvimento
       const envValue = process.env[fallbackEnvKey || key];
       if (envValue) {
-        console.warn(`🆘 Using emergency environment fallback for: ${key}`);
+        logger.warn(`Using environment fallback for: ${key}`);
         return envValue;
       }
-      
       throw error;
     }
   }
@@ -88,17 +87,19 @@ class ConfigService {
 
   async loadConfig(): Promise<Config> {
     try {
-      console.log('🔧 Loading configuration with Secret Manager...');
-      
-      // Configurações públicas (não são secrets)
+      // Configurações que não são secrets (públicas)
       const publicConfig = {
         NODE_ENV: this.getEnvVar('NODE_ENV', 'development'),
         PORT: this.getEnvVarAsNumber('PORT', 3001),
         FRONTEND_URL: this.getEnvVar('FRONTEND_URL', 'http://localhost:5173'),
-        REQUEST_TIMEOUT_MS: this.getEnvVarAsNumber('REQUEST_TIMEOUT_MS', 15000)
+        REQUEST_TIMEOUT_MS: this.getEnvVarAsNumber('REQUEST_TIMEOUT_MS', 15000),
+        SECRET_MANAGER_PROVIDER: this.getEnvVar('SECRET_MANAGER_PROVIDER', 'local'),
+        AZURE_KEY_VAULT_NAME: process.env.AZURE_KEY_VAULT_NAME,
+        AWS_REGION: process.env.AWS_REGION,
+        GCP_PROJECT_ID: process.env.GCP_PROJECT_ID
       };
 
-      // Secrets sensíveis
+      // Secrets que devem vir do Secret Manager
       const claudeApiKey = await this.getSecret('CLAUDE_API_KEY', 'ANTHROPIC_API_KEY');
 
       const config: Config = {
@@ -107,11 +108,11 @@ class ConfigService {
       };
 
       this.configCache = config;
-      console.log('✅ Configuration loaded successfully with Secret Manager');
+      logger.info('Configuration loaded successfully with Secret Manager integration');
       
       return config;
     } catch (error) {
-      console.error('❌ Failed to load configuration', error);
+      logger.error('Failed to load configuration', error);
       throw error;
     }
   }
@@ -122,12 +123,37 @@ class ConfigService {
     }
     return this.configCache as Config;
   }
+
+  async rotateSecrets(): Promise<void> {
+    logger.info('Starting secret rotation...');
+    try {
+      const secrets = await this.secretManager.listSecrets();
+      
+      for (const secretName of secrets) {
+        if (secretName.includes('API_KEY') || secretName.includes('SECRET')) {
+          const rotated = await this.secretManager.rotateSecret(secretName);
+          if (rotated) {
+            logger.info(`Successfully rotated secret: ${secretName}`);
+          } else {
+            logger.warn(`Failed to rotate secret: ${secretName}`);
+          }
+        }
+      }
+      
+      // Invalidar cache para forçar reload
+      this.configCache = {};
+      logger.info('Secret rotation completed');
+    } catch (error) {
+      logger.error('Secret rotation failed', error);
+      throw error;
+    }
+  }
 }
 
-// Singleton
+// Singleton instance
 const configService = ConfigService.getInstance();
 
-// Promise para carregar config
+// Carregar configuração na inicialização
 let configPromise: Promise<Config> | null = null;
 
 export async function loadConfig(): Promise<Config> {
@@ -141,7 +167,11 @@ export function getConfig(): Config {
   return configService.getConfig();
 }
 
-// Manter compatibilidade total com código existente
+export async function rotateSecrets(): Promise<void> {
+  return configService.rotateSecrets();
+}
+
+// Manter compatibilidade com código existente
 export const config = {
   get NODE_ENV() { return getConfig().NODE_ENV; },
   get PORT() { return getConfig().PORT; },
@@ -150,8 +180,8 @@ export const config = {
   get REQUEST_TIMEOUT_MS() { return getConfig().REQUEST_TIMEOUT_MS; }
 };
 
-// Auto-inicialização para manter compatibilidade
+// Inicializar configuração automaticamente
 loadConfig().catch(error => {
-  console.error('Failed to initialize configuration', error);
-  // NÃO fazer exit aqui para evitar crash da aplicação
+  logger.error('Failed to initialize configuration', error);
+  process.exit(1);
 });
