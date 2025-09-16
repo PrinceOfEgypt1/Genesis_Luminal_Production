@@ -1,4 +1,4 @@
-import type { EmotionalAnalysisRequest } from "../../../../packages/shared/types/api";
+import type { EmotionalAnalysisRequest } from "@shared/types/api";
 /**
  * @fileoverview Genesis Luminal Evoluído - CORREÇÕES TYPESCRIPT
  * 

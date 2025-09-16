@@ -1,26 +1,13 @@
 /**
  * Testes de integração para API endpoints
- * CORRIGIDO: Expectativas correspondem à API real
+ * Usa app.ts sem inicialização do servidor
  */
 
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import { describe, it, expect } from '@jest/globals';
 import request from 'supertest';
-import app from '../../index';
+import app from '../../app';
 
 describe('API Integration Tests', () => {
-  let server: any;
-
-  beforeAll(async () => {
-    // Usar porta diferente para testes
-    process.env.PORT = '3002';
-  });
-
-  afterAll(async () => {
-    if (server) {
-      server.close();
-    }
-  });
-
   describe('Emotional Analysis Endpoint', () => {
     it('should accept valid emotional analysis request', async () => {
       const validPayload = {
@@ -49,14 +36,12 @@ describe('API Integration Tests', () => {
         .send(validPayload)
         .expect(200);
 
-      // Campos que realmente existem na resposta
       expect(response.body).toHaveProperty('intensity');
       expect(response.body).toHaveProperty('timestamp');
       expect(response.body).toHaveProperty('confidence');
       expect(response.body).toHaveProperty('recommendation');
       expect(response.body).toHaveProperty('emotionalShift');
       expect(response.body).toHaveProperty('morphogenicSuggestion');
-      // Note: API às vezes não retorna 'dominantAffect', então não testamos
     });
 
     it('should handle malformed requests gracefully', async () => {
@@ -67,7 +52,7 @@ describe('API Integration Tests', () => {
       const response = await request(app)
         .post('/api/emotional/analyze')
         .send(malformedPayload)
-        .expect(200); // API trata graciosamente
+        .expect(200);
 
       expect(response.body).toHaveProperty('intensity');
       expect(response.body).toHaveProperty('timestamp');
@@ -78,7 +63,6 @@ describe('API Integration Tests', () => {
 
   describe('Rate Limiting', () => {
     it('should not rate limit health endpoints', async () => {
-      // Fazer múltiplas requisições para health
       const promises = Array(10).fill(null).map(() =>
         request(app).get('/api/liveness')
       );
@@ -97,7 +81,6 @@ describe('API Integration Tests', () => {
         .get('/api/liveness')
         .expect(200);
 
-      // Verificar headers de segurança (implementados pelo Helmet)
       expect(response.headers).toHaveProperty('x-frame-options');
       expect(response.headers).toHaveProperty('x-content-type-options');
     });
