@@ -1,3 +1,4 @@
+import type { EmotionalAnalysisRequest } from "../../../../packages/shared/types/api";
 /**
  * @fileoverview Genesis Luminal Evoluído - CORREÇÕES TYPESCRIPT
  * 
@@ -10,7 +11,6 @@
  */
 
 import React, { useRef, useEffect, useState, useCallback, useMemo, memo } from 'react';
-import type { EmotionalAnalysisRequest } from '../shared/types/EmotionalTypes';
 import * as Tone from 'tone';
 import { BackendClient } from '../services/BackendClient';
 

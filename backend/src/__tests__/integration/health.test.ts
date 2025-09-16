@@ -1,5 +1,6 @@
 /**
  * Testes de integração para health endpoints
+ * CORRIGIDO: Campos correspondem à API real
  */
 
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
@@ -7,12 +8,17 @@ import request from 'supertest';
 import app from '../../index';
 
 describe('Health Endpoints Integration', () => {
+  let server: any;
+
   beforeAll(async () => {
-    // Setup do teste
+    // Usar porta diferente para testes
+    process.env.PORT = '3002';
   });
 
   afterAll(async () => {
-    // Cleanup do teste
+    if (server) {
+      server.close();
+    }
   });
 
   describe('GET /api/liveness', () => {
@@ -43,9 +49,15 @@ describe('Health Endpoints Integration', () => {
         .get('/api/status')
         .expect(200);
 
+      // Campos que realmente existem na API
       expect(response.body).toHaveProperty('status');
       expect(response.body).toHaveProperty('timestamp');
-      expect(response.body).toHaveProperty('uptime');
+      expect(response.body).toHaveProperty('service');
+      expect(response.body).toHaveProperty('version');
+      expect(response.body).toHaveProperty('environment');
+      expect(response.body).toHaveProperty('uptime_seconds'); // Não 'uptime'
+      expect(response.body).toHaveProperty('memory_mb');
+      expect(response.body).toHaveProperty('claude_api_key');
     });
   });
 
@@ -57,7 +69,7 @@ describe('Health Endpoints Integration', () => {
 
       const responses = await Promise.all(promises);
       
-      responses.forEach((response: any, index: number) => {
+      responses.forEach((response: any) => {
         expect(response.status).toBe(200);
         expect(response.body.status).toBe('alive');
       });
