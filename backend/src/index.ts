@@ -63,16 +63,9 @@ app.use('/api', setupRoutes());
 // Error handling
 app.use(errorMiddleware);
 
-// Start server
-const PORT = config.PORT || 3001;
-app.listen(PORT, () => {
-  logger.info(`🚀 Genesis Luminal Backend running on port ${PORT}`);
-  logger.info(`📡 Frontend URL: ${config.FRONTEND_URL}`);
-  logger.info(`🧠 Claude API: ${config.CLAUDE_API_KEY ? 'Configured' : 'Missing'}`);
-  logger.info(`⏱️  Request timeout: ${REQUEST_TIMEOUT_MS}ms`);
-  logger.info(`🛡️  Health endpoints: /api/liveness, /api/readiness, /api/status`);
-  logger.info(`✅ CORREÇÃO: Rate limit aplicado APÓS health checks`);
-});
-
-// Export default para compatibilidade com testes
 export default app;
+
+// Debug logging
+console.log('🔍 DEBUG: Starting server initialization...');
+console.log('🔍 DEBUG: PORT variable:', PORT || 3001);
+console.log('🔍 DEBUG: About to call app.listen...');
