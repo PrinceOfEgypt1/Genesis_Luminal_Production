@@ -10,7 +10,7 @@
  */
 
 import React, { useRef, useEffect, useState, useCallback, useMemo, memo } from 'react';
-import type { EmotionalAnalysisRequest } from '../shared/types/EmotionalTypes';
+import type { EmotionalAnalysisRequest } from '@genesis-luminal/shared/types/api';
 import * as Tone from 'tone';
 import { BackendClient } from '../services/BackendClient';
 
