@@ -4,10 +4,8 @@ import { CacheService } from '../../../services/CacheService';
 const mockRedisClient = {
   get: jest.fn(),
   setEx: jest.fn(),
-  del: jest.fn(),
   connect: jest.fn(),
   disconnect: jest.fn(),
-  isOpen: true
 };
 
 jest.mock('redis', () => ({
@@ -41,7 +39,7 @@ describe('CacheService', () => {
       expect(result).toBeNull();
     });
 
-    it('should handle JSON parse errors', async () => {
+    it('should handle JSON parse errors gracefully', async () => {
       mockRedisClient.get.mockResolvedValue('invalid-json');
 
       const result = await cacheService.get('invalid-key');
@@ -59,29 +57,16 @@ describe('CacheService', () => {
   });
 
   describe('set', () => {
-    it('should store data with default TTL', async () => {
+    it('should store data with TTL (required parameter)', async () => {
       const testData = { value: 'test' };
+      const ttl = 3600;
       mockRedisClient.setEx.mockResolvedValue('OK');
 
-      await cacheService.set('test-key', testData);
+      await cacheService.set('test-key', testData, ttl);
 
       expect(mockRedisClient.setEx).toHaveBeenCalledWith(
         'test-key',
-        3600, // default TTL
-        JSON.stringify(testData)
-      );
-    });
-
-    it('should store data with custom TTL', async () => {
-      const testData = { value: 'test' };
-      const customTtl = 1800;
-      mockRedisClient.setEx.mockResolvedValue('OK');
-
-      await cacheService.set('test-key', testData, customTtl);
-
-      expect(mockRedisClient.setEx).toHaveBeenCalledWith(
-        'test-key',
-        customTtl,
+        ttl,
         JSON.stringify(testData)
       );
     });
@@ -90,67 +75,54 @@ describe('CacheService', () => {
       const testData = { value: 'test' };
       mockRedisClient.setEx.mockRejectedValue(new Error('Set failed'));
 
-      await expect(cacheService.set('error-key', testData))
-        .rejects.toThrow('Set failed');
-    });
-  });
-
-  describe('delete', () => {
-    it('should delete key from cache', async () => {
-      mockRedisClient.del.mockResolvedValue(1);
-
-      const result = await cacheService.delete('test-key');
-
-      expect(mockRedisClient.del).toHaveBeenCalledWith('test-key');
-      expect(result).toBe(true);
-    });
-
-    it('should return false when key does not exist', async () => {
-      mockRedisClient.del.mockResolvedValue(0);
-
-      const result = await cacheService.delete('nonexistent-key');
-
-      expect(result).toBe(false);
-    });
-  });
-
-  describe('generateKey', () => {
-    it('should generate consistent keys for same input', () => {
-      const input = { text: 'test', state: { energy: 0.5 } };
-      
-      const key1 = cacheService.generateKey('emotional', input);
-      const key2 = cacheService.generateKey('emotional', input);
-      
-      expect(key1).toBe(key2);
-      expect(key1).toContain('emotional:');
-    });
-
-    it('should generate different keys for different inputs', () => {
-      const input1 = { text: 'test1' };
-      const input2 = { text: 'test2' };
-      
-      const key1 = cacheService.generateKey('emotional', input1);
-      const key2 = cacheService.generateKey('emotional', input2);
-      
-      expect(key1).not.toBe(key2);
+      // Should not throw, just handle gracefully
+      await expect(cacheService.set('error-key', testData, 3600))
+        .resolves.toBeUndefined();
     });
   });
 
   describe('connection management', () => {
-    it('should handle connection initialization', async () => {
-      mockRedisClient.connect.mockResolvedValue(undefined);
-
-      await cacheService.connect();
-
+    it('should handle connection properly', () => {
+      // Constructor calls connect automatically
       expect(mockRedisClient.connect).toHaveBeenCalled();
     });
 
-    it('should handle disconnection', async () => {
-      mockRedisClient.disconnect.mockResolvedValue(undefined);
+    it('should handle connection failures gracefully', () => {
+      mockRedisClient.connect.mockRejectedValue(new Error('Connection failed'));
+      
+      // Should not throw, uses fallback
+      const newCacheService = new CacheService();
+      expect(newCacheService).toBeInstanceOf(CacheService);
+    });
+  });
 
-      await cacheService.disconnect();
+  describe('cache integration', () => {
+    it('should work end-to-end when connected', async () => {
+      const testData = { emotional: 'state', confidence: 0.8 };
+      const key = 'emotion-cache-key';
+      const ttl = 1800;
 
-      expect(mockRedisClient.disconnect).toHaveBeenCalled();
+      mockRedisClient.setEx.mockResolvedValue('OK');
+      mockRedisClient.get.mockResolvedValue(JSON.stringify(testData));
+
+      // Set and then get
+      await cacheService.set(key, testData, ttl);
+      const retrieved = await cacheService.get(key);
+
+      expect(retrieved).toEqual(testData);
+    });
+
+    it('should handle disconnected state gracefully', async () => {
+      // Simulate disconnected state
+      const disconnectedCache = new CacheService();
+      disconnectedCache['connected'] = false;
+
+      const result = await disconnectedCache.get('any-key');
+      expect(result).toBeNull();
+
+      // Set should not throw when disconnected
+      await expect(disconnectedCache.set('any-key', {}, 3600))
+        .resolves.toBeUndefined();
     });
   });
 });

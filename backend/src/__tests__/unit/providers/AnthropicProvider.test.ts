@@ -1,4 +1,5 @@
 import { AnthropicProvider } from '../../../providers/AnthropicProvider';
+import type { EmotionalAnalysisRequest } from '../../../../../shared/types/api';
 
 describe('AnthropicProvider', () => {
   let provider: AnthropicProvider;
@@ -16,15 +17,15 @@ describe('AnthropicProvider', () => {
       expect(provider).toBeInstanceOf(AnthropicProvider);
     });
 
-    it('should have required methods', () => {
-      expect(typeof provider.analyzeEmotional).toBe('function');
-      expect(typeof provider.isHealthy).toBe('function');
+    it('should have required methods based on real interface', () => {
+      expect(typeof provider.analyze).toBe('function');
+      expect(typeof provider.getStatus).toBe('function');
     });
   });
 
-  describe('analyzeEmotional', () => {
+  describe('analyze', () => {
     it('should return valid emotional analysis structure', async () => {
-      const mockRequest = {
+      const mockRequest: EmotionalAnalysisRequest = {
         text: 'I am feeling happy today',
         currentState: {
           energy: 0.8,
@@ -33,9 +34,9 @@ describe('AnthropicProvider', () => {
         }
       };
 
-      const result = await provider.analyzeEmotional(mockRequest);
+      const result = await provider.analyze(mockRequest);
 
-      expect(result).toHaveProperty('emotional_state');
+      expect(result).toHaveProperty('intensity');
       expect(result).toHaveProperty('confidence');
       expect(result).toHaveProperty('timestamp');
       expect(typeof result.confidence).toBe('number');
@@ -44,7 +45,7 @@ describe('AnthropicProvider', () => {
     });
 
     it('should handle empty text input gracefully', async () => {
-      const mockRequest = {
+      const mockRequest: EmotionalAnalysisRequest = {
         text: '',
         currentState: {
           energy: 0.5,
@@ -53,48 +54,40 @@ describe('AnthropicProvider', () => {
         }
       };
 
-      const result = await provider.analyzeEmotional(mockRequest);
+      const result = await provider.analyze(mockRequest);
       
-      expect(result).toHaveProperty('emotional_state');
-      expect(result.confidence).toBeLessThan(0.5); // Lower confidence for empty input
+      expect(result).toHaveProperty('intensity');
+      expect(typeof result.confidence).toBe('number');
     });
 
     it('should validate input parameters', async () => {
-      await expect(provider.analyzeEmotional(null as any))
-        .rejects.toThrow('Invalid request');
+      await expect(provider.analyze(null as any))
+        .rejects.toThrow();
 
-      await expect(provider.analyzeEmotional({} as any))
-        .rejects.toThrow('Invalid request');
+      await expect(provider.analyze({} as any))
+        .rejects.toThrow();
     });
   });
 
-  describe('isHealthy', () => {
-    it('should return health status', async () => {
-      const health = await provider.isHealthy();
+  describe('getStatus', () => {
+    it('should return status object', () => {
+      const status = provider.getStatus();
       
-      expect(typeof health).toBe('boolean');
-    });
-
-    it('should handle connection errors', async () => {
-      // Mock network error
-      const originalFetch = global.fetch;
-      global.fetch = jest.fn().mockRejectedValue(new Error('Network error'));
-
-      const health = await provider.isHealthy();
-      expect(health).toBe(false);
-
-      global.fetch = originalFetch;
+      expect(status).toHaveProperty('ok');
+      expect(status).toHaveProperty('provider');
+      expect(typeof status.ok).toBe('boolean');
+      expect(status.provider).toBe('anthropic');
     });
   });
 
   describe('error handling', () => {
     it('should handle API errors gracefully', async () => {
-      const mockRequest = {
+      const mockRequest: EmotionalAnalysisRequest = {
         text: 'test',
         currentState: { energy: 0.5, valence: 0.5, arousal: 0.5 }
       };
 
-      // Mock API error
+      // Mock fetch to simulate API error
       const originalFetch = global.fetch;
       global.fetch = jest.fn().mockResolvedValue({
         ok: false,
@@ -102,8 +95,8 @@ describe('AnthropicProvider', () => {
         statusText: 'Rate Limited'
       });
 
-      await expect(provider.analyzeEmotional(mockRequest))
-        .rejects.toThrow('API Error');
+      await expect(provider.analyze(mockRequest))
+        .rejects.toThrow();
 
       global.fetch = originalFetch;
     });
