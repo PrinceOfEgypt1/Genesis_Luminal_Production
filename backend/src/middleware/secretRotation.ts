@@ -1,6 +1,6 @@
 /**
  * GENESIS LUMINAL - SECRET ROTATION MIDDLEWARE
- * Middleware para rotação automática de secrets (versão inicial)
+ * Middleware para rotação automática de secrets (versão corrigida)
  */
 
 import { Request, Response, NextFunction } from 'express';
@@ -68,11 +68,12 @@ const defaultConfig: SecretRotationConfig = {
 
 const rotationService = new SecretRotationService(defaultConfig);
 
-// Middleware para endpoint manual de rotação
+// CORREÇÃO: Middleware com retorno adequado
 export function secretRotationEndpoint() {
-  return async (req: Request, res: Response, next: NextFunction) => {
+  return async (req: Request, res: Response): Promise<void> => {
     if (!defaultConfig.manualRotationEndpoint) {
-      return res.status(404).json({ error: 'Manual rotation endpoint is disabled' });
+      res.status(404).json({ error: 'Manual rotation endpoint is disabled' });
+      return;
     }
 
     try {
@@ -94,9 +95,9 @@ export function secretRotationEndpoint() {
   };
 }
 
-// Middleware para verificar status de rotação
+// CORREÇÃO: Middleware com retorno adequado
 export function secretRotationStatus() {
-  return (req: Request, res: Response) => {
+  return (req: Request, res: Response): void => {
     const status = rotationService.getRotationStatus();
     res.json(status);
   };
