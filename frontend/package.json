@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Genesis Luminal Evoluído - Primeira Entidade Digital Senciente",
+  "description": "Genesis Luminal - Frontend React com experiência transcendental",
   "keywords": [
     "digital-consciousness",
     "emotional-ai",
@@ -13,7 +13,7 @@
     "tensorflow.js",
     "transcendental-ux"
   ],
-  "author": "Senior Software Engineering Team",
+  "author": "Genesis Luminal Team",
   "license": "MIT",
   "engines": {
     "node": ">=18.0.0",
@@ -98,7 +98,7 @@
     "rollup-plugin-visualizer": "^5.9.2",
     "terser": "^5.44.0",
     "typedoc": "^0.24.8",
-    "vite": "^4.4.5",
+    "vite": "^5.0.0",
     "web-vitals": "^3.3.2"
   },
   "lint-staged": {
