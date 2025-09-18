@@ -1,122 +1,102 @@
-/**
- * GENESIS LUMINAL - APP CONFIGURATION
- * Apenas configuração do Express, sem inicialização do servidor
- * Para uso em testes e desenvolvimento
- */
-
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import { config } from './config/environment';
-import { setupRoutes } from './routes';
-import { healthRouter } from './routes/health';
-import { errorMiddleware } from './middleware/error';
 import { rateLimitMiddleware } from './middleware/rateLimit';
-import { sanitizeEmotional } from './middleware/sanitizeEmotional';
+import { errorHandler } from './middleware/error';
+import { logger } from './utils/logger';
+
+// Import routes
+import healthRoutes from './routes/health';
+import emotionalRoutes from './routes/emotional';
+import indexRoutes from './routes/index';
 
 const app = express();
 
-// Timeout configurável
-const REQUEST_TIMEOUT_MS = parseInt(process.env.REQUEST_TIMEOUT_MS || '15000', 10);
-
-// Middleware de timeout
-app.use((req, res, next) => {
-  const timeout = setTimeout(() => {
-    if (!res.headersSent) {
-      res.status(503).json({
-        error: 'Request timeout',
-        message: `Request exceeded ${REQUEST_TIMEOUT_MS}ms limit`,
-        timestamp: new Date().toISOString()
-      });
-    }
-  }, REQUEST_TIMEOUT_MS);
-
-  res.on('finish', () => clearTimeout(timeout));
-  res.on('close', () => clearTimeout(timeout));
-  
-  next();
-});
-
-// Security & Performance middleware
+// Security middleware
 app.use(helmet({
+  crossOriginEmbedderPolicy: false,
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'"],
       imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'"],
-      fontSrc: ["'self'"],
-      objectSrc: ["'none'"],
-      mediaSrc: ["'self'"],
-      frameSrc: ["'none'"]
-    }
+    },
   },
-  crossOriginEmbedderPolicy: false
 }));
 
-app.use(compression());
-
-// CORS restrito por ambiente
+// CORS configuration
 app.use(cors({
-  origin: (origin, callback) => {
-    const allowedOrigins = [];
-    
-    if (config.NODE_ENV === 'development') {
-      allowedOrigins.push('http://localhost:3000');
-      allowedOrigins.push('http://127.0.0.1:3000');
-      allowedOrigins.push('http://localhost:5173');
-      allowedOrigins.push('http://127.0.0.1:5173');
-    }
-    
-    if (config.NODE_ENV === 'production') {
-      if (config.FRONTEND_URL) {
-        allowedOrigins.push(config.FRONTEND_URL);
-      }
-    }
-    
-    if (!origin && config.NODE_ENV === 'development') {
-      return callback(null, true);
-    }
-    
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Não permitido pelo CORS'), false);
-    }
-  },
+  origin: [config.FRONTEND_URL, 'http://localhost:3000', 'http://localhost:5173'],
   credentials: true,
-  optionsSuccessStatus: 200,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'Origin',
-    'X-Requested-With',
-    'Content-Type',
-    'Accept',
-    'Authorization',
-    'Cache-Control',
-    'Pragma'
-  ],
-  exposedHeaders: ['X-Total-Count', 'X-Rate-Limit-Limit', 'X-Rate-Limit-Remaining'],
-  maxAge: 86400
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['X-Total-Count', 'X-Rate-Limit-Remaining']
 }));
+
+// Compression
+app.use(compression());
 
 // Body parsing
 app.use(express.json({ limit: '1mb' }));
-app.use('/api/emotional/analyze', sanitizeEmotional);
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-// Health routes ANTES do rate limiting
-app.use('/api', healthRouter);
+// Request logging
+app.use((req, res, next) => {
+  logger.info(`${req.method} ${req.path}`, {
+    ip: req.ip,
+    userAgent: req.get('User-Agent'),
+    contentType: req.get('Content-Type')
+  });
+  next();
+});
 
-// Rate limiting aplicado APÓS rotas de saúde
-app.use(rateLimitMiddleware);
+// Health routes (before rate limiting)
+app.use('/api', healthRoutes);
 
-// Application routes
-app.use('/api', setupRoutes());
+// Rate limiting (after health checks)
+app.use('/api/emotional', rateLimitMiddleware);
 
-// Error handling
-app.use(errorMiddleware);
+// API routes
+app.use('/', indexRoutes);
+app.use('/api/emotional', emotionalRoutes);
+
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({
+    error: 'Not Found',
+    message: `Route ${req.method} ${req.originalUrl} not found`,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Method not allowed handler
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (err.status === 405 || err.code === 'ENOTALLOWED') {
+    return res.status(405).json({
+      error: 'Method Not Allowed',
+      message: `Method ${req.method} not allowed for ${req.path}`,
+      timestamp: new Date().toISOString()
+    });
+  }
+  next(err);
+});
+
+// Content-Type validation middleware
+app.use('/api/emotional/analyze', (req, res, next) => {
+  if (req.method === 'POST' && !req.is('application/json')) {
+    return res.status(415).json({
+      error: 'Unsupported Media Type',
+      message: 'Content-Type must be application/json',
+      timestamp: new Date().toISOString()
+    });
+  }
+  next();
+});
+
+// Global error handler
+app.use(errorHandler);
 
 export default app;

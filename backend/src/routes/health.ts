@@ -1,48 +1,42 @@
-/**
- * Health endpoints para monitoramento e observabilidade
- */
-
-import { Router, Request, Response } from 'express';
+import { Router } from 'express';
 import { config } from '../config/environment';
 
 const router = Router();
 
-// GET /api/liveness - Verificação básica de vida do serviço
-router.get('/liveness', (req: Request, res: Response) => {
+// Liveness probe - basic health check
+router.get('/liveness', (req, res) => {
   res.json({
     status: 'alive',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    service: 'Genesis Luminal Claude'
   });
 });
 
-// GET /api/readiness - Verificação se o serviço está pronto para receber tráfego
-router.get('/readiness', (req: Request, res: Response) => {
-  // Checagem simples - pode ser expandida com verificações de dependências
-  const isReady = true; // TODO: adicionar checagens de DB, Redis, APIs externas, etc.
+// Readiness probe - detailed health check
+router.get('/readiness', (req, res) => {
+  const isReady = !!config.CLAUDE_API_KEY;
   
-  if (isReady) {
-    res.json({
-      status: 'ready',
-      timestamp: new Date().toISOString()
-    });
-  } else {
-    res.status(503).json({
-      status: 'not_ready',
-      timestamp: new Date().toISOString()
-    });
-  }
+  res.json({
+    status: isReady ? 'ready' : 'not_ready',
+    ready: isReady,
+    timestamp: new Date().toISOString(),
+    checks: {
+      claude_api_key: config.CLAUDE_API_KEY ? 'configured' : 'missing'
+    }
+  });
 });
 
-// GET /api/status - Informações detalhadas do sistema
-router.get('/status', (req: Request, res: Response) => {
+// Detailed status endpoint
+router.get('/status', (req, res) => {
   const memoryUsage = process.memoryUsage();
   
-  const status = {
+  res.json({
     status: 'ok',
     service: 'Genesis Luminal Claude',
     version: '1.0.0',
-    environment: process.env.NODE_ENV || 'development',
+    environment: config.NODE_ENV,
     timestamp: new Date().toISOString(),
+    uptime: Math.floor(process.uptime()),
     uptime_seconds: Math.floor(process.uptime()),
     memory_mb: {
       rss: Math.round(memoryUsage.rss / 1024 / 1024),
@@ -50,10 +44,7 @@ router.get('/status', (req: Request, res: Response) => {
       heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024)
     },
     claude_api_key: config.CLAUDE_API_KEY ? 'configured' : 'missing'
-  };
-  
-  res.json(status);
+  });
 });
 
-export { router as healthRouter };
 export default router;
