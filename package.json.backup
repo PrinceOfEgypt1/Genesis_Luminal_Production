@@ -2,23 +2,23 @@
   "name": "genesis-luminal-monorepo",
   "private": true,
   "workspaces": [
-    "apps/*", 
-    "packages/*"
+    "frontend",
+    "backend"
   ],
   "scripts": {
-    "build": "npm run build:packages && npm run build:apps",
-    "build:packages": "npm run build --workspace=packages/validation && npm run build --workspace=packages/shared && npm run build --workspace=packages/ui-components && npm run build --workspace=packages/business-logic",
-    "build:apps": "npm run build --workspace=apps/api && npm run build --workspace=apps/web",
-    "dev": "concurrently \"npm:dev:api\" \"npm:dev:web\"",
-    "dev:api": "npm run dev --workspace=apps/api",
-    "dev:web": "npm run dev --workspace=apps/web",
-    "test": "npm run test:unit && npm run test:integration && npm run test:e2e",
-    "test:unit": "npm run test --workspace=apps/web && npm run test --workspace=apps/api",
-    "test:integration": "npm run test:integration --workspace=apps/api",
-    "test:e2e": "npx playwright test",
-    "test:coverage": "npm run test:unit && npm run coverage --workspace=apps/web && npm run coverage --workspace=apps/api",
-    "lint": "npm run lint --workspaces",
-    "ci": "npm run lint && npm run test:coverage && npm run build"
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "npm run build --workspace=backend",
+    "build:frontend": "npm run build --workspace=frontend", 
+    "dev": "concurrently \"npm:dev:backend\" \"npm:dev:frontend\"",
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "npm run test --workspace=backend",
+    "test:frontend": "npm run test --workspace=frontend",
+    "test:coverage": "npm run test:coverage --workspace=backend",
+    "lint": "npm run lint --workspace=backend && npm run lint --workspace=frontend",
+    "typecheck": "npm run typecheck --workspace=backend",
+    "ci": "npm run lint && npm run typecheck && npm run test && npm run build"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
