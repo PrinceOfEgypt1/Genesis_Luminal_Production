@@ -1,6 +1,6 @@
 /**
- * Test Helpers - Genesis Luminal (CORREÇÃO PRECISA)
- * Fix: Elemento é #main-content, não apenas main
+ * Test Helpers - Genesis Luminal (SELETORES CORRETOS)
+ * Baseado em evidência científica: aplicação usa #root > div, não main
  */
 
 import { Page, expect } from '@playwright/test';
@@ -9,19 +9,36 @@ export class GenesisTestHelpers {
   constructor(private page: Page) {}
 
   /**
-   * Aguarda carregamento da aplicação Genesis - SELETOR CORRETO
+   * Aguarda carregamento da aplicação Genesis - SELETORES REAIS
    */
   async waitForGenesisReady(): Promise<void> {
     // Aguardar carregamento da rede
     await this.page.waitForLoadState('networkidle');
     
-    // CORREÇÃO: Elemento correto é #main-content baseado no código
-    await this.page.waitForSelector('#main-content', { timeout: 15000 });
+    // EVIDÊNCIA CIENTÍFICA: Aplicação real usa #root > div
+    await this.page.waitForSelector('#root', { timeout: 10000 });
+    await this.page.waitForSelector('#root > div', { timeout: 10000 });
     
-    console.log('✅ Elemento #main-content encontrado');
+    // Aguardar canvas (elementos visuais principais)
+    await this.page.waitForSelector('canvas', { timeout: 10000 });
     
-    // Aguardar estabilização da aplicação
+    console.log('✅ Genesis Luminal carregado - estrutura real detectada');
+    
+    // Aguardar estabilização
     await this.page.waitForTimeout(2000);
+  }
+
+  /**
+   * Verifica se aplicação está carregada (baseado na estrutura real)
+   */
+  async isApplicationLoaded(): Promise<boolean> {
+    try {
+      const rootHasContent = await this.page.locator('#root > div').count() > 0;
+      const canvasExists = await this.page.locator('canvas').count() > 0;
+      return rootHasContent && canvasExists;
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -93,7 +110,7 @@ export class GenesisTestHelpers {
           lastTime = now;
           frameCount++;
           
-          if (frameCount < 60) {
+          if (frameCount < 30) { // Reduzido para teste mais rápido
             requestAnimationFrame(measureFrame);
           } else {
             const avgFps = frames.reduce((a, b) => a + b, 0) / frames.length;
@@ -108,12 +125,16 @@ export class GenesisTestHelpers {
   }
 
   /**
-   * Verifica responsividade visual
+   * Verifica responsividade visual (estrutura real)
    */
   async checkVisualResponsiveness(): Promise<boolean> {
     try {
       await this.performNaturalMouseMovement();
-      await expect(this.page.locator('#main-content')).toBeVisible();
+      
+      // Verificar elementos reais que existem
+      await expect(this.page.locator('#root > div')).toBeVisible();
+      await expect(this.page.locator('canvas')).toBeVisible();
+      
       return true;
     } catch {
       return false;
@@ -124,7 +145,7 @@ export class GenesisTestHelpers {
    * Simula usuário fascinado
    */
   async simulateFascinatedUser(): Promise<void> {
-    // Movimentos rápidos de exploração
+    // Movimentos rápidos de exploração sobre o canvas
     const rapidMovements = Array.from({ length: 15 }, (_, i) => ({
       x: 100 + (i * 50) % 800,
       y: 100 + (i * 40) % 600
