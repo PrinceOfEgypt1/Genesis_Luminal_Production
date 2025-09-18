@@ -1,11 +1,11 @@
 #!/bin/bash
 echo "🔧 Corrigindo configuração Jest..."
 
-# Backup do package.json
+# Backup do package.json atual
 cp package.json package.json.backup
 
-# Remover configuração Jest do package.json
-cat > package.json << 'JSON_EOF'
+# Remover configuração Jest do package.json (manter apenas scripts e dependências)
+cat > package.json << 'EOF'
 {
   "name": "genesis-luminal-backend",
   "version": "1.0.0",
@@ -20,7 +20,7 @@ cat > package.json << 'JSON_EOF'
     "test:integration": "jest src/__tests__/integration/",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:ci": "jest --ci --coverage",
+    "test:ci": "jest --ci --coverage --reporters=default --reporters=jest-junit",
     "test:verbose": "jest --verbose",
     "lint": "eslint src/**/*.ts",
     "typecheck": "tsc --noEmit"
@@ -54,10 +54,54 @@ cat > package.json << 'JSON_EOF'
   "engines": {
     "node": ">=18.0.0"
   },
-  "keywords": ["genesis", "luminal"],
+  "keywords": ["genesis", "luminal", "emotional-ai", "claude"],
   "author": "Genesis Luminal Team",
   "license": "MIT"
 }
-JSON_EOF
+EOF
 
-echo "✅ package.json limpo criado"
+# Atualizar jest.config.js
+cp jest.config.js jest.config.js.backup
+cat > jest.config.js << 'EOF'
+module.exports = {
+  testEnvironment: 'node',
+  roots: ['<rootDir>/src'],
+  testMatch: [
+    '**/__tests__/**/*.{js,ts}',
+    '**/?(*.)+(spec|test).{js,ts}'
+  ],
+  collectCoverageFrom: [
+    'src/**/*.{ts,js}',
+    '!src/**/*.d.ts',
+    '!src/index.ts'
+  ],
+  coverageDirectory: 'coverage',
+  coverageReporters: ['text', 'lcov', 'html'],
+  coverageThreshold: {
+    global: {
+      branches: 20,
+      functions: 20,
+      lines: 20,
+      statements: 20
+    }
+  },
+  setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
+  moduleNameMapping: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^@shared/(.*)$': '<rootDir>/../shared/src/$1'
+  },
+  transform: {},
+  testTimeout: 30000
+}
+EOF
+
+echo "✅ Configuração Jest corrigida"
+echo "📦 Instalando ts-jest se necessário..."
+
+# Verificar e instalar ts-jest
+npm list ts-jest || npm install --save-dev ts-jest
+
+echo "🧪 Testando configuração..."
+npm run test:unit
+
+echo "🎉 Correção concluída!"
