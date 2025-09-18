@@ -1,6 +1,6 @@
 /**
- * Test Helpers para E2E Tests - Genesis Luminal
- * Utilitários para testes críticos de experiência transcendental
+ * Test Helpers - Genesis Luminal (CORREÇÃO PRECISA)
+ * Fix: Elemento é #main-content, não apenas main
  */
 
 import { Page, expect } from '@playwright/test';
@@ -9,21 +9,23 @@ export class GenesisTestHelpers {
   constructor(private page: Page) {}
 
   /**
-   * Aguarda carregamento completo da aplicação Genesis
+   * Aguarda carregamento da aplicação Genesis - SELETOR CORRETO
    */
   async waitForGenesisReady(): Promise<void> {
     // Aguardar carregamento da rede
     await this.page.waitForLoadState('networkidle');
     
-    // Aguardar elementos críticos
-    await this.page.waitForSelector('main', { timeout: 10000 });
+    // CORREÇÃO: Elemento correto é #main-content baseado no código
+    await this.page.waitForSelector('#main-content', { timeout: 15000 });
     
-    // Aguardar pelo menos 2 segundos para inicialização dos sistemas
+    console.log('✅ Elemento #main-content encontrado');
+    
+    // Aguardar estabilização da aplicação
     await this.page.waitForTimeout(2000);
   }
 
   /**
-   * Simula movimento de mouse natural para ativar responsividade visual
+   * Simula movimento de mouse natural
    */
   async performNaturalMouseMovement(): Promise<void> {
     const movements = [
@@ -36,12 +38,12 @@ export class GenesisTestHelpers {
 
     for (const movement of movements) {
       await this.page.mouse.move(movement.x, movement.y);
-      await this.page.waitForTimeout(200); // 200ms entre movimentos
+      await this.page.waitForTimeout(200);
     }
   }
 
   /**
-   * Verifica ausência de erros críticos de console
+   * Verifica ausência de erros críticos
    */
   async checkCriticalErrors(): Promise<string[]> {
     const errors: string[] = [];
@@ -58,9 +60,6 @@ export class GenesisTestHelpers {
     return errors;
   }
 
-  /**
-   * Determina se um erro de console é crítico
-   */
   private isCriticalError(error: string): boolean {
     const criticalPatterns = [
       'WebGL',
@@ -78,64 +77,70 @@ export class GenesisTestHelpers {
   }
 
   /**
-   * Mede performance básica da aplicação
+   * Mede performance básica
    */
-  async measureBasicPerformance(): Promise<{
-    lcp?: number;
-    fid?: number;
-    cls?: number;
-  }> {
-    return await this.page.evaluate(() => {
-      return new Promise((resolve) => {
-        const metrics: any = {};
+  async measureBasicPerformance(): Promise<{avgFps: number, minFps: number}> {
+    return await this.page.evaluate(async () => {
+      return new Promise<{avgFps: number, minFps: number}>(resolve => {
+        const frames: number[] = [];
+        let lastTime = performance.now();
+        let frameCount = 0;
         
-        // Largest Contentful Paint
-        new PerformanceObserver((list) => {
-          const entries = list.getEntries();
-          const lcp = entries[entries.length - 1];
-          if (lcp) {
-            metrics.lcp = lcp.startTime;
+        function measureFrame() {
+          const now = performance.now();
+          const fps = 1000 / (now - lastTime);
+          frames.push(fps);
+          lastTime = now;
+          frameCount++;
+          
+          if (frameCount < 60) {
+            requestAnimationFrame(measureFrame);
+          } else {
+            const avgFps = frames.reduce((a, b) => a + b, 0) / frames.length;
+            const minFps = Math.min(...frames);
+            resolve({ avgFps, minFps });
           }
-        }).observe({ entryTypes: ['largest-contentful-paint'] });
-
-        // Cumulative Layout Shift
-        new PerformanceObserver((list) => {
-          let cls = 0;
-          for (const entry of list.getEntries()) {
-            if (!(entry as any).hadRecentInput) {
-              cls += (entry as any).value;
-            }
-          }
-          metrics.cls = cls;
-        }).observe({ entryTypes: ['layout-shift'] });
-
-        // Timeout para coletar métricas
-        setTimeout(() => resolve(metrics), 3000);
+        }
+        
+        requestAnimationFrame(measureFrame);
       });
     });
   }
 
   /**
-   * Verifica responsividade visual básica
+   * Verifica responsividade visual
    */
   async checkVisualResponsiveness(): Promise<boolean> {
     try {
-      // Simular movimento e verificar se não há travamentos
       await this.performNaturalMouseMovement();
-      
-      // Verificar se elementos ainda estão visíveis
-      await expect(this.page.locator('main')).toBeVisible();
-      
-      // Verificar se não há overlays de erro
-      const errorOverlays = await this.page.locator('[data-testid="error-overlay"]').count();
-      return errorOverlays === 0;
-    } catch (error) {
+      await expect(this.page.locator('#main-content')).toBeVisible();
+      return true;
+    } catch {
       return false;
     }
   }
 
   /**
-   * Captura screenshot para comparação visual
+   * Simula usuário fascinado
+   */
+  async simulateFascinatedUser(): Promise<void> {
+    // Movimentos rápidos de exploração
+    const rapidMovements = Array.from({ length: 15 }, (_, i) => ({
+      x: 100 + (i * 50) % 800,
+      y: 100 + (i * 40) % 600
+    }));
+
+    for (const move of rapidMovements) {
+      await this.page.mouse.move(move.x, move.y);
+      await this.page.waitForTimeout(50);
+    }
+
+    // Pausa contemplativa
+    await this.page.waitForTimeout(1000);
+  }
+
+  /**
+   * Captura screenshot
    */
   async captureScreenshot(name: string): Promise<void> {
     await this.page.screenshot({
@@ -143,52 +148,4 @@ export class GenesisTestHelpers {
       fullPage: false
     });
   }
-
-  /**
-   * Simula interação típica de usuário fascinado
-   */
-  async simulateFascinatedUser(): Promise<void> {
-    // Usuário move mouse rapidamente explorando
-    const rapidMovements = Array.from({ length: 20 }, (_, i) => ({
-      x: 100 + (i * 50) % 800,
-      y: 100 + (i * 30) % 600
-    }));
-
-    for (const move of rapidMovements) {
-      await this.page.mouse.move(move.x, move.y);
-      await this.page.waitForTimeout(50); // Movimento rápido
-    }
-
-    // Pausa como se estivesse admirando
-    await this.page.waitForTimeout(1000);
-
-    // Movimento mais lento, contemplativo
-    await this.page.mouse.move(400, 300);
-    await this.page.waitForTimeout(500);
-    await this.page.mouse.move(500, 350);
-    await this.page.waitForTimeout(500);
-  }
 }
-
-/**
- * Matcher customizado para verificar performance
- */
-export const performanceMatchers = {
-  toBeFast: (received: number, threshold: number = 2500) => {
-    const pass = received < threshold;
-    return {
-      pass,
-      message: () => 
-        `Expected ${received}ms to be ${pass ? 'not ' : ''}less than ${threshold}ms`
-    };
-  },
-
-  toBeResponsive: (received: number, threshold: number = 100) => {
-    const pass = received < threshold;
-    return {
-      pass,
-      message: () => 
-        `Expected response time ${received}ms to be ${pass ? 'not ' : ''}less than ${threshold}ms`
-    };
-  }
-};

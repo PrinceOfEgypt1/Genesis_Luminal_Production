@@ -7,7 +7,7 @@
       - heading "Estados Emocionais" [level=3]
       - paragraph: Análise em Tempo Real • 1500 Partículas
       - paragraph: "Distribuição: Espiral"
-      - paragraph: Claude Offline
+      - paragraph: Conectando Claude...
     - generic:
       - generic:
         - generic: Joy
