@@ -1,36 +1,31 @@
 import { Router } from 'express';
-import { ClaudeService } from '../services/ClaudeService';
+import claudeService from '../services/ClaudeService';
 import { logger } from '../utils/logger';
 import type { EmotionalAnalysisRequest } from '../../../shared/types/api';
 
 const router = Router();
-const claudeService = new ClaudeService();
 
-// Input sanitization middleware
 const sanitizeEmotionalInput = (req: any, res: any, next: any) => {
   try {
     const { text, currentState, metadata } = req.body;
-    
-    // Sanitize text input
+
     if (text && typeof text === 'string') {
-      req.body.text = text.slice(0, 10000); // Limit text length
+      req.body.text = text.slice(0, 10000);
     }
-    
-    // Validate and sanitize currentState
+
     if (currentState && typeof currentState === 'object') {
-      // Keep only valid emotional state properties
-      const allowedKeys = ['joy', 'curiosity', 'transcendence', 'serenity', 'wonder', 'compassion'];
+      const allowedKeys = ['joy', 'curiosity', 'serenity', 'nostalgia', 'ecstasy', 'mystery', 'power'];
       const sanitized: any = {};
-      
+
       for (const key of allowedKeys) {
         if (typeof currentState[key] === 'number' && !isNaN(currentState[key])) {
           sanitized[key] = Math.max(0, Math.min(1, currentState[key]));
         }
       }
-      
+
       req.body.currentState = Object.keys(sanitized).length > 0 ? sanitized : undefined;
     }
-    
+
     next();
   } catch (error) {
     logger.error('Error sanitizing emotional input:', error);
@@ -41,27 +36,29 @@ const sanitizeEmotionalInput = (req: any, res: any, next: any) => {
   }
 };
 
-router.post('/analyze', sanitizeEmotionalInput, async (req, res) => {
+router.post('/analyze', sanitizeEmotionalInput, async (req, res): Promise<void> => {
   try {
     const request: EmotionalAnalysisRequest = req.body;
-    
-    // Validate request
+
     if (!request.text && !request.currentState) {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'Missing required data',
         message: 'Request must contain either text or currentState'
       });
+      return;
     }
 
-    const result = await claudeService.analyze(request);
+    const result = await claudeService.analyzeEmotionalState(request);
     
-    // Ensure dominantAffect is present for contract compliance
+    const validRecommendations = ['continue', 'pause', 'intensify', 'explore', 'transcend'];
+    const safeRecommendation = result.recommendation && validRecommendations.includes(result.recommendation) 
+      ? result.recommendation 
+      : 'continue';
+
     const response = {
       ...result,
       dominantAffect: result.dominantAffect || 'curiosity',
-      recommendation: ['continue', 'pause', 'intensify', 'explore', 'transcend'].includes(result.recommendation) 
-        ? result.recommendation 
-        : 'continue'
+      recommendation: safeRecommendation
     };
     
     res.json(response);
