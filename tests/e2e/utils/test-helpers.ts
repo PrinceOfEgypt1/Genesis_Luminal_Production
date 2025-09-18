@@ -1,6 +1,6 @@
 /**
- * Test Helpers - Genesis Luminal (SELETORES CORRETOS)
- * Baseado em evidência científica: aplicação usa #root > div, não main
+ * Test Helpers - Genesis Luminal (CANVAS MÚLTIPLO CORRIGIDO)
+ * Fix: canvas → canvas.first() para múltiplos elementos
  */
 
 import { Page, expect } from '@playwright/test';
@@ -9,17 +9,17 @@ export class GenesisTestHelpers {
   constructor(private page: Page) {}
 
   /**
-   * Aguarda carregamento da aplicação Genesis - SELETORES REAIS
+   * Aguarda carregamento da aplicação Genesis - CANVAS CORRIGIDO
    */
   async waitForGenesisReady(): Promise<void> {
     // Aguardar carregamento da rede
     await this.page.waitForLoadState('networkidle');
     
-    // EVIDÊNCIA CIENTÍFICA: Aplicação real usa #root > div
+    // Elementos principais da aplicação
     await this.page.waitForSelector('#root', { timeout: 10000 });
     await this.page.waitForSelector('#root > div', { timeout: 10000 });
     
-    // Aguardar canvas (elementos visuais principais)
+    // FIX: Aguardar pelo menos um canvas (há 2, usar first())
     await this.page.waitForSelector('canvas', { timeout: 10000 });
     
     console.log('✅ Genesis Luminal carregado - estrutura real detectada');
@@ -29,7 +29,7 @@ export class GenesisTestHelpers {
   }
 
   /**
-   * Verifica se aplicação está carregada (baseado na estrutura real)
+   * Verifica se aplicação está carregada
    */
   async isApplicationLoaded(): Promise<boolean> {
     try {
@@ -81,7 +81,7 @@ export class GenesisTestHelpers {
     const criticalPatterns = [
       'WebGL',
       'Canvas',
-      'Three.js',
+      'Three.js', 
       'Uncaught',
       'TypeError',
       'ReferenceError',
@@ -110,7 +110,7 @@ export class GenesisTestHelpers {
           lastTime = now;
           frameCount++;
           
-          if (frameCount < 30) { // Reduzido para teste mais rápido
+          if (frameCount < 30) {
             requestAnimationFrame(measureFrame);
           } else {
             const avgFps = frames.reduce((a, b) => a + b, 0) / frames.length;
@@ -125,15 +125,15 @@ export class GenesisTestHelpers {
   }
 
   /**
-   * Verifica responsividade visual (estrutura real)
+   * Verifica responsividade visual - CANVAS CORRIGIDO
    */
   async checkVisualResponsiveness(): Promise<boolean> {
     try {
       await this.performNaturalMouseMovement();
       
-      // Verificar elementos reais que existem
+      // Verificar elementos reais - CANVAS.FIRST() para múltiplos
       await expect(this.page.locator('#root > div')).toBeVisible();
-      await expect(this.page.locator('canvas')).toBeVisible();
+      await expect(this.page.locator('canvas').first()).toBeVisible();
       
       return true;
     } catch {

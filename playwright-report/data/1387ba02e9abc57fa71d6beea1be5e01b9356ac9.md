@@ -7,7 +7,7 @@
       - heading "Estados Emocionais" [level=3]
       - paragraph: Análise em Tempo Real • 1500 Partículas
       - paragraph: "Distribuição: Espiral"
-      - paragraph: Transicionando... 1%
+      - paragraph: Transicionando... 49%
       - paragraph: Conectando Claude...
     - generic:
       - generic:
