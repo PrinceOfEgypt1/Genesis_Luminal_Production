@@ -1,10 +1,9 @@
 /**
  * Tipos compartilhados para API Genesis Luminal
- * Centralização de contratos entre frontend e backend
+ * ATUALIZADO: Alinhado com implementação real do sistema
  */
 
 // === TIPOS BÁSICOS ===
-
 export interface Vector2D {
   x: number;
   y: number;
@@ -17,7 +16,6 @@ export interface Vector3D {
 }
 
 // === TIPOS EMOCIONAIS ===
-
 export interface EmotionalDNA {
   joy: number;
   nostalgia: number;
@@ -31,7 +29,6 @@ export interface EmotionalDNA {
 export type EmotionalAffect = keyof EmotionalDNA;
 
 // === REQUISIÇÕES E RESPOSTAS DA API ===
-
 export interface EmotionalAnalysisRequest {
   currentState: EmotionalDNA;
   mousePosition: Vector2D;
@@ -40,22 +37,20 @@ export interface EmotionalAnalysisRequest {
 }
 
 export interface EmotionalAnalysisResponse {
-  /** Intensidade (0..1). Temporariamente opcional para compatibilidade. */
+  success: boolean;                    // ✅ ADICIONADO - Match com implementação
   intensity?: number;
-  /** Afeto dominante. Temporariamente opcional. */
   dominantAffect?: EmotionalAffect;
-  /** Estado emocional resultante */
   newState: EmotionalDNA;
-  /** Timestamp da análise */
   timestamp: number;
-  /** Confiança da predição */
   confidence: number;
+  recommendation?: string;             // ✅ ADICIONADO - Match com GenesisCore
+  error?: string;                      // ✅ Para casos de erro
 }
 
 // === HEALTH CHECK ===
-
 export interface HealthCheckResponse {
-  status: 'ok' | 'error';
+  success: boolean;                    // ✅ ADICIONADO - Match com BackendClient
+  status: 'ok' | 'error' | 'offline'; // ✅ EXPANDIDO - incluir offline
   timestamp: number;
   uptime: number;
   services: {
@@ -67,7 +62,6 @@ export interface HealthCheckResponse {
 }
 
 // === PERFORMANCE METRICS ===
-
 export interface PerformanceMetrics {
   fps: number;
   latency: number;
@@ -76,7 +70,6 @@ export interface PerformanceMetrics {
 }
 
 // === ERROR RESPONSES ===
-
 export interface ApiError {
   code: string;
   message: string;

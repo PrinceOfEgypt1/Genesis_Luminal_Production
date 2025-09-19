@@ -1,14 +1,17 @@
 /**
  * Test Setup - Genesis Luminal Frontend
- * Configuração global para testes com Vitest + jsdom
+ * Configuração científica para testes com Vitest
+ * SEM dependência de globals vi para evitar erros TypeScript
  */
 
-import { beforeEach, afterEach } from 'vitest'
+import { beforeEach, afterEach, vi } from 'vitest'
 
-// Global mocks para ambiente de teste
+// ✅ IMPORT EXPLÍCITO do vi - sem dependência de globals
+
+// Mock GenesisCore
 const mockGenesisCore = {
   init: vi.fn(),
-  destroy: vi.fn(),
+  destroy: vi.fn(), 
   updateEmotionalState: vi.fn(),
   getCurrentState: vi.fn(() => ({
     joy: 0.5,
@@ -21,7 +24,7 @@ const mockGenesisCore = {
   }))
 };
 
-// Mock Three.js para evitar erros WebGL
+// Mock Three.js
 Object.defineProperty(globalThis, 'THREE', {
   value: {
     WebGLRenderer: vi.fn(),
