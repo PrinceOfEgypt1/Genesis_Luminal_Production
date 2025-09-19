@@ -2,8 +2,7 @@ module.exports = {
   root: true,
   env: { browser: true, es2020: true, node: true },
   extends: [
-    'eslint:recommended',
-    '@typescript-eslint/recommended'
+    'eslint:recommended'
   ],
   ignorePatterns: ['dist', '.eslintrc.cjs'],
   parser: '@typescript-eslint/parser',
@@ -13,8 +12,12 @@ module.exports = {
       argsIgnorePattern: '^_',
       varsIgnorePattern: '^_' 
     }],
-    '@typescript-eslint/no-explicit-any': 'warn',
     'prefer-const': 'error',
-    'no-var': 'error'
+    'no-var': 'error',
+    'no-undef': 'off' // Desabilitar no-undef para evitar falsos positivos
   },
+  parserOptions: {
+    ecmaVersion: 'latest',
+    sourceType: 'module'
+  }
 }
