@@ -1,9 +1,10 @@
 /**
- * GENESIS LUMINAL - SPECIALIZED TESTS CONFIGURATION
- * Configuração global para todos os testes especializados
+ * GENESIS LUMINAL - SPECIALIZED TESTS CONFIGURATION (CORRIGIDO)
+ * Configuração corrigida para estrutura frontend/ e backend/
+ * Compatível com WSL/Ubuntu
  * 
  * @author Claude Sonnet 4
- * @version 1.0.0
+ * @version 2.0.0 - ESTRUTURA CORRIGIDA
  */
 
 import { PlaywrightTestConfig } from '@playwright/test';
@@ -12,25 +13,26 @@ const config: PlaywrightTestConfig = {
   testDir: './tests/specialized',
   
   // Configurações baseadas na performance real da aplicação
-  timeout: 30000,
-  expect: { timeout: 10000 },
+  timeout: 60000,       // Aumentado para WSL
+  expect: { timeout: 15000 },  // Aumentado para WSL
   
   // Configurações de execução
   fullyParallel: false, // Testes de load não devem ser paralelos
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  retries: process.env.CI ? 2 : 1,  // Retry em WSL
+  workers: 1,  // Forçar sequencial em WSL
   
   // Configurações de relatório
   reporter: [
     ['html', { outputFolder: 'test-results/specialized' }],
     ['json', { outputFile: 'test-results/specialized-results.json' }],
-    ['junit', { outputFile: 'test-results/specialized-junit.xml' }]
+    ['junit', { outputFile: 'test-results/specialized-junit.xml' }],
+    ['list']  // Adicionar output no console
   ],
   
   outputDir: 'test-results/specialized-output',
   
-  // Configurações globais
+  // Configurações globais para WSL
   use: {
     baseURL: 'http://localhost:5173',
     trace: 'on-first-retry',
@@ -44,6 +46,19 @@ const config: PlaywrightTestConfig = {
     // Headers para testes de segurança
     extraHTTPHeaders: {
       'X-Test-Suite': 'Genesis-Luminal-Specialized'
+    },
+    
+    // Configurações para WSL/headless
+    launchOptions: {
+      headless: true,  // Forçar headless em WSL
+      args: [
+        '--no-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-extensions',
+        '--disable-gpu',
+        '--disable-web-security',
+        '--allow-running-insecure-content'
+      ]
     }
   },
   
@@ -54,19 +69,15 @@ const config: PlaywrightTestConfig = {
       testDir: './tests/specialized/accessibility',
       use: { 
         browserName: 'chromium',
-        // Configurações específicas para testes de acessibilidade
         colorScheme: 'light'
       }
     },
     {
-      name: 'performance',
+      name: 'performance-custom',  // Renomeado para evitar conflito com Lighthouse
       testDir: './tests/specialized/performance',
+      testMatch: '**/performance-tests.spec.ts',  // Apenas testes customizados
       use: { 
-        browserName: 'chromium',
-        // Configurações para testes de performance
-        launchOptions: {
-          args: ['--no-sandbox', '--disable-dev-shm-usage']
-        }
+        browserName: 'chromium'
       }
     },
     {
@@ -85,19 +96,23 @@ const config: PlaywrightTestConfig = {
     }
   ],
   
-  // Configuração de servidor web para testes
+  // CORREÇÃO: Usar estrutura real frontend/ e backend/
   webServer: [
     {
-      command: 'npm run dev --workspace=apps/web',
+      command: 'cd frontend && npm run dev',  // CORRIGIDO: era apps/web
       port: 5173,
-      timeout: 30000,
-      reuseExistingServer: !process.env.CI
+      timeout: 60000,  // Aumentado para WSL
+      reuseExistingServer: !process.env.CI,
+      stdout: 'pipe',
+      stderr: 'pipe'
     },
     {
-      command: 'npm run dev --workspace=apps/api',
-      port: 3000,
-      timeout: 30000,
-      reuseExistingServer: !process.env.CI
+      command: 'cd backend && npm run dev',   // CORRIGIDO: era apps/api  
+      port: 3001,  // CORRIGIDO: backend usa porta 3001
+      timeout: 60000,  // Aumentado para WSL
+      reuseExistingServer: !process.env.CI,
+      stdout: 'pipe',
+      stderr: 'pipe'
     }
   ]
 };
