@@ -1,16 +1,16 @@
 /**
  * Test Setup - Genesis Luminal Frontend
- * Configuração global para testes com Jest
+ * Configuração global para testes com Vitest + jsdom
  */
 
-import { beforeEach, afterEach } from '@jest/globals';
+import { beforeEach, afterEach } from 'vitest'
 
 // Global mocks para ambiente de teste
 const mockGenesisCore = {
-  init: jest.fn(),
-  destroy: jest.fn(),
-  updateEmotionalState: jest.fn(),
-  getCurrentState: jest.fn(() => ({
+  init: vi.fn(),
+  destroy: vi.fn(),
+  updateEmotionalState: vi.fn(),
+  getCurrentState: vi.fn(() => ({
     joy: 0.5,
     nostalgia: 0.3,
     curiosity: 0.7,
@@ -21,52 +21,48 @@ const mockGenesisCore = {
   }))
 };
 
-// Mock Three.js
-Object.defineProperty(global, 'THREE', {
+// Mock Three.js para evitar erros WebGL
+Object.defineProperty(globalThis, 'THREE', {
   value: {
-    WebGLRenderer: jest.fn(),
-    Scene: jest.fn(),
-    PerspectiveCamera: jest.fn(),
-    Vector3: jest.fn(),
-    Mesh: jest.fn(),
-    SphereGeometry: jest.fn(),
-    MeshBasicMaterial: jest.fn()
+    WebGLRenderer: vi.fn(),
+    Scene: vi.fn(),
+    PerspectiveCamera: vi.fn(),
+    Vector3: vi.fn(),
+    Mesh: vi.fn(),
+    SphereGeometry: vi.fn(),
+    MeshBasicMaterial: vi.fn()
   }
 });
 
 // Mock WebGL context
-Object.defineProperty(global, 'HTMLCanvasElement', {
-  value: {
-    prototype: {
-      getContext: jest.fn(() => ({
-        getExtension: jest.fn(),
-        viewport: jest.fn(),
-        clear: jest.fn(),
-        clearColor: jest.fn()
-      }))
-    }
-  }
+Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
+  value: vi.fn(() => ({
+    getExtension: vi.fn(),
+    viewport: vi.fn(),
+    clear: vi.fn(),
+    clearColor: vi.fn()
+  }))
 });
 
 // Mock requestAnimationFrame
-Object.defineProperty(global, 'requestAnimationFrame', {
-  value: jest.fn((cb: any) => setTimeout(cb, 16))
+Object.defineProperty(globalThis, 'requestAnimationFrame', {
+  value: vi.fn((cb: any) => setTimeout(cb, 16))
 });
 
 // Mock performance API
-Object.defineProperty(global, 'performance', {
+Object.defineProperty(globalThis, 'performance', {
   value: {
-    now: jest.fn(() => Date.now())
+    now: vi.fn(() => Date.now())
   }
 });
 
 // Setup e cleanup para cada teste
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(() => {
-  jest.restoreAllMocks();
+  vi.restoreAllMocks();
 });
 
 export { mockGenesisCore };

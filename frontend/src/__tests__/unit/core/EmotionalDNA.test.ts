@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { EmotionalDNA, type EmotionalInteraction } from '../../../core/EmotionalDNA'
+import { EmotionalDNA } from '../../../core/EmotionalDNA'
 
 describe('EmotionalDNA', () => {
   let emotionalDNA: EmotionalDNA

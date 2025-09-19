@@ -2,7 +2,7 @@ import {
   EmotionalAnalysisRequest,
   EmotionalAnalysisResponse,
   HealthCheckResponse
-} from '../../../shared/types/api';
+} from '../../../packages/shared/types/api';
 
 export class BackendClient {
   private baseUrl: string;
