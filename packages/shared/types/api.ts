@@ -43,101 +43,43 @@ export interface EmotionalAnalysisResponse {
   /** Intensidade (0..1). Temporariamente opcional para compatibilidade. */
   intensity?: number;
   /** Afeto dominante. Temporariamente opcional. */
-  dominantAffect?: keyof EmotionalDNA;
-  /** ISO datetime. Temporariamente opcional. */
-  timestamp?: string;
-  // --- Campos legados aceitos temporariamente (compatibilidade) ---
-  success?: boolean;
-  confidence?: number;
-  recommendation?: string;
-  error?: unknown;
-  emotionalShift?: unknown;
-  morphogenicSuggestion?: unknown;
+  dominantAffect?: EmotionalAffect;
+  /** Estado emocional resultante */
+  newState: EmotionalDNA;
+  /** Timestamp da análise */
+  timestamp: number;
+  /** Confiança da predição */
+  confidence: number;
 }
 
 // === HEALTH CHECK ===
 
 export interface HealthCheckResponse {
-  success: boolean;
-  status: string;
-  error?: any;
-}
-
-export interface SystemStatus {
-  status: string;
-  service: string;
-  version: string;
-  environment: string;
-  timestamp: string;
-  uptime_seconds: number;
-  memory_mb: {
-    rss: number;
-    heapUsed: number;
-    heapTotal: number;
+  status: 'ok' | 'error';
+  timestamp: number;
+  uptime: number;
+  services: {
+    database?: 'healthy' | 'unhealthy';
+    cache?: 'healthy' | 'unhealthy';
+    ai?: 'healthy' | 'unhealthy';
   };
-  claude_api_key: 'configured' | 'missing';
+  version: string;
 }
 
-// === PREDIÇÕES E ANÁLISES ===
-
-export interface EmotionalPrediction {
-  predictedEmotion: EmotionalDNA;
-  confidence: number;
-  timeHorizon: number;
-  reasoning: string;
-}
-
-export interface ClaudeAnalysisResult {
-  confidence: number;
-  recommendation: string;
-  emotionalShift: string;
-  morphogenicSuggestion: string;
-}
-
-// === PERFORMANCE E SISTEMA ===
+// === PERFORMANCE METRICS ===
 
 export interface PerformanceMetrics {
   fps: number;
-  inputLatency: number;
+  latency: number;
   memoryUsage: number;
-  particleCount: number;
-  visibleParticles: number;
-  renderedParticles: number;
-  distributionTransitions: number;
-  webglEnabled: boolean;
-  adaptiveOptimizations: number;
+  renderTime: number;
 }
 
-// === CONFIGURAÇÕES ===
+// === ERROR RESPONSES ===
 
-export interface AudioScale {
-  name: string;
-  frequencies: number[];
-  emotions: string[];
-  timbre: 'sine' | 'square' | 'sawtooth' | 'triangle';
-}
-
-export interface DistributionConfig {
-  name: string;
-  emotions: string[];
-  description: string;
-}
-
-// === TIPOS DE EVENTOS ===
-
-export type StatusChangeHandler = (message: string) => void;
-
-// === ENUMS ===
-
-export enum DistributionType {
-  FIBONACCI = 'fibonacci',
-  SPIRAL = 'spiral',
-  ORGANIC = 'organic',
-  RANDOM = 'random'
-}
-
-export enum ConnectionStatus {
-  DISCONNECTED = 'disconnected',
-  CONNECTING = 'connecting',
-  CONNECTED = 'connected'
+export interface ApiError {
+  code: string;
+  message: string;
+  timestamp: number;
+  path?: string;
 }
