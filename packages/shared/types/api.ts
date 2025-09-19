@@ -1,21 +1,8 @@
-/**
- * Tipos compartilhados para API Genesis Luminal
- * ATUALIZADO: Alinhado com implementação real do sistema
- */
-
-// === TIPOS BÁSICOS ===
 export interface Vector2D {
   x: number;
   y: number;
 }
 
-export interface Vector3D {
-  x: number;
-  y: number;
-  z: number;
-}
-
-// === TIPOS EMOCIONAIS ===
 export interface EmotionalDNA {
   joy: number;
   nostalgia: number;
@@ -26,9 +13,6 @@ export interface EmotionalDNA {
   power: number;
 }
 
-export type EmotionalAffect = keyof EmotionalDNA;
-
-// === REQUISIÇÕES E RESPOSTAS DA API ===
 export interface EmotionalAnalysisRequest {
   currentState: EmotionalDNA;
   mousePosition: Vector2D;
@@ -37,20 +21,20 @@ export interface EmotionalAnalysisRequest {
 }
 
 export interface EmotionalAnalysisResponse {
-  success: boolean;                    // ✅ ADICIONADO - Match com implementação
-  intensity?: number;
-  dominantAffect?: EmotionalAffect;
+  success: boolean;
   newState: EmotionalDNA;
   timestamp: number;
   confidence: number;
-  recommendation?: string;             // ✅ ADICIONADO - Match com GenesisCore
-  error?: string;                      // ✅ Para casos de erro
+  recommendation?: string;
+  error?: string;
+  emotionalShift?: string;
+  intensity?: number;
+  dominantAffect?: string;
 }
 
-// === HEALTH CHECK ===
 export interface HealthCheckResponse {
-  success: boolean;                    // ✅ ADICIONADO - Match com BackendClient
-  status: 'ok' | 'error' | 'offline'; // ✅ EXPANDIDO - incluir offline
+  success: boolean;
+  status: 'ok' | 'error' | 'offline';
   timestamp: number;
   uptime: number;
   services: {
@@ -59,20 +43,5 @@ export interface HealthCheckResponse {
     ai?: 'healthy' | 'unhealthy';
   };
   version: string;
-}
-
-// === PERFORMANCE METRICS ===
-export interface PerformanceMetrics {
-  fps: number;
-  latency: number;
-  memoryUsage: number;
-  renderTime: number;
-}
-
-// === ERROR RESPONSES ===
-export interface ApiError {
-  code: string;
-  message: string;
-  timestamp: number;
-  path?: string;
+  error?: any;
 }
