@@ -171,3 +171,5 @@ export const config = {
 loadConfig().catch(error => {
   console.warn('Configuration async load failed, using fallback:', error.message);
 });
+
+------------------------------------------------------------------------------------------------------------------------

@@ -16,12 +16,13 @@ export interface EmotionalDNA {
 
 export type EmotionalAffect = keyof EmotionalDNA;
 
+// ✅ CORREÇÃO: Aceitar tanto formato completo quanto text simples
 export interface EmotionalAnalysisRequest {
   currentState?: EmotionalDNA;
   mousePosition?: Vector2D;
   sessionDuration?: number;
   userId?: string;
-  text?: string;
+  text?: string; // Adicionar text para compatibilidade backend
   metadata?: any;
 }
 
@@ -35,8 +36,6 @@ export interface EmotionalAnalysisResponse {
   error?: unknown;
   emotionalShift?: unknown;
   morphogenicSuggestion?: unknown;
-  processingTime?: number;
-  provider?: string;
 }
 
 export interface SystemStatus {
@@ -54,15 +53,4 @@ export interface SystemStatus {
   claude_api_key: 'configured' | 'missing';
 }
 
-export enum EmotionalRecommendation {
-  CONTINUE = 'continue',
-  PAUSE = 'pause',
-  ADAPT = 'adapt',
-  RESET = 'reset'
-}
-
-export enum EmotionalShiftType {
-  POSITIVE = 'positive',
-  NEGATIVE = 'negative',
-  STABLE = 'stable'
-}
+------------------------------------------------------------------------------------------------------------------------

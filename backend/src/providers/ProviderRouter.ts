@@ -1,88 +1,112 @@
+import { env } from '../config/env';
+import type { AIProvider } from './AIProvider';
 import { AnthropicProvider } from './AnthropicProvider';
 import { FallbackProvider } from './FallbackProvider';
 import { logger } from '../utils/logger';
 import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '../../../shared/types/api';
 
+type CBState = 'CLOSED' | 'OPEN' | 'HALF_OPEN';
+
+function sleep(ms: number) { return new Promise(r => setTimeout(r, ms)); }
+function jitter(ms: number) { const j = Math.floor(ms * 0.2); return ms + Math.floor(Math.random() * j); }
+
 export class ProviderRouter {
-  private providers: Array<{ name: string; provider: any }>;
-  private failureCount: number = 0;
-  private maxFailures: number = 3;
-  private lastFailureTime: number = 0;
-  private circuitBreakerTimeout: number = 60000; // 1 minute
+  private primary: AIProvider;
+  private fallback: AIProvider;
 
-  constructor() {
-    this.providers = [
-      { name: 'anthropic', provider: new AnthropicProvider() },
-      { name: 'fallback', provider: new FallbackProvider() }
-    ];
+  private state: CBState = 'CLOSED';
+  private failures = 0;
+  private nextRetryAt = 0;
+  private lastErrorCode: string | undefined;
+
+  constructor(primary?: AIProvider, fallback?: AIProvider) {
+    this.primary = primary ?? new AnthropicProvider();
+    this.fallback = fallback ?? new FallbackProvider();
   }
 
-  async analyzeEmotion(input: string): Promise<EmotionalAnalysisResponse> {
-    const startTime = Date.now();
-    
-    // Circuit breaker logic
-    if (this.isCircuitBreakerOpen()) {
-      logger.warn('Circuit breaker is open, using fallback');
-      return await this.useFallback(input, startTime);
+  getStatus() {
+    return {
+      state: this.state,
+      failures: this.failures,
+      nextRetryAt: this.nextRetryAt || null,
+      lastErrorCode: this.lastErrorCode || null,
+      offlineMode: env.CLAUDE_OFFLINE_MODE === 'true',
+      primary: this.primary.name,
+      fallback: this.fallback.name,
+    };
+  }
+
+  private openCircuit(reason: string, cooldownMs: number) {
+    if (this.state !== 'OPEN') {
+      logger.warn('Circuit opened (primary disabled)', { reason, cooldownMs });
+    }
+    this.state = 'OPEN';
+    this.nextRetryAt = Date.now() + cooldownMs;
+  }
+
+  private closeCircuit() {
+    if (this.state !== 'CLOSED') {
+      logger.info('Circuit closed (primary enabled again)');
+    }
+    this.state = 'CLOSED';
+    this.failures = 0;
+    this.nextRetryAt = 0;
+    this.lastErrorCode = undefined;
+  }
+
+  private async tryPrimary(input: EmotionalAnalysisRequest): Promise<EmotionalAnalysisResponse> {
+    const base = env.RETRY_BASE_MS;
+    const max = env.RETRY_MAX_MS;
+    let attempt = 0;
+    for (;;) {
+      try {
+        return await this.primary.analyze(input);
+      } catch (err: any) {
+        attempt++;
+        this.lastErrorCode = err?.code || 'UNKNOWN';
+        const msg: string = err?.details?.error?.message || '';
+        if (String(this.lastErrorCode).includes('usage') || /usage limits|quota/i.test(msg)) {
+          this.openCircuit('quota_exceeded', env.CB_COOLDOWN_SECONDS * 1000);
+          throw err;
+        }
+        this.failures++;
+        const delay = Math.min(max, Math.pow(2, attempt - 1) * base);
+        if (attempt >= 2) throw err;
+        await sleep(jitter(delay));
+      }
+    }
+  }
+
+  async analyze(input: EmotionalAnalysisRequest): Promise<EmotionalAnalysisResponse> {
+    if (env.CLAUDE_OFFLINE_MODE === 'true') {
+      return this.fallback.analyze(input);
+    }
+
+    const now = Date.now();
+    if (this.state === 'OPEN') {
+      if (now < this.nextRetryAt) {
+        return this.fallback.analyze(input);
+      }
+      this.state = 'HALF_OPEN';
     }
 
     try {
-      // Try primary provider (Anthropic)
-      const result = await this.providers[0].provider.analyze({ text: input });
-      
-      // Reset failure count on success
-      this.failureCount = 0;
-      
-      return {
-        ...result,
-        processingTime: Date.now() - startTime,
-        provider: this.providers[0].name
-      };
-    } catch (error) {
-      logger.error('Primary provider failed', { error, input });
-      
-      // Increment failure count
-      this.failureCount++;
-      this.lastFailureTime = Date.now();
-      
-      // Use fallback
-      return await this.useFallback(input, startTime);
-    }
-  }
-
-  private async useFallback(input: string, startTime: number): Promise<EmotionalAnalysisResponse> {
-    try {
-      const result = await this.providers[1].provider.analyze({ text: input });
-      return {
-        ...result,
-        processingTime: Date.now() - startTime,
-        provider: this.providers[1].name
-      };
-    } catch (error) {
-      logger.error('Fallback provider also failed', { error });
-      throw new Error('All providers failed');
-    }
-  }
-
-  private isCircuitBreakerOpen(): boolean {
-    if (this.failureCount >= this.maxFailures) {
-      const timeSinceLastFailure = Date.now() - this.lastFailureTime;
-      return timeSinceLastFailure < this.circuitBreakerTimeout;
-    }
-    return false;
-  }
-
-  async isHealthy(): Promise<boolean> {
-    try {
-      await this.providers[0].provider.analyze({ text: 'health check' });
-      return true;
+      const res = await this.tryPrimary(input);
+      this.closeCircuit();
+      return res;
     } catch {
-      return false;
+      if (this.state === 'HALF_OPEN') {
+        this.openCircuit(this.lastErrorCode || 'half_open_fail', env.CB_COOLDOWN_SECONDS * 1000);
+      } else if (this.failures >= env.CB_FAILURE_THRESHOLD) {
+        this.openCircuit(this.lastErrorCode || 'threshold_reached', 30_000);
+      }
+      if (env.SUPPRESS_CLAUDE_QUOTA_LOGS !== 'true') {
+        logger.warn('Primary provider failed, serving fallback', { code: this.lastErrorCode });
+      } else {
+        logger.debug('Primary disabled / fallback', { code: this.lastErrorCode, state: this.state });
+      }
+      return this.fallback.analyze(input);
     }
-  }
-
-  getActiveProviderName(): string {
-    return this.isCircuitBreakerOpen() ? this.providers[1].name : this.providers[0].name;
   }
 }
 

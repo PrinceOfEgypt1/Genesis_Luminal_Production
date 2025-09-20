@@ -48,3 +48,5 @@ export async function rateLimit(req: Request, res: Response, next: NextFunction)
 // ✅ CRÍTICO: Mantém compatibilidade EXATA com index.ts original
 export { rateLimit as rateLimitMiddleware };
 export default rateLimit;
+
+------------------------------------------------------------------------------------------------------------------------
