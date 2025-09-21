@@ -1,0 +1,142 @@
+{
+  "extends": ["@commitlint/config-conventional"],
+  "rules": {
+    "type-enum": [
+      2,
+      "always",
+      [
+        "feat",
+        "fix",
+        "docs", 
+        "style",
+        "refactor",
+        "perf",
+        "test",
+        "build",
+        "ci",
+        "chore",
+        "revert",
+        "security",
+        "release"
+      ]
+    ],
+    "scope-enum": [
+      2,
+      "always",
+      [
+        "backend",
+        "frontend", 
+        "docs",
+        "ci",
+        "security",
+        "deps",
+        "config",
+        "api",
+        "ui",
+        "tests",
+        "release"
+      ]
+    ],
+    "subject-max-length": [2, "always", 72],
+    "subject-min-length": [2, "always", 10],
+    "subject-case": [2, "always", "sentence-case"],
+    "body-max-line-length": [2, "always", 100],
+    "footer-max-line-length": [2, "always", 100]
+  },
+  "prompt": {
+    "questions": {
+      "type": {
+        "description": "Selecione o tipo de mudança que você está commitando:",
+        "enum": {
+          "feat": {
+            "description": "Nova funcionalidade",
+            "title": "Features",
+            "emoji": "✨"
+          },
+          "fix": {
+            "description": "Correção de bug",
+            "title": "Bug Fixes", 
+            "emoji": "🐛"
+          },
+          "docs": {
+            "description": "Apenas mudanças na documentação",
+            "title": "Documentation",
+            "emoji": "📚"
+          },
+          "style": {
+            "description": "Mudanças que não afetam o significado do código (espaços, formatação, etc)",
+            "title": "Styles",
+            "emoji": "💎"
+          },
+          "refactor": {
+            "description": "Mudança de código que não corrige bug nem adiciona funcionalidade",
+            "title": "Code Refactoring",
+            "emoji": "📦"
+          },
+          "perf": {
+            "description": "Mudança de código que melhora performance",
+            "title": "Performance Improvements",
+            "emoji": "🚀"
+          },
+          "test": {
+            "description": "Adicionando testes ausentes ou corrigindo testes existentes",
+            "title": "Tests",
+            "emoji": "🚨"
+          },
+          "build": {
+            "description": "Mudanças que afetam o sistema de build ou dependências externas",
+            "title": "Builds",
+            "emoji": "🛠"
+          },
+          "ci": {
+            "description": "Mudanças nos arquivos e scripts de CI",
+            "title": "Continuous Integrations",
+            "emoji": "⚙️"
+          },
+          "chore": {
+            "description": "Outras mudanças que não modificam src ou arquivos de teste",
+            "title": "Chores",
+            "emoji": "♻️"
+          },
+          "revert": {
+            "description": "Reverte um commit anterior",
+            "title": "Reverts",
+            "emoji": "🗑"
+          },
+          "security": {
+            "description": "Correções de segurança",
+            "title": "Security",
+            "emoji": "🔒"
+          }
+        }
+      },
+      "scope": {
+        "description": "Qual é o escopo desta mudança (ex. componente ou nome do arquivo):"
+      },
+      "subject": {
+        "description": "Escreva uma descrição curta e imperativa da mudança:"
+      },
+      "body": {
+        "description": "Forneça uma descrição mais longa da mudança:"
+      },
+      "isBreaking": {
+        "description": "Há alguma mudança que quebra compatibilidade?"
+      },
+      "breakingBody": {
+        "description": "Um commit BREAKING CHANGE requer um corpo. Descreva o que mudou:"
+      },
+      "breaking": {
+        "description": "Descreva as breaking changes:"
+      },
+      "isIssueAffected": {
+        "description": "Esta mudança afeta alguma issue aberta?"
+      },
+      "issuesBody": {
+        "description": "Se issues são fechadas, o commit requer um corpo. Por favor entre uma descrição longa do commit:"
+      },
+      "issues": {
+        "description": "Adicione referências de issues (ex. \"fix #123\", \"re #123\"):"
+      }
+    }
+  }
+}

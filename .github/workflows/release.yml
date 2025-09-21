@@ -1,0 +1,99 @@
+# ========================================
+# GENESIS LUMINAL - AUTOMATED RELEASE
+# Semantic versioning e automated releases
+# ========================================
+
+name: 🚀 Release
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  release:
+    name: 🚀 Semantic Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 🟢 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: 📦 Install Dependencies
+      run: |
+        npm ci
+        cd backend && npm ci
+        cd ../frontend && npm ci
+
+    - name: 🧪 Run Tests
+      run: |
+        npm run test:ci
+
+    - name: 🏗️ Build Applications
+      run: |
+        npm run build
+
+    - name: 🔍 Security Scan
+      run: |
+        npm run security:scan
+
+    - name: 📊 Generate SBOM
+      run: |
+        npx @cyclonedx/cyclonedx-npm --output-file sbom.json
+        npx @cyclonedx/cyclonedx-npm --output-format xml --output-file sbom.xml
+
+    - name: 🚀 Semantic Release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      run: npx semantic-release
+
+    - name: 📤 Upload SBOM
+      uses: actions/upload-artifact@v4
+      with:
+        name: software-bill-of-materials
+        path: |
+          sbom.json
+          sbom.xml
+        retention-days: 90
+
+    - name: 📤 Upload Build Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-artifacts
+        path: |
+          backend/dist/
+          frontend/dist/
+        retention-days: 30
+
+    - name: 🔔 Slack Notification
+      if: success()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        text: '🚀 New release deployed successfully!'
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+    - name: 🔔 Discord Notification
+      if: success()
+      uses: sarisia/actions-status-discord@v1
+      with:
+        webhook: ${{ secrets.DISCORD_WEBHOOK }}
+        title: "Genesis Luminal Release"
+        description: "New version released successfully! 🎉"
+        color: 0x00ff00

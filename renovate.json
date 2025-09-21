@@ -1,0 +1,69 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base",
+    ":timezone(America/Sao_Paulo)",
+    ":semanticCommitTypeAll(chore)",
+    ":semanticCommitScope(deps)"
+  ],
+  "schedule": ["before 6am on monday"],
+  "labels": ["dependencies", "automated"],
+  "assignees": ["@PrinceOfEgypt1"],
+  "reviewers": ["@PrinceOfEgypt1"],
+  "packageRules": [
+    {
+      "groupName": "Backend Dependencies",
+      "matchFiles": ["backend/package.json"],
+      "schedule": ["before 4am on monday"]
+    },
+    {
+      "groupName": "Frontend Dependencies", 
+      "matchFiles": ["frontend/package.json"],
+      "schedule": ["before 4am on monday"]
+    },
+    {
+      "groupName": "Root Dependencies",
+      "matchFiles": ["package.json"],
+      "schedule": ["before 4am on monday"]
+    },
+    {
+      "groupName": "Security Updates",
+      "matchPackagePatterns": ["security", "helmet", "bcrypt"],
+      "schedule": ["at any time"],
+      "automerge": false,
+      "labels": ["security", "dependencies"]
+    },
+    {
+      "groupName": "TypeScript",
+      "matchPackageNames": ["typescript"],
+      "schedule": ["before 6am on monday"]
+    },
+    {
+      "groupName": "Testing Dependencies",
+      "matchPackagePatterns": ["jest", "vitest", "@testing-library"],
+      "schedule": ["before 6am on monday"]
+    },
+    {
+      "groupName": "Dev Dependencies",
+      "matchDepTypes": ["devDependencies"],
+      "automerge": true,
+      "automergeType": "pr"
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "schedule": ["at any time"]
+  },
+  "osvVulnerabilityAlerts": true,
+  "prCreation": "not-pending",
+  "prHourlyLimit": 2,
+  "prConcurrentLimit": 10,
+  "branchConcurrentLimit": 20,
+  "minimumReleaseAge": "3 days",
+  "internalChecksFilter": "strict",
+  "configMigration": true,
+  "platformAutomerge": false,
+  "gitAuthor": "Renovate Bot <bot@renovateapp.com>",
+  "onboarding": false,
+  "requireConfig": "optional"
+}
