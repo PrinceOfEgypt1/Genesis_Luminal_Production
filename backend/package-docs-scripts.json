@@ -1,0 +1,14 @@
+{
+  "scripts": {
+    "docs:generate": "typedoc",
+    "docs:serve": "npx http-server ../docs/typedoc/backend -p 8080 -o",
+    "docs:clean": "rm -rf ../docs/typedoc/backend",
+    "docs:build": "npm run docs:clean && npm run docs:generate",
+    "docs:watch": "typedoc --watch"
+  },
+  "devDependencies": {
+    "typedoc": "^0.25.0",
+    "typedoc-plugin-markdown": "^3.16.0",
+    "typedoc-plugin-mermaid": "^1.10.0"
+  }
+}

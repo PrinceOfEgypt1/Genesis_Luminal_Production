@@ -1,0 +1,17 @@
+{
+  "scripts": {
+    "storybook": "storybook dev -p 6006",
+    "storybook:build": "storybook build -o ../docs/storybook",
+    "storybook:serve": "npx http-server ../docs/storybook -p 6007 -o",
+    "storybook:test": "test-storybook",
+    "chromatic": "npx chromatic --project-token=<project-token>"
+  },
+  "devDependencies": {
+    "@storybook/react-vite": "^7.5.0",
+    "@storybook/addon-essentials": "^7.5.0",
+    "@storybook/addon-interactions": "^7.5.0",
+    "@storybook/addon-a11y": "^7.5.0",
+    "@storybook/test": "^7.5.0",
+    "@storybook/test-runner": "^0.15.0"
+  }
+}

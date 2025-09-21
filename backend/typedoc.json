@@ -1,0 +1,47 @@
+{
+  "entryPoints": [
+    "src/index.ts",
+    "src/controllers",
+    "src/services", 
+    "src/providers",
+    "src/types",
+    "src/utils"
+  ],
+  "out": "../docs/typedoc/backend",
+  "name": "Genesis Luminal - Backend API Documentation",
+  "theme": "default",
+  "includeVersion": true,
+  "excludeExternals": true,
+  "excludePrivate": false,
+  "excludeProtected": false,
+  "disableSources": false,
+  "includes": "./docs",
+  "media": "./assets",
+  "readme": "../README.md",
+  "plugin": [
+    "typedoc-plugin-markdown",
+    "typedoc-plugin-mermaid"
+  ],
+  "categoryOrder": [
+    "Controllers",
+    "Services", 
+    "Providers",
+    "Types",
+    "Utils",
+    "*"
+  ],
+  "sort": ["source-order"],
+  "validation": {
+    "notExported": true,
+    "invalidLink": true,
+    "notDocumented": false
+  },
+  "searchInComments": true,
+  "searchInDocuments": true,
+  "githubPages": false,
+  "gitRevision": "main",
+  "sourceLinkTemplate": "https://github.com/PrinceOfEgypt1/Genesis_Luminal_Production/blob/{gitRevision}/{path}#L{line}",
+  "markedOptions": {
+    "mangle": false
+  }
+}
