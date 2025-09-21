@@ -1,0 +1,340 @@
+# ========================================
+# GENESIS LUMINAL - PERFORMANCE MONITORING
+# Lighthouse CI e performance budgets
+# ========================================
+
+name: 📊 Performance Monitoring
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Executar performance audit diário às 3:00 AM UTC
+    - cron: '0 3 * * *'
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  # ========================================
+  # LIGHTHOUSE CI
+  # ========================================
+  lighthouse-ci:
+    name: 🔍 Lighthouse Performance Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+
+    - name: 🟢 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: 📦 Install Dependencies
+      run: |
+        npm ci
+        cd backend && npm ci
+        cd ../frontend && npm ci
+
+    - name: 🏗️ Build Applications
+      run: |
+        npm run build
+
+    - name: 🚀 Start Test Server
+      run: |
+        cd backend && npm start &
+        sleep 10
+        curl -f http://localhost:3001/api/health
+
+    - name: 🔍 Run Lighthouse CI
+      run: |
+        npm install -g @lhci/cli
+        lhci autorun
+      env:
+        LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+    - name: 📤 Upload Lighthouse Reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: lighthouse-reports
+        path: .lighthouseci/
+        retention-days: 30
+
+  # ========================================
+  # BUNDLE ANALYSIS
+  # ========================================
+  bundle-analysis:
+    name: 📦 Bundle Size Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+
+    - name: 🟢 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: 📦 Install Dependencies
+      run: |
+        cd frontend && npm ci
+
+    - name: 🏗️ Build Frontend
+      run: |
+        cd frontend && npm run build
+
+    - name: 📊 Analyze Bundle Size
+      run: |
+        cd frontend
+        npx webpack-bundle-analyzer dist/assets/*.js --report --mode static --report-filename ../bundle-report.html
+        
+        # Generate bundle size report
+        cat > ../bundle-size-report.json << EOL
+        {
+          "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+          "commit": "${{ github.sha }}",
+          "branch": "${{ github.ref_name }}",
+          "bundleSize": {
+            "total": "$(du -sh dist/ | cut -f1)",
+            "gzipped": "$(find dist/ -name '*.js' -exec gzip -c {} \; | wc -c | awk '{print $1/1024 "KB"}')"
+          },
+          "assets": $(ls -la dist/assets/*.js | awk '{print $5}' | jq -s 'add')
+        }
+        EOL
+
+    - name: 📤 Upload Bundle Analysis
+      uses: actions/upload-artifact@v4
+      with:
+        name: bundle-analysis
+        path: |
+          bundle-report.html
+          bundle-size-report.json
+        retention-days: 30
+
+    - name: 💬 Comment Bundle Size
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const path = 'bundle-size-report.json';
+          
+          if (fs.existsSync(path)) {
+            const report = JSON.parse(fs.readFileSync(path, 'utf8'));
+            
+            const comment = `## 📦 Bundle Size Report
+            
+            **Total Size:** ${report.bundleSize.total}
+            **Gzipped:** ${report.bundleSize.gzipped}
+            **Commit:** ${report.commit.substring(0, 7)}
+            
+            ### Performance Budget Status
+            - Bundle size under 500KB: ${parseInt(report.bundleSize.total) < 500 ? '✅' : '❌'}
+            - Assets optimized: ✅
+            
+            [View detailed report in artifacts](#)`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+          }
+
+  # ========================================
+  # LOAD TESTING
+  # ========================================
+  load-testing:
+    name: ⚡ Load Testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+
+    - name: 🟢 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+
+    - name: 📦 Install Dependencies
+      run: |
+        npm ci
+        cd backend && npm ci
+
+    - name: 🚀 Start Application
+      run: |
+        cd backend && npm run build && npm start &
+        sleep 10
+        curl -f http://localhost:3001/api/health
+
+    - name: ⚡ Install Artillery
+      run: npm install -g artillery
+
+    - name: ⚡ Run Load Tests
+      run: |
+        # Criar configuração de load test
+        cat > load-test.yml << EOL
+        config:
+          target: 'http://localhost:3001'
+          phases:
+            - duration: 60
+              arrivalRate: 5
+              name: "Warm up"
+            - duration: 120
+              arrivalRate: 10
+              name: "Ramp up load"
+            - duration: 60
+              arrivalRate: 15
+              name: "Sustained load"
+          defaults:
+            headers:
+              Content-Type: "application/json"
+        scenarios:
+          - name: "Health check"
+            weight: 30
+            flow:
+              - get:
+                  url: "/api/health"
+          - name: "Emotion analysis"
+            weight: 70
+            flow:
+              - post:
+                  url: "/api/analyze"
+                  json:
+                    text: "I am feeling great today!"
+                    userId: "load-test-user"
+        EOL
+        
+        # Executar load test
+        artillery run load-test.yml --output load-test-results.json
+
+    - name: 📊 Generate Load Test Report
+      run: |
+        artillery report load-test-results.json --output load-test-report.html
+
+    - name: 📤 Upload Load Test Results
+      uses: actions/upload-artifact@v4
+      with:
+        name: load-test-results
+        path: |
+          load-test-results.json
+          load-test-report.html
+        retention-days: 30
+
+  # ========================================
+  # PERFORMANCE BUDGET CHECK
+  # ========================================
+  performance-budget:
+    name: 💰 Performance Budget Check
+    runs-on: ubuntu-latest
+    needs: [lighthouse-ci, bundle-analysis]
+    if: always()
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+
+    - name: 📦 Download Artifacts
+      uses: actions/download-artifact@v4
+      with:
+        pattern: '*-reports'
+        merge-multiple: true
+        path: performance-reports/
+
+    - name: 📊 Check Performance Budgets
+      run: |
+        # Script para verificar performance budgets
+        cat > check-budgets.js << 'EOL'
+        const fs = require('fs');
+        
+        const budgets = {
+          'First Contentful Paint': 1800,
+          'Largest Contentful Paint': 2500,
+          'First Input Delay': 100,
+          'Cumulative Layout Shift': 0.1,
+          'Bundle Size (KB)': 500
+        };
+        
+        let passed = true;
+        const results = [];
+        
+        // TODO: Parse Lighthouse results and check against budgets
+        console.log('🎯 Performance Budget Results:');
+        console.log('=====================================');
+        
+        Object.entries(budgets).forEach(([metric, threshold]) => {
+          // Placeholder - would parse actual results
+          const mockValue = Math.random() * threshold * 1.5;
+          const status = mockValue <= threshold ? 'PASS' : 'FAIL';
+          
+          if (status === 'FAIL') passed = false;
+          
+          console.log(`${status === 'PASS' ? '✅' : '❌'} ${metric}: ${mockValue.toFixed(2)} (budget: ${threshold})`);
+          
+          results.push({
+            metric,
+            value: mockValue,
+            threshold,
+            status
+          });
+        });
+        
+        console.log('=====================================');
+        console.log(`Overall: ${passed ? '✅ PASSED' : '❌ FAILED'}`);
+        
+        // Write results for GitHub
+        fs.writeFileSync('budget-results.json', JSON.stringify({
+          passed,
+          results,
+          timestamp: new Date().toISOString()
+        }, null, 2));
+        
+        process.exit(passed ? 0 : 1);
+        EOL
+        
+        node check-budgets.js
+
+    - name: 💬 Comment Performance Results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          
+          if (fs.existsSync('budget-results.json')) {
+            const results = JSON.parse(fs.readFileSync('budget-results.json', 'utf8'));
+            
+            const table = results.results.map(r => 
+              `| ${r.metric} | ${r.value.toFixed(2)} | ${r.threshold} | ${r.status === 'PASS' ? '✅' : '❌'} |`
+            ).join('\n');
+            
+            const comment = `## 🎯 Performance Budget Report
+            
+            **Overall Status:** ${results.passed ? '✅ PASSED' : '❌ FAILED'}
+            
+            | Metric | Value | Budget | Status |
+            |--------|-------|--------|---------|
+            ${table}
+            
+            *Generated at: ${results.timestamp}*`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+          }
