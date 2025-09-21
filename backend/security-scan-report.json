@@ -1,0 +1,21 @@
+{
+  "timestamp": "2025-09-21T15:26:38Z",
+  "version": "1.0.0",
+  "project": "Genesis Luminal",
+  "scanResults": {
+    "dependencyVulnerabilities": {
+      "backend": "",
+      "frontend": ""
+    },
+    "secretsFound": false,
+    "codeQualityIssues": 0,
+    "securityConfigurationScore": 85,
+    "overallRisk": "LOW"
+  },
+  "recommendations": [
+    "Manter dependências atualizadas",
+    "Implementar secret scanning no CI/CD",
+    "Configurar SAST (Static Application Security Testing)",
+    "Implementar dependency scanning automatizado"
+  ]
+}

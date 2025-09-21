@@ -1,0 +1,250 @@
+# ========================================
+# GENESIS LUMINAL - SECURITY SCANNING WORKFLOW
+# Scanning automatizado de segurança
+# ========================================
+
+name: 🔒 Security Scanning
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Executar diariamente às 2:00 AM UTC
+    - cron: '0 2 * * *'
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  # ========================================
+  # DEPENDENCY SCANNING
+  # ========================================
+  dependency-scan:
+    name: 🔍 Dependency Vulnerabilities
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+
+    - name: 🟢 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: 📦 Install Dependencies - Backend
+      working-directory: ./backend
+      run: npm ci
+
+    - name: 📦 Install Dependencies - Frontend
+      working-directory: ./frontend
+      run: npm ci
+
+    - name: 🔍 Audit Backend Dependencies
+      working-directory: ./backend
+      run: |
+        echo "🔍 Scanning backend dependencies..."
+        npm audit --audit-level=moderate
+        npm audit --json > ../security-reports/backend-audit.json || true
+
+    - name: 🔍 Audit Frontend Dependencies
+      working-directory: ./frontend
+      run: |
+        echo "🔍 Scanning frontend dependencies..."
+        npm audit --audit-level=moderate
+        npm audit --json > ../security-reports/frontend-audit.json || true
+
+    - name: 📤 Upload Audit Reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: dependency-audit-reports
+        path: security-reports/
+        retention-days: 30
+
+  # ========================================
+  # SECRETS SCANNING
+  # ========================================
+  secrets-scan:
+    name: 🔐 Secrets Detection
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+
+    - name: 🔍 Run Custom Secrets Scan
+      run: |
+        chmod +x scripts/security/security-scan.sh
+        ./scripts/security/security-scan.sh
+
+    - name: 🔍 TruffleHog Secrets Detection
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        base: main
+        head: HEAD
+
+  # ========================================
+  # STATIC CODE ANALYSIS
+  # ========================================
+  static-analysis:
+    name: 🔍 Static Code Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+
+    - name: 🔍 CodeQL Analysis
+      uses: github/codeql-action/init@v3
+      with:
+        languages: javascript
+
+    - name: 🔍 Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+
+    - name: 🔍 ESLint Security Analysis
+      run: |
+        cd backend && npm ci
+        cd ../frontend && npm ci
+        
+        # Executar ESLint com regras de segurança
+        cd backend && npx eslint src/ --ext .ts --format json > ../security-reports/backend-eslint.json || true
+        cd ../frontend && npx eslint src/ --ext .ts,.tsx --format json > ../security-reports/frontend-eslint.json || true
+
+    - name: 📤 Upload Static Analysis Reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: static-analysis-reports
+        path: security-reports/
+        retention-days: 30
+
+  # ========================================
+  # DOCKER SECURITY SCANNING
+  # ========================================
+  docker-scan:
+    name: 🐳 Docker Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+
+    - name: 🐳 Build Docker Image
+      run: |
+        docker build -f Dockerfile.ci -t genesis-luminal:security-scan .
+
+    - name: 🔍 Trivy Container Scan
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'genesis-luminal:security-scan'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: 📤 Upload Trivy Results
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  # ========================================
+  # DYNAMIC SECURITY TESTING
+  # ========================================
+  dynamic-scan:
+    name: 🕷️ Dynamic Security Testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+
+    - name: 🟢 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+
+    - name: 📦 Install Dependencies
+      run: |
+        cd backend && npm ci
+        cd ../frontend && npm ci
+
+    - name: 🚀 Start Application
+      run: |
+        cd backend && npm run build && npm start &
+        sleep 10
+        curl -f http://localhost:3001/api/health
+
+    - name: 🕷️ OWASP ZAP Baseline Scan
+      uses: zaproxy/action-baseline@v0.7.0
+      with:
+        target: 'http://localhost:3001'
+        rules_file_name: '.zap/rules.tsv'
+        cmd_options: '-a'
+
+  # ========================================
+  # SECURITY REPORT GENERATION
+  # ========================================
+  security-report:
+    name: 📊 Security Report
+    runs-on: ubuntu-latest
+    needs: [dependency-scan, secrets-scan, static-analysis]
+    if: always()
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+
+    - name: 📦 Download All Reports
+      uses: actions/download-artifact@v4
+      with:
+        pattern: '*-reports'
+        merge-multiple: true
+        path: security-reports/
+
+    - name: 📊 Generate Consolidated Report
+      run: |
+        mkdir -p security-reports
+        
+        # Criar relatório consolidado
+        cat > security-reports/security-summary.json << EOL
+        {
+          "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+          "workflow_run": "${{ github.run_id }}",
+          "commit": "${{ github.sha }}",
+          "branch": "${{ github.ref_name }}",
+          "results": {
+            "dependency_scan": "${{ needs.dependency-scan.result }}",
+            "secrets_scan": "${{ needs.secrets-scan.result }}",
+            "static_analysis": "${{ needs.static-analysis.result }}"
+          },
+          "status": "completed"
+        }
+        EOL
+
+    - name: 📤 Upload Consolidated Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-consolidated-report
+        path: security-reports/
+        retention-days: 90
+
+    - name: 📊 Security Summary
+      run: |
+        echo "## 🔒 Security Scanning Summary" >> $GITHUB_STEP_SUMMARY
+        echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Dependency Scan | ${{ needs.dependency-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Secrets Scan | ${{ needs.secrets-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Static Analysis | ${{ needs.static-analysis.result }} |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Timestamp:** $(date -u)" >> $GITHUB_STEP_SUMMARY
+        echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
