@@ -1,0 +1,6 @@
+{
+  "entryPoints": ["backend/src/index.ts"],
+  "out": "docs/api", 
+  "theme": "default",
+  "name": "Genesis Luminal API"
+}
