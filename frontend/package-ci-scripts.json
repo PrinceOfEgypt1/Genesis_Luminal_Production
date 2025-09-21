@@ -1,0 +1,13 @@
+{
+  "scripts": {
+    "test:ci": "vitest run --coverage",
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run src/__tests__/integration",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src --ext .ts,.tsx,.js,.jsx --fix",
+    "lint:check": "eslint src --ext .ts,.tsx,.js,.jsx",
+    "audit:security": "npm audit --audit-level=moderate",
+    "build:ci": "npm run build && npm run type-check",
+    "ci:local": "../scripts/ci/quality-gates.sh"
+  }
+}

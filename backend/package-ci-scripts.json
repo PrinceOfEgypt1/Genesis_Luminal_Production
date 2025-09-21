@@ -1,0 +1,13 @@
+{
+  "scripts": {
+    "test:ci": "jest --coverage --watchAll=false --verbose",
+    "test:coverage": "jest --coverage --watchAll=false",
+    "test:integration": "jest --testMatch='**/__tests__/integration/**/*.test.*' --runInBand",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src --ext .ts,.js --fix",
+    "lint:check": "eslint src --ext .ts,.js",
+    "audit:security": "npm audit --audit-level=moderate",
+    "build:ci": "npm run build && npm run type-check",
+    "ci:local": "../scripts/ci/quality-gates.sh"
+  }
+}
