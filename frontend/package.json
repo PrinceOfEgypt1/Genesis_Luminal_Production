@@ -70,7 +70,7 @@
     "zustand": "^4.3.9"
   },
   "devDependencies": {
-    "@cyclonedx/cyclonedx-npm": "^1.16.0",
+    "@cyclonedx/cyclonedx-npm": "^4.0.2",
     "@playwright/test": "^1.36.2",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
