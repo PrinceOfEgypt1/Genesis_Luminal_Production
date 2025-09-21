@@ -46,3 +46,6 @@ app.listen(PORT, () => {
 
 // Swagger config (Fase 4)
 import { specs, swaggerUi } from './docs/swagger';
+
+// Swagger UI endpoint
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
