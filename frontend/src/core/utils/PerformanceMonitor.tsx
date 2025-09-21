@@ -88,3 +88,4 @@ export class PerformanceMonitor {
     return { ...this.metrics };
   }
 }
+

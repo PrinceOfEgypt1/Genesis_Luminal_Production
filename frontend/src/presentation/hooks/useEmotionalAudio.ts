@@ -41,3 +41,4 @@ export const useEmotionalAudio = (
 
   return { startAudio, playEmotionalTone, isAudioStarted };
 };
+

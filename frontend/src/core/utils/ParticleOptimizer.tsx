@@ -39,3 +39,4 @@ export class ParticleOptimizer {
     return Math.floor(this.adaptiveSettings.particleCount);
   }
 }
+

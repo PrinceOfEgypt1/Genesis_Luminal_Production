@@ -38,3 +38,4 @@ export const MinimalTest: React.FC = () => {
   
   return <canvas ref={canvasRef} width={800} height={600} style={{border: '1px solid white'}} />;
 };
+

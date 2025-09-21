@@ -25,3 +25,4 @@ describe('GenesisCore Component', () => {
     expect(element).toBeTruthy()
   })
 })
+

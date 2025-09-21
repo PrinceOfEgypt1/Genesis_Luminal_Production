@@ -143,3 +143,4 @@ test.describe('Cenários Críticos de Usuário - Genesis Luminal', () => {
     expect(browserSpecificErrors.length).toBe(0);
   });
 });
+

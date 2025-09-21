@@ -228,3 +228,4 @@ export const QuantumOrb: React.FC<QuantumOrbProps> = (props): JSX.Element => {
     </div>
   );
 };
+

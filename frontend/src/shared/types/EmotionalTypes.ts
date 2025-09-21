@@ -53,3 +53,4 @@ export interface EmotionalArchetype {
   stability: number
   uniqueness: number
 }
+

@@ -11,3 +11,4 @@ test.describe('Genesis Luminal - Simple JS Tests', () => {
     console.log('✅ Environment validated');
   });
 });
+

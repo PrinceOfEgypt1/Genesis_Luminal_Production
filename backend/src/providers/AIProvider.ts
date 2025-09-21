@@ -4,3 +4,4 @@ export interface AIProvider {
   name: string;
   analyze(input: EmotionalAnalysisRequest): Promise<EmotionalAnalysisResponse>;
 }
+

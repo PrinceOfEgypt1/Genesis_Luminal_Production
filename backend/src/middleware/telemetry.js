@@ -7,8 +7,8 @@
  * @version 1.0.0
  * @author Senior Software Engineering Team
  */
-import { generateCorrelationId, setCorrelationId } from '../telemetry/tracing';
-import { recordHttpRequestLatency } from '../telemetry/metrics';
+import { generateCorrelationId, setCorrelationId } from '../observability/tracing';
+import { recordHttpRequestLatency } from '../observability/metrics';
 /**
  * Middleware principal de telemetria
  */

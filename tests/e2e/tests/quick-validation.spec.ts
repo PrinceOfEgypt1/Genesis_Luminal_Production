@@ -99,3 +99,4 @@ test.describe('Validação - Seletores Corretos (Canvas Fix)', () => {
     });
   });
 });
+

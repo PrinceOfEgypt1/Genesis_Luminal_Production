@@ -24,3 +24,4 @@
 2. Implementar IA real com Claude
 3. Manter funcionalidades visuais
 4. Adicionar testes reais
+

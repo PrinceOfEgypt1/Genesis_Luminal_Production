@@ -82,3 +82,4 @@ Proprietary - Transcendental Digital Experience License
 - Arquivos legados da raiz foram movidos para `docs/legacy/` (index.html, public/, vite.config.*).
 - `shared/types` atualmente emite JS/DTs no próprio diretório. **Recomendação futura**: configurar `outDir: "dist"` no tsconfig do pacote `shared`.
 
+

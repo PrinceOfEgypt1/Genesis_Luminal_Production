@@ -24,3 +24,5 @@ describe('GenesisCore', () => {
     expect(screen.getByText('Genesis Luminal Loading...')).toBeInTheDocument()
   })
 })
+
+------------------------------------------------------------------------------------------------------------------------

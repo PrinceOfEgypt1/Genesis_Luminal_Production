@@ -81,3 +81,4 @@ console.log('- Headers HTTP de segurança');
 console.log('- Sanitização de entrada');
 console.log('- Rate limiting'); 
 console.log('- Proteção contra XSS');
+

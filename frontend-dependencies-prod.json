@@ -1,0 +1,86 @@
+{
+  "name": "genesis-luminal-monorepo",
+  "dependencies": {
+    "genesis_luminal_claude": {
+      "version": "1.0.0",
+      "resolved": "file:../frontend",
+      "overridden": false,
+      "dependencies": {
+        "@react-three/drei": {
+          "version": "9.122.0",
+          "overridden": false
+        },
+        "@react-three/fiber": {
+          "version": "8.18.0",
+          "overridden": false
+        },
+        "@react-three/postprocessing": {
+          "version": "2.19.1",
+          "overridden": false
+        },
+        "@tensorflow/tfjs-node": {
+          "version": "4.22.0",
+          "overridden": false
+        },
+        "@tensorflow/tfjs": {
+          "version": "4.22.0",
+          "overridden": false
+        },
+        "comlink": {
+          "version": "4.4.2",
+          "overridden": false
+        },
+        "d3-array": {
+          "version": "3.2.4",
+          "overridden": false
+        },
+        "d3-scale": {
+          "version": "4.0.2",
+          "overridden": false
+        },
+        "framer-motion": {
+          "version": "10.18.0",
+          "overridden": false
+        },
+        "mathjs": {
+          "version": "11.12.0",
+          "overridden": false
+        },
+        "ml-kmeans": {
+          "version": "6.0.0",
+          "overridden": false
+        },
+        "ml-matrix": {
+          "version": "6.12.1",
+          "overridden": false
+        },
+        "react-dom": {
+          "version": "18.3.1",
+          "overridden": false
+        },
+        "react": {
+          "version": "18.3.1",
+          "overridden": false
+        },
+        "three": {
+          "version": "0.153.0",
+          "overridden": false
+        },
+        "tone": {
+          "version": "14.9.17",
+          "overridden": false
+        },
+        "typescript": {
+          "version": "5.1.6",
+          "resolved": "https://registry.npmjs.org/typescript/-/typescript-5.1.6.tgz",
+          "overridden": false
+        },
+        "zustand": {
+          "version": "4.5.7",
+          "overridden": false
+        }
+      }
+    }
+  }
+}
+

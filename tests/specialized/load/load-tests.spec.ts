@@ -109,3 +109,4 @@ test.describe('Load Tests - Genesis Luminal', () => {
     expect(successRate).toBeGreaterThan(0.95); // 95% de sucesso mínimo
   });
 });
+

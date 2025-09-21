@@ -1,0 +1,18 @@
+{
+  "scripts": {
+    "test:specialized": "npm run test:accessibility && npm run test:performance && npm run test:load && npm run test:security",
+    "test:accessibility": "playwright test tests/specialized/accessibility/",
+    "test:performance": "npm run test:lighthouse && playwright test tests/specialized/performance/",
+    "test:lighthouse": "lhci autorun --config=tests/specialized/performance/lighthouse.config.js",
+    "test:load": "playwright test tests/specialized/load/ && artillery run tests/specialized/load/artillery-config.yml",
+    "test:security": "playwright test tests/specialized/security/",
+    "test:audit": "npm audit --audit-level=high",
+    "test:specialized:ci": "npm run test:specialized --reporter=json --output-file=specialized-test-results.json"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.8.2",
+    "@lhci/cli": "^0.12.0",
+    "artillery": "^2.0.0"
+  }
+}
+

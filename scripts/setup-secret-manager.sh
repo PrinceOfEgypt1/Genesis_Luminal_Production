@@ -19,3 +19,5 @@ echo ""
 echo "⚠️ Em produção, configure um provedor real (Azure/AWS/GCP)"
 echo ""
 echo "✅ Setup concluído!"
+
+------------------------------------------------------------------------------------------------------------------------

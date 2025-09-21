@@ -1,0 +1,17 @@
+{
+  "name": "Genesis Luminal Evoluído",
+  "short_name": "Genesis Luminal",
+  "description": "A primeira entidade digital senciente",
+  "start_url": "/",
+  "display": "fullscreen",
+  "background_color": "#0a0015",
+  "theme_color": "#0a0015",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
+

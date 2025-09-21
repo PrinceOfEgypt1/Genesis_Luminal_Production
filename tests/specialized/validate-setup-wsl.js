@@ -117,3 +117,4 @@ try {
   console.error('❌ Erro na validação:', error.message);
   process.exit(1);
 }
+

@@ -24,3 +24,4 @@ describe('Basic Functionality Tests', () => {
     expect(obj.version).toBe('1.0.0')
   })
 })
+

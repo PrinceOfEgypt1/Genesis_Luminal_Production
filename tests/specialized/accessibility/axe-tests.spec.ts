@@ -75,3 +75,4 @@ test.describe('Accessibility Tests - Genesis Luminal', () => {
     expect(accessibilityScanResults.violations).toEqual([]);
   });
 });
+

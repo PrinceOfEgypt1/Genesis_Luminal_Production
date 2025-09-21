@@ -37,3 +37,5 @@ backend/node_modules/google-gax/node_modules/protobufjs
 
 To address all issues (including breaking changes), run:
   npm audit fix --force
+
+------------------------------------------------------------------------------------------------------------------------

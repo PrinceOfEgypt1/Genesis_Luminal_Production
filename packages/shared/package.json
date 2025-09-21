@@ -1,0 +1,14 @@
+{
+  "name": "@genesis/shared",
+  "version": "1.0.0",
+  "description": "Tipos e utilitários compartilhados - Genesis Luminal",
+  "main": "types/api.js",
+  "types": "types/api.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}

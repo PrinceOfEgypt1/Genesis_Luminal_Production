@@ -201,3 +201,4 @@ test.describe('Performance Testing - Genesis Luminal', () => {
     expect(requests.length).toBeLessThan(50);
   });
 });
+

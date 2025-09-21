@@ -400,3 +400,4 @@ const GenesisLuminalPrediction: React.FC = () => {
 };
 
 export default GenesisLuminalPrediction;
+

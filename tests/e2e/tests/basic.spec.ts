@@ -38,3 +38,4 @@ test('performance básica', async ({ page }) => {
   );
   expect(criticalErrors).toHaveLength(0);
 });
+

@@ -56,3 +56,4 @@ module.exports = {
     static: './bundle-analysis.html'
   }
 };
+

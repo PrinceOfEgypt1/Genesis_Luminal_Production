@@ -52,3 +52,4 @@ export type EmotionalDNA = z.infer<typeof EmotionalDNASchema>;
 export type Vector2D = z.infer<typeof Vector2DSchema>;
 export type EmotionalAnalysisRequest = z.infer<typeof EmotionalAnalysisRequestSchema>;
 export type EmotionalAnalysisResponse = z.infer<typeof EmotionalAnalysisResponseSchema>;
+

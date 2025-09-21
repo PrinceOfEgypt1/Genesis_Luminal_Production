@@ -1,0 +1,257 @@
+{
+  "@azure/abort-controller@1.1.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/Azure/azure-sdk-for-js",
+    "publisher": "Microsoft Corporation",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/@azure/abort-controller",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/@azure/abort-controller/LICENSE"
+  },
+  "@azure/identity@3.4.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/Azure/azure-sdk-for-js",
+    "publisher": "Microsoft Corporation",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/@azure/identity",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/@azure/identity/LICENSE"
+  },
+  "@azure/msal-browser@3.30.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/AzureAD/microsoft-authentication-library-for-js",
+    "publisher": "Microsoft",
+    "email": "nugetaad@microsoft.com",
+    "url": "https://www.microsoft.com",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/@azure/msal-browser",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/@azure/msal-browser/LICENSE"
+  },
+  "@azure/msal-common@14.16.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/AzureAD/microsoft-authentication-library-for-js",
+    "publisher": "Microsoft",
+    "email": "nugetaad@microsoft.com",
+    "url": "https://www.microsoft.com",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/@azure/msal-common",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/@azure/msal-common/LICENSE"
+  },
+  "@azure/msal-node@2.16.3": {
+    "licenses": "MIT",
+    "repository": "https://github.com/AzureAD/microsoft-authentication-library-for-js",
+    "publisher": "Microsoft",
+    "email": "nugetaad@microsoft.com",
+    "url": "https://www.microsoft.com",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/@azure/msal-node",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/@azure/msal-node/LICENSE"
+  },
+  "@google-cloud/secret-manager@4.2.2": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/googleapis/google-cloud-node",
+    "publisher": "Google LLC",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/@google-cloud/secret-manager",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/@google-cloud/secret-manager/LICENSE"
+  },
+  "@grpc/grpc-js@1.8.22": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/grpc/grpc-node/tree/master/packages/grpc-js",
+    "publisher": "Google Inc.",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/@grpc/grpc-js",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/@grpc/grpc-js/LICENSE"
+  },
+  "@grpc/proto-loader@0.7.15": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/grpc/grpc-node",
+    "publisher": "Google Inc.",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/@grpc/proto-loader",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/@grpc/proto-loader/LICENSE"
+  },
+  "@typescript-eslint/eslint-plugin@6.21.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/typescript-eslint/typescript-eslint",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/@typescript-eslint/eslint-plugin",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/@typescript-eslint/eslint-plugin/LICENSE"
+  },
+  "@typescript-eslint/parser@6.21.0": {
+    "licenses": "BSD-2-Clause",
+    "repository": "https://github.com/typescript-eslint/typescript-eslint",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/@typescript-eslint/parser",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/@typescript-eslint/parser/LICENSE"
+  },
+  "agent-base@6.0.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/TooTallNate/node-agent-base",
+    "publisher": "Nathan Rajlich",
+    "email": "nathan@tootallnate.net",
+    "url": "http://n8.io/",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/agent-base",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/agent-base/README.md"
+  },
+  "define-lazy-prop@2.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/define-lazy-prop",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "sindresorhus.com",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/define-lazy-prop",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/define-lazy-prop/license"
+  },
+  "gaxios@5.1.3": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/googleapis/gaxios",
+    "publisher": "Google, LLC",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/gaxios",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/gaxios/LICENSE"
+  },
+  "gcp-metadata@5.3.0": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/googleapis/gcp-metadata",
+    "publisher": "Stephen Sawchuk",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/gcp-metadata",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/gcp-metadata/LICENSE"
+  },
+  "genesis-luminal-backend@1.0.0": {
+    "licenses": "UNKNOWN",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend"
+  },
+  "glob@8.1.0": {
+    "licenses": "ISC",
+    "repository": "https://github.com/isaacs/node-glob",
+    "publisher": "Isaac Z. Schlueter",
+    "email": "i@izs.me",
+    "url": "http://blog.izs.me/",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/glob",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/glob/LICENSE"
+  },
+  "google-auth-library@8.9.0": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/googleapis/google-auth-library-nodejs",
+    "publisher": "Google Inc.",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/google-auth-library",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/google-auth-library/LICENSE"
+  },
+  "google-gax@3.6.1": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/googleapis/gax-nodejs",
+    "publisher": "Google API Authors",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/google-gax",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/google-gax/LICENSE"
+  },
+  "gtoken@6.1.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/google/node-gtoken",
+    "publisher": "Google, LLC",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/gtoken",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/gtoken/LICENSE"
+  },
+  "https-proxy-agent@5.0.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/TooTallNate/node-https-proxy-agent",
+    "publisher": "Nathan Rajlich",
+    "email": "nathan@tootallnate.net",
+    "url": "http://n8.io/",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/https-proxy-agent",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/https-proxy-agent/README.md"
+  },
+  "is-docker@2.2.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/is-docker",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "https://sindresorhus.com",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/is-docker",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/is-docker/license"
+  },
+  "is-wsl@2.2.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/is-wsl",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "sindresorhus.com",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/is-wsl",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/is-wsl/license"
+  },
+  "jwa@2.0.1": {
+    "licenses": "MIT",
+    "repository": "https://github.com/brianloveswords/node-jwa",
+    "publisher": "Brian J. Brennan",
+    "email": "brianloveswords@gmail.com",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/jwa",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/jwa/LICENSE"
+  },
+  "jws@4.0.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/brianloveswords/node-jws",
+    "publisher": "Brian J Brennan",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/jws",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/jws/LICENSE"
+  },
+  "lru-cache@6.0.0": {
+    "licenses": "ISC",
+    "repository": "https://github.com/isaacs/node-lru-cache",
+    "publisher": "Isaac Z. Schlueter",
+    "email": "i@izs.me",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/lru-cache",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/lru-cache/LICENSE"
+  },
+  "minimatch@5.1.6": {
+    "licenses": "ISC",
+    "repository": "https://github.com/isaacs/minimatch",
+    "publisher": "Isaac Z. Schlueter",
+    "email": "i@izs.me",
+    "url": "http://blog.izs.me",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/minimatch",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/minimatch/LICENSE"
+  },
+  "node-fetch@2.7.0": {
+    "licenses": "MIT",
+    "repository": "https://github.com/bitinn/node-fetch",
+    "publisher": "David Frank",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/node-fetch",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/node-fetch/LICENSE.md"
+  },
+  "open@8.4.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/sindresorhus/open",
+    "publisher": "Sindre Sorhus",
+    "email": "sindresorhus@gmail.com",
+    "url": "https://sindresorhus.com",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/open",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/open/license"
+  },
+  "proto3-json-serializer@1.1.1": {
+    "licenses": "Apache-2.0",
+    "repository": "https://github.com/googleapis/proto3-json-serializer-nodejs",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/proto3-json-serializer",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/proto3-json-serializer/LICENSE"
+  },
+  "protobufjs-cli@1.1.1": {
+    "licenses": "BSD-3-Clause",
+    "repository": "https://github.com/protobufjs/protobuf.js",
+    "publisher": "Daniel Wirtz",
+    "email": "dcode+protobufjs@dcode.io",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/google-gax/node_modules/protobufjs-cli",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/google-gax/node_modules/protobufjs-cli/LICENSE"
+  },
+  "protobufjs@7.2.4": {
+    "licenses": "BSD-3-Clause",
+    "repository": "https://github.com/protobufjs/protobuf.js",
+    "publisher": "Daniel Wirtz",
+    "email": "dcode+protobufjs@dcode.io",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/google-gax/node_modules/protobufjs",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/google-gax/node_modules/protobufjs/LICENSE"
+  },
+  "retry-request@5.0.2": {
+    "licenses": "MIT",
+    "repository": "https://github.com/stephenplusplus/retry-request",
+    "publisher": "Stephen Sawchuk",
+    "email": "sawchuk@gmail.com",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/retry-request",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/retry-request/license"
+  },
+  "yallist@4.0.0": {
+    "licenses": "ISC",
+    "repository": "https://github.com/isaacs/yallist",
+    "publisher": "Isaac Z. Schlueter",
+    "email": "i@izs.me",
+    "url": "http://blog.izs.me/",
+    "path": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/yallist",
+    "licenseFile": "/home/moises/workspace/genesis_luminal_claude/backend/node_modules/yallist/LICENSE"
+  }
+}
+

@@ -1,0 +1,231 @@
+{
+  "auditReportVersion": 2,
+  "vulnerabilities": {
+    "@cyclonedx/cyclonedx-library": {
+      "name": "@cyclonedx/cyclonedx-library",
+      "severity": "critical",
+      "isDirect": false,
+      "via": [
+        "libxmljs2"
+      ],
+      "effects": [
+        "@cyclonedx/cyclonedx-npm"
+      ],
+      "range": "1.14.0-rc.0 - 8.0.1-alpha.1",
+      "nodes": [
+        "node_modules/@cyclonedx/cyclonedx-library"
+      ],
+      "fixAvailable": {
+        "name": "@cyclonedx/cyclonedx-npm",
+        "version": "4.0.2",
+        "isSemVerMajor": true
+      }
+    },
+    "@cyclonedx/cyclonedx-npm": {
+      "name": "@cyclonedx/cyclonedx-npm",
+      "severity": "critical",
+      "isDirect": true,
+      "via": [
+        "@cyclonedx/cyclonedx-library"
+      ],
+      "effects": [],
+      "range": "1.11.0 - 2.1.0",
+      "nodes": [
+        "node_modules/@cyclonedx/cyclonedx-npm"
+      ],
+      "fixAvailable": {
+        "name": "@cyclonedx/cyclonedx-npm",
+        "version": "4.0.2",
+        "isSemVerMajor": true
+      }
+    },
+    "esbuild": {
+      "name": "esbuild",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1102341,
+          "name": "esbuild",
+          "dependency": "esbuild",
+          "title": "esbuild enables any website to send any requests to the development server and read the response",
+          "url": "https://github.com/advisories/GHSA-67mh-4wv8-2f99",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-346"
+          ],
+          "cvss": {
+            "score": 5.3,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:N/A:N"
+          },
+          "range": "<=0.24.2"
+        }
+      ],
+      "effects": [
+        "vite"
+      ],
+      "range": "<=0.24.2",
+      "nodes": [
+        "frontend/node_modules/esbuild"
+      ],
+      "fixAvailable": {
+        "name": "vite",
+        "version": "7.1.5",
+        "isSemVerMajor": true
+      }
+    },
+    "libxmljs2": {
+      "name": "libxmljs2",
+      "severity": "critical",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1100657,
+          "name": "libxmljs2",
+          "dependency": "libxmljs2",
+          "title": "libxmljs2 vulnerable to type confusion when parsing specially crafted XML",
+          "url": "https://github.com/advisories/GHSA-78h3-pg4x-j8cv",
+          "severity": "critical",
+          "cwe": [
+            "CWE-843"
+          ],
+          "cvss": {
+            "score": 8.1,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
+          },
+          "range": "<=0.35.0"
+        }
+      ],
+      "effects": [
+        "@cyclonedx/cyclonedx-library"
+      ],
+      "range": "<=0.35.0",
+      "nodes": [
+        "node_modules/libxmljs2"
+      ],
+      "fixAvailable": {
+        "name": "@cyclonedx/cyclonedx-npm",
+        "version": "4.0.2",
+        "isSemVerMajor": true
+      }
+    },
+    "lint-staged": {
+      "name": "lint-staged",
+      "severity": "moderate",
+      "isDirect": true,
+      "via": [
+        "micromatch"
+      ],
+      "effects": [],
+      "range": "7.0.0 - 8.2.1 || 13.3.0 - 15.2.4",
+      "nodes": [
+        "frontend/node_modules/lint-staged"
+      ],
+      "fixAvailable": true
+    },
+    "micromatch": {
+      "name": "micromatch",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1098681,
+          "name": "micromatch",
+          "dependency": "micromatch",
+          "title": "Regular Expression Denial of Service (ReDoS) in micromatch",
+          "url": "https://github.com/advisories/GHSA-952p-6rrq-rcjv",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-1333"
+          ],
+          "cvss": {
+            "score": 5.3,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+          },
+          "range": "<4.0.8"
+        }
+      ],
+      "effects": [
+        "lint-staged"
+      ],
+      "range": "<4.0.8",
+      "nodes": [
+        "frontend/node_modules/lint-staged/node_modules/micromatch"
+      ],
+      "fixAvailable": true
+    },
+    "vite": {
+      "name": "vite",
+      "severity": "moderate",
+      "isDirect": true,
+      "via": [
+        {
+          "source": 1107323,
+          "name": "vite",
+          "dependency": "vite",
+          "title": "Vite middleware may serve files starting with the same name with the public directory",
+          "url": "https://github.com/advisories/GHSA-g4jq-h2w9-997c",
+          "severity": "low",
+          "cwe": [
+            "CWE-22",
+            "CWE-200",
+            "CWE-284"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": "<=5.4.19"
+        },
+        {
+          "source": 1107327,
+          "name": "vite",
+          "dependency": "vite",
+          "title": "Vite's `server.fs` settings were not applied to HTML files",
+          "url": "https://github.com/advisories/GHSA-jqfw-vq24-v9c3",
+          "severity": "low",
+          "cwe": [
+            "CWE-23",
+            "CWE-200",
+            "CWE-284"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": "<=5.4.19"
+        },
+        "esbuild"
+      ],
+      "effects": [],
+      "range": "<=6.1.6",
+      "nodes": [
+        "frontend/node_modules/vite"
+      ],
+      "fixAvailable": {
+        "name": "vite",
+        "version": "7.1.5",
+        "isSemVerMajor": true
+      }
+    }
+  },
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 4,
+      "high": 0,
+      "critical": 3,
+      "total": 7
+    },
+    "dependencies": {
+      "prod": 674,
+      "dev": 1054,
+      "optional": 130,
+      "peer": 1,
+      "peerOptional": 0,
+      "total": 1731
+    }
+  }
+}
+

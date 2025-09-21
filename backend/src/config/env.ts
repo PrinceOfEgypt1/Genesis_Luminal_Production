@@ -26,3 +26,4 @@ export const env: AppEnv = envSchema.parse(process.env);
 export function apiKey(): string | undefined {
   return env.CLAUDE_API_KEY || env.ANTHROPIC_API_KEY;
 }
+

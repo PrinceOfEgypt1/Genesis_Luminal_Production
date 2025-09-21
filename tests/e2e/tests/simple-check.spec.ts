@@ -15,3 +15,4 @@ test('verificar elemento main-content', async ({ page }) => {
   
   console.log('✅ Elemento #main-content encontrado e visível');
 });
+

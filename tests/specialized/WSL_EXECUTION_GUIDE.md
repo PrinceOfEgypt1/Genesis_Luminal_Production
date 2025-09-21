@@ -101,3 +101,4 @@ npx playwright --version
 curl http://localhost:5173 || echo "Frontend não rodando"
 curl http://localhost:3001/health || echo "Backend não rodando"
 ```
+

@@ -49,4 +49,3 @@ export async function rateLimit(req: Request, res: Response, next: NextFunction)
 export { rateLimit as rateLimitMiddleware };
 export default rateLimit;
 
-------------------------------------------------------------------------------------------------------------------------

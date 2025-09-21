@@ -9,8 +9,8 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { generateCorrelationId, setCorrelationId } from '../telemetry/tracing';
-import { recordHttpRequestLatency } from '../telemetry/metrics';
+import { generateCorrelationId, setCorrelationId } from '../observability/tracing';
+import { recordHttpRequestLatency } from '../observability/metrics';
 
 /**
  * Interface estendida do Request com telemetria

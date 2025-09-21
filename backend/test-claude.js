@@ -39,3 +39,4 @@ if (!apiKey) {
   }
   console.log('✅ Chamada básica OK.');
 })();
+

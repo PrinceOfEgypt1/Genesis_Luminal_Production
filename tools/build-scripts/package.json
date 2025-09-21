@@ -1,0 +1,9 @@
+{
+  "name": "@genesis/build-scripts",
+  "version": "1.0.0",
+  "description": "Scripts de build compartilhados - Genesis Luminal",
+  "private": true,
+  "scripts": {
+    "build": "echo 'Build scripts - no build needed'"
+  }
+}

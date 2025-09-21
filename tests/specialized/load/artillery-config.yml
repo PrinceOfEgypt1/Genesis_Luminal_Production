@@ -64,3 +64,4 @@ expect:
   - maxErrorRate: 0.05  # 5% de erro máximo
   - p95: 100  # 95% das requests em menos de 100ms
   - p99: 250  # 99% das requests em menos de 250ms
+

@@ -121,3 +121,4 @@ test.describe('Performance Tests - Genesis Luminal', () => {
     expect(growthPercentage).toBeLessThan(50); // Menos de 50% de crescimento
   });
 });
+

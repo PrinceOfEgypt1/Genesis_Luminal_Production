@@ -1,0 +1,203 @@
+{
+  "auditReportVersion": 2,
+  "vulnerabilities": {
+    "@azure/identity": {
+      "name": "@azure/identity",
+      "severity": "moderate",
+      "isDirect": true,
+      "via": [
+        {
+          "source": 1106621,
+          "name": "@azure/identity",
+          "dependency": "@azure/identity",
+          "title": "Azure Identity Libraries and Microsoft Authentication Library Elevation of Privilege Vulnerability",
+          "url": "https://github.com/advisories/GHSA-m5vv-6r4h-3vj9",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-362"
+          ],
+          "cvss": {
+            "score": 5.5,
+            "vectorString": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N"
+          },
+          "range": "<4.2.1"
+        }
+      ],
+      "effects": [],
+      "range": "<4.2.1",
+      "nodes": [
+        "backend/node_modules/@azure/identity"
+      ],
+      "fixAvailable": {
+        "name": "@azure/identity",
+        "version": "4.12.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@cyclonedx/cyclonedx-library": {
+      "name": "@cyclonedx/cyclonedx-library",
+      "severity": "critical",
+      "isDirect": false,
+      "via": [
+        "libxmljs2"
+      ],
+      "effects": [
+        "@cyclonedx/cyclonedx-npm"
+      ],
+      "range": "1.14.0-rc.0 - 8.0.1-alpha.1",
+      "nodes": [
+        "node_modules/@cyclonedx/cyclonedx-library"
+      ],
+      "fixAvailable": {
+        "name": "@cyclonedx/cyclonedx-npm",
+        "version": "4.0.2",
+        "isSemVerMajor": true
+      }
+    },
+    "@cyclonedx/cyclonedx-npm": {
+      "name": "@cyclonedx/cyclonedx-npm",
+      "severity": "critical",
+      "isDirect": true,
+      "via": [
+        "@cyclonedx/cyclonedx-library"
+      ],
+      "effects": [],
+      "range": "1.11.0 - 2.1.0",
+      "nodes": [
+        "node_modules/@cyclonedx/cyclonedx-npm"
+      ],
+      "fixAvailable": {
+        "name": "@cyclonedx/cyclonedx-npm",
+        "version": "4.0.2",
+        "isSemVerMajor": true
+      }
+    },
+    "@google-cloud/secret-manager": {
+      "name": "@google-cloud/secret-manager",
+      "severity": "critical",
+      "isDirect": true,
+      "via": [
+        "google-gax"
+      ],
+      "effects": [],
+      "range": "4.1.2 - 4.2.2",
+      "nodes": [
+        "backend/node_modules/@google-cloud/secret-manager"
+      ],
+      "fixAvailable": {
+        "name": "@google-cloud/secret-manager",
+        "version": "6.1.0",
+        "isSemVerMajor": true
+      }
+    },
+    "google-gax": {
+      "name": "google-gax",
+      "severity": "critical",
+      "isDirect": false,
+      "via": [
+        "protobufjs"
+      ],
+      "effects": [
+        "@google-cloud/secret-manager"
+      ],
+      "range": "2.2.1-pre - 2.2.1-pre.2 || 2.28.2-alpha.1 - 2.28.4-alpha.1 || 3.1.4 - 4.0.3",
+      "nodes": [
+        "backend/node_modules/google-gax"
+      ],
+      "fixAvailable": {
+        "name": "@google-cloud/secret-manager",
+        "version": "6.1.0",
+        "isSemVerMajor": true
+      }
+    },
+    "libxmljs2": {
+      "name": "libxmljs2",
+      "severity": "critical",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1100657,
+          "name": "libxmljs2",
+          "dependency": "libxmljs2",
+          "title": "libxmljs2 vulnerable to type confusion when parsing specially crafted XML",
+          "url": "https://github.com/advisories/GHSA-78h3-pg4x-j8cv",
+          "severity": "critical",
+          "cwe": [
+            "CWE-843"
+          ],
+          "cvss": {
+            "score": 8.1,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
+          },
+          "range": "<=0.35.0"
+        }
+      ],
+      "effects": [
+        "@cyclonedx/cyclonedx-library"
+      ],
+      "range": "<=0.35.0",
+      "nodes": [
+        "node_modules/libxmljs2"
+      ],
+      "fixAvailable": {
+        "name": "@cyclonedx/cyclonedx-npm",
+        "version": "4.0.2",
+        "isSemVerMajor": true
+      }
+    },
+    "protobufjs": {
+      "name": "protobufjs",
+      "severity": "critical",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1097722,
+          "name": "protobufjs",
+          "dependency": "protobufjs",
+          "title": "protobufjs Prototype Pollution vulnerability",
+          "url": "https://github.com/advisories/GHSA-h755-8qp9-cq85",
+          "severity": "critical",
+          "cwe": [
+            "CWE-1321"
+          ],
+          "cvss": {
+            "score": 9.8,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+          },
+          "range": ">=7.0.0 <7.2.5"
+        }
+      ],
+      "effects": [
+        "google-gax"
+      ],
+      "range": "7.0.0 - 7.2.4",
+      "nodes": [
+        "backend/node_modules/google-gax/node_modules/protobufjs"
+      ],
+      "fixAvailable": {
+        "name": "@google-cloud/secret-manager",
+        "version": "6.1.0",
+        "isSemVerMajor": true
+      }
+    }
+  },
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 1,
+      "high": 0,
+      "critical": 6,
+      "total": 7
+    },
+    "dependencies": {
+      "prod": 674,
+      "dev": 1054,
+      "optional": 130,
+      "peer": 1,
+      "peerOptional": 0,
+      "total": 1731
+    }
+  }
+}
+

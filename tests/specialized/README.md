@@ -118,3 +118,4 @@ Revisar e atualizar critérios baseados em:
 - Feedback de usuários sobre acessibilidade
 - Mudanças nos requisitos de segurança
 - Evolução das métricas Core Web Vitals
+

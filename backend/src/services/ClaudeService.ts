@@ -34,4 +34,3 @@ class ClaudeService {
 const claudeService = new ClaudeService();
 export default claudeService;
 
-------------------------------------------------------------------------------------------------------------------------

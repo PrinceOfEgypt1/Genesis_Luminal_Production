@@ -130,3 +130,4 @@ middleware/
 - Pronto para expansão
 
 **Próximo:** Frontend Unit Tests (separadamente)
+

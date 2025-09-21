@@ -108,3 +108,4 @@ test.use({
   // Desabilitar animações para screenshots consistentes
   reducedMotion: 'reduce'
 });
+

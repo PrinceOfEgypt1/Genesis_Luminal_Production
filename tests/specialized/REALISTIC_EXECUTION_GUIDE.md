@@ -100,3 +100,4 @@ npm run test:validate-only
 2. **Em CI/CD**: Configuração adaptada para containers
 3. **Em produção**: Monitoramento real de performance/segurança
 4. **Desenvolvimento**: Usar scripts demo para validação contínua
+

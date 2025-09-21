@@ -153,3 +153,4 @@ npm run check:secrets
 This security policy is reviewed and updated regularly. Last updated: $(date +%Y-%m-%d)
 
 For questions about this security policy, contact: security@genesis-luminal.com
+
