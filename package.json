@@ -87,9 +87,13 @@
     "@lhci/cli": "^0.15.1",
     "@playwright/test": "^1.40.0",
     "@types/supertest": "^6.0.3",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "artillery": "^2.0.25",
     "concurrently": "^8.2.2",
-    "supertest": "^7.1.4"
+    "supertest": "^7.1.4",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   }
 }
