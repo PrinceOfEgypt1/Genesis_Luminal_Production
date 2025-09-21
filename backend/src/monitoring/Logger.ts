@@ -347,7 +347,7 @@ export class StructuredLogger {
           url: req.originalUrl || req.url,
           statusCode: res.statusCode,
           duration,
-          responseTime: `${duration}ms`
+          responseTime: duration
         });
         
         // Log performance se demorou muito

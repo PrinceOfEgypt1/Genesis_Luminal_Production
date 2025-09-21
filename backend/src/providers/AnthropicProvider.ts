@@ -126,8 +126,9 @@ export class AnthropicProvider {
         confidence: emotionData.confidence,
         timestamp: new Date(),
         metadata: {
+          provider: "anthropic",
           model: 'claude-3-sonnet',
-          processingTime: Date.now() - request.timestamp.getTime(),
+          processingTime: Date.now() - request.timestamp ? request.timestamp.getTime() : Date.now(),
           version: '1.0.0',
           isSimulated: false
         }
@@ -196,6 +197,7 @@ export class AnthropicProvider {
       confidence: Number(confidence.toFixed(2)),
       timestamp: new Date(),
       metadata: {
+          provider: "anthropic",
         model: 'simulation-heuristic-v1',
         processingTime: 150 + Math.random() * 100,
         version: '1.0.0',

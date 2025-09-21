@@ -15,6 +15,7 @@ export function initializeFeatureRegistry(): void {
   // ========================================
   FeatureRegistry.register('emotion-analysis-anthropic', {
     status: FeatureStatus.SIMULATION,
+    name: "emotion-analysis-anthropic",
     confidence: ConfidenceLevel.DEMO_ONLY,
     description: 'Análise de emoções usando heurísticas simples que simulam IA',
     limitations: [
@@ -33,6 +34,7 @@ export function initializeFeatureRegistry(): void {
   // API REST
   // ========================================
   FeatureRegistry.register('rest-api', {
+    name: "rest-api",
     status: FeatureStatus.IMPLEMENTED,
     confidence: ConfidenceLevel.HIGH,
     description: 'API REST completa para análise de emoções',
@@ -50,6 +52,7 @@ export function initializeFeatureRegistry(): void {
   // INTERFACE WEB
   // ========================================
   FeatureRegistry.register('web-interface', {
+    name: "web-interface",
     status: FeatureStatus.IMPLEMENTED,
     confidence: ConfidenceLevel.MEDIUM,
     description: 'Interface React para análise de emoções',
@@ -67,6 +70,7 @@ export function initializeFeatureRegistry(): void {
   // SISTEMA DE TESTES
   // ========================================
   FeatureRegistry.register('testing-system', {
+    name: "testing-system",
     status: FeatureStatus.IMPLEMENTED,
     confidence: ConfidenceLevel.HIGH,
     description: 'Suite completa de testes unitários e integração',
@@ -83,6 +87,7 @@ export function initializeFeatureRegistry(): void {
   // CI/CD PIPELINE
   // ========================================
   FeatureRegistry.register('ci-cd-pipeline', {
+    name: "ci-cd-pipeline",
     status: FeatureStatus.IMPLEMENTED,
     confidence: ConfidenceLevel.HIGH,
     description: 'Pipeline completo GitHub Actions com quality gates',
@@ -99,6 +104,7 @@ export function initializeFeatureRegistry(): void {
   // FUNCIONALIDADES PLANEJADAS
   // ========================================
   FeatureRegistry.register('user-authentication', {
+    name: "user-authentication",
     status: FeatureStatus.PLANNED,
     confidence: ConfidenceLevel.LOW,
     description: 'Sistema de autenticação e autorização de usuários',
@@ -112,6 +118,7 @@ export function initializeFeatureRegistry(): void {
   });
   
   FeatureRegistry.register('emotion-history', {
+    name: "emotion-history",
     status: FeatureStatus.PLANNED,
     confidence: ConfidenceLevel.LOW,
     description: 'Histórico e analytics de análises de emoção por usuário',
@@ -125,6 +132,7 @@ export function initializeFeatureRegistry(): void {
   });
   
   FeatureRegistry.register('real-time-analysis', {
+    name: "real-time-analysis",
     status: FeatureStatus.PLANNED,
     confidence: ConfidenceLevel.LOW,
     description: 'Análise de emoções em tempo real via WebSocket',

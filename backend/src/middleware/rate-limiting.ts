@@ -1,3 +1,14 @@
+declare global {
+  namespace Express {
+    interface Request {
+      rateLimit?: {
+        type?: string;
+        resetTime?: Date;
+      };
+    }
+  }
+}
+
 /**
  * @fileoverview Rate Limiting Granular - Genesis Luminal
  * @version 1.0.0
@@ -152,7 +163,7 @@ function createRateLimitMiddleware(type: RateLimitType) {
     legacyHeaders: false,
     
     // Adicionar tipo ao request para logging
-    onLimitReached: (req: Request) => {
+    handler: (req: Request) => {
       (req as any).rateLimit = { 
         type,
         resetTime: Date.now() + config.windowMs

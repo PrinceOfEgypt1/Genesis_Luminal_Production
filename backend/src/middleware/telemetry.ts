@@ -10,7 +10,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { generateCorrelationId, setCorrelationId } from '../observability/tracing';
-import { recordHttpRequestLatency } from '../observability/metrics';
+import { recordHttpRequest } from '../observability/metrics';
 
 /**
  * Interface estendida do Request com telemetria
@@ -42,14 +42,14 @@ export function telemetryMiddleware(
   res.setHeader('x-trace-id', correlationId);
   
   // Configurar contexto de tracing
-  setCorrelationId(correlationId);
+  setCorrelationId(req, correlationId);
   
   // Registrar métricas quando resposta for enviada
   res.on('finish', () => {
     const duration = Date.now() - req.startTime;
     const route = req.route?.path || req.path || 'unknown';
     
-    recordHttpRequestLatency(
+    recordHttpRequest(
       duration,
       req.method,
       route,
