@@ -5,7 +5,11 @@
   "scripts": {
     "dev": "node --loader ts-node/esm --experimental-specifier-resolution=node src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:ci": "jest --coverage --watchAll=false"
   },
   "dependencies": {
     "compression": "^1.8.1",
