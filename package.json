@@ -79,7 +79,8 @@
     "bundle:size": "node -e \"console.log(\"Bundle analysis running...\")\"",
     "ci:quality": "npm run quality:gates",
     "ci:performance": "npm run perf:budget",
-    "ci:security": "npm audit --audit-level moderate"
+    "ci:security": "npm audit --audit-level moderate",
+    "docs:generate": "typedoc"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.2",
