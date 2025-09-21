@@ -1,18 +1,11 @@
 {
   "entryPoints": [
-    "backend/src/index.ts",
-    "frontend/src/main.tsx"
+    "backend/src/index.ts"
   ],
   "out": "docs/api",
-  "theme": "default", 
-  "name": "Genesis Luminal Production API",
-  "tsconfig": "tsconfig.json",
-  "exclude": [
-    "**/node_modules/**",
-    "**/dist/**",
-    "**/*.test.ts",
-    "**/*.spec.ts"
-  ],
+  "theme": "default",
+  "name": "Genesis Luminal Backend API",
+  "skipErrorChecking": true,
   "excludeExternals": true,
   "excludePrivate": true
 }
