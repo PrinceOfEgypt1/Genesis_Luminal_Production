@@ -33,7 +33,7 @@ const options = {
             }
         }
     },
-    apis: ['./src/routes/*.ts']
+    apis: ['./src/index.ts'] // Corrigido para apontar para index.ts
 };
 export const specs = swaggerJsdoc(options);
 export { swaggerUi };
