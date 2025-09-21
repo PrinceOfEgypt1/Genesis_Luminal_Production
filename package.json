@@ -41,7 +41,7 @@
     "conventional-changelog-cli": "^4.1.0",
     "cz-conventional-changelog": "^3.3.0",
     "husky": "^8.0.3",
-    "lint-staged": "^15.2.0",
+    "lint-staged": "^16.1.6",
     "semantic-release": "^22.0.8"
   },
   "config": {
