@@ -246,4 +246,6 @@ export const securityHeaders = helmet({
 //   app.use(sensitiveEndpointProtection);
 //   
 //   console.log('🛡️ Security headers e middleware configurados');
-// }
+});
+
+export default securityHeaders;
