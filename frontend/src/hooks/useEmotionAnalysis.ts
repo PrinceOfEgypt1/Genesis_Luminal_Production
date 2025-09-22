@@ -1,67 +1,78 @@
 /**
- * @fileoverview Hook useEmotionAnalysis - Genesis Luminal
+ * @fileoverview Hook para análise de emoções
+ * @version 1.0.0
  */
 
 import { useState, useCallback } from 'react';
 
-export interface EmotionResult {
+interface EmotionResult {
+  dominant: string;
   intensity: number;
-  dominantAffect: string;
   confidence: number;
-  emotions: Record<string, number>;
 }
 
 export interface UseEmotionAnalysisReturn {
-  analyze: (text: string) => Promise<EmotionResult>;
   loading: boolean;
-  error: string | null;
+  isLoading: boolean; // Alias para compatibilidade com testes
   result: EmotionResult | null;
+  error: string | null;
+  analyze: (text: string, userId?: string) => Promise<void>;
+  reset: () => void; // Método esperado pelos testes
 }
 
 export const useEmotionAnalysis = (): UseEmotionAnalysisReturn => {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<EmotionResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const analyze = useCallback(async (text: string): Promise<EmotionResult> => {
+  const analyze = useCallback(async (text: string, userId?: string) => {
+    if (!text.trim()) {
+      setError('Texto não pode estar vazio');
+      return;
+    }
+
     setLoading(true);
     setError(null);
-    
+
     try {
-      // Simulação para desenvolvimento/testes
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const mockResult: EmotionResult = {
-        intensity: Math.random() * 0.5 + 0.5, // 0.5-1.0
-        dominantAffect: ['joy', 'sadness', 'anger', 'fear', 'surprise'][
-          Math.floor(Math.random() * 5)
-        ],
-        confidence: Math.random() * 0.3 + 0.7, // 0.7-1.0
-        emotions: {
-          joy: Math.random(),
-          sadness: Math.random(),
-          anger: Math.random(),
-          fear: Math.random(),
-          surprise: Math.random()
-        }
-      };
-      
-      setResult(mockResult);
-      return mockResult;
+      // Simulação de análise de emoção
+      const response = await fetch('/api/emotion/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          text: text.trim(),
+          ...(userId && { userId })
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha na análise de emoção');
+      }
+
+      const data = await response.json();
+      setResult(data);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
-      setError(errorMessage);
-      throw err;
+      setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
       setLoading(false);
     }
   }, []);
 
+  const reset = useCallback(() => {
+    setResult(null);
+    setError(null);
+    setLoading(false);
+  }, []);
+
   return {
-    analyze,
     loading,
+    isLoading: loading, // Alias para compatibilidade
+    result,
     error,
-    result
+    analyze,
+    reset,
   };
 };
 
