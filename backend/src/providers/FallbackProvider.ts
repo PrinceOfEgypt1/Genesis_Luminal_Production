@@ -7,6 +7,7 @@ export class FallbackProvider implements AIProvider {
   async analyze(_input: EmotionalAnalysisRequest): Promise<EmotionalAnalysisResponse> {
     const now = new Date().toISOString();
     return {
+      dominant: "neutral",
       intensity: 0.5,
       timestamp: now,
       confidence: 0.5,

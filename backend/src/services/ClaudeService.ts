@@ -14,6 +14,7 @@ class ClaudeService {
     const text = extractText(input);
     if (!text) {
       return {
+        dominant: "curiosity",
         intensity: 0.0,
         timestamp: new Date().toISOString(),
         confidence: 0.0,
