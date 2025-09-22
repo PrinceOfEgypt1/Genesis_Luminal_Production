@@ -9,7 +9,7 @@ import { z, ZodSchema } from 'zod';
 interface ValidationError {
   field: string;
   message: string;
-  value?: any;
+  code?: string;
 }
 
 /**
@@ -26,7 +26,7 @@ export const validateBody = (schema: ZodSchema) => {
         const validationErrors: ValidationError[] = error.errors.map(err => ({
           field: err.path.join('.'),
           message: err.message,
-          value: err.input
+          code: err.code
         }));
 
         return res.status(400).json({
@@ -58,7 +58,7 @@ export const validateQuery = (schema: ZodSchema) => {
         const validationErrors: ValidationError[] = error.errors.map(err => ({
           field: err.path.join('.'),
           message: err.message,
-          value: err.input
+          code: err.code
         }));
 
         return res.status(400).json({
@@ -83,7 +83,11 @@ export const validationErrorHandler = (error: any, req: Request, res: Response, 
   if (error instanceof z.ZodError) {
     return res.status(400).json({
       error: 'Validation error',
-      details: error.errors,
+      details: error.errors.map(err => ({
+        field: err.path.join('.'),
+        message: err.message,
+        code: err.code
+      })),
       path: req.path,
       method: req.method,
       timestamp: new Date().toISOString()
