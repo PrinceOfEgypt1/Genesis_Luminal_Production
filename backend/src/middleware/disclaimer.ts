@@ -1,115 +1,107 @@
 /**
- * @fileoverview Middleware de Disclaimer - Genesis Luminal
+ * @fileoverview Disclaimer middleware para Genesis Luminal
  * @version 1.0.0
- * @author Genesis Luminal Team
- * 
- * Adiciona headers de transparência em todas as responses
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { FeatureRegistry } from '@/types/system-status';
+
+interface FeatureStatus {
+  status: 'IMPLEMENTADO' | 'SIMULACAO' | 'PLANEJADO';
+  description: string;
+}
 
 /**
- * Middleware que adiciona headers de transparência técnica
+ * Middleware de disclaimer para funcionalidades
  */
-export function disclaimerMiddleware(
-  req: Request, 
-  res: Response, 
-  next: NextFunction
-): void {
-  // Headers de transparência
-  res.setHeader('X-Genesis-Mode', 'DEVELOPMENT');
-  res.setHeader('X-Genesis-Simulation', 'ACTIVE');
-  res.setHeader('X-Genesis-Version', '1.0.0-alpha');
-  res.setHeader('X-Genesis-Disclaimer', 'Contains simulated features - Not production ready');
+export const disclaimerMiddleware = (req: Request, res: Response, next: NextFunction) => {
+  // Adicionar headers de disclaimer
+  res.setHeader('X-Feature-Disclaimer', 'Algumas funcionalidades podem estar em modo simulação');
+  res.setHeader('X-Development-Status', 'Beta');
   
-  // Interceptar JSON responses para adicionar disclaimer
-  const originalJson = res.json;
-  
-  res.json = function(obj: any) {
-    const honestyReport = FeatureRegistry.generateHonestyReport();
+  next();
+};
+
+/**
+ * Obter status das funcionalidades
+ */
+export const getFeatureStatus = (): Record<string, FeatureStatus> => {
+  return {
+    emotionAnalysis: {
+      status: 'IMPLEMENTADO',
+      description: 'Análise de emoções via providers'
+    },
+    audioEngine: {
+      status: 'SIMULACAO',
+      description: 'Engine de áudio emocional'
+    },
+    metrics: {
+      status: 'IMPLEMENTADO',
+      description: 'Coleta de métricas e observabilidade'
+    }
+  };
+};
+
+/**
+ * Middleware para incluir status das funcionalidades na resposta
+ */
+export const includeFeatureStatus = (req: Request, res: Response, next: NextFunction) => {
+  // Adicionar método para incluir disclaimer na resposta
+  res.locals.addDisclaimer = () => {
+    const features = getFeatureStatus();
     
-    // Adicionar metadados de transparência
-    const responseWithDisclaimer = {
-      ...obj,
-      _disclaimer: {
-        environment: 'DEVELOPMENT',
-        simulatedFeatures: honestyReport.simulated,
-        implementedFeatures: honestyReport.implemented,
-        honestyScore: honestyReport.honestyScore,
-        warning: 'Este sistema contém funcionalidades simuladas. Não usar em produção.',
-        lastUpdated: new Date().toISOString(),
-        documentation: 'https://genesis-luminal.dev/docs/disclaimer'
+    return {
+      disclaimer: {
+        message: 'Este sistema inclui funcionalidades em diferentes estágios de desenvolvimento',
+        features: Object.entries(features).map(([featureName, metadata]) => ({
+          name: featureName,
+          status: metadata.status,
+          description: metadata.description,
+          statusEmoji: getStatusEmoji(metadata.status)
+        })),
+        recommendations: [
+          'Funcionalidades SIMULACAO são para demonstração',
+          'Funcionalidades IMPLEMENTADO são totalmente funcionais',
+          'Funcionalidades PLANEJADO serão implementadas no futuro'
+        ]
       }
     };
-    
-    return originalJson.call(this, responseWithDisclaimer);
   };
   
   next();
-}
+};
 
 /**
- * Endpoint dedicado para disclaimer e transparência
+ * Obter emoji para status
  */
-export function createDisclaimerRoutes(app: any): void {
-  app.get('/api/disclaimer', (req: Request, res: Response) => {
-    const honestyReport = FeatureRegistry.generateHonestyReport();
-    
-    res.json({
-      title: 'Genesis Luminal - Disclaimer de Desenvolvimento',
-      version: '1.0.0-alpha',
-      environment: 'DEVELOPMENT',
-      warnings: [
-        '🔴 SISTEMA EM DESENVOLVIMENTO - NÃO USAR EM PRODUÇÃO',
-        '🔴 CONTÉM FUNCIONALIDADES SIMULADAS',
-        '🔴 DADOS PODEM SER BASEADOS EM HEURÍSTICAS',
-        '🔴 PRECISÃO LIMITADA EM ANÁLISES'
-      ],
-      honestyReport,
-      features: Array.from(FeatureRegistry.getAll().entries()).map(([name, metadata]) => ({
-        name,
-        status: metadata.status,
-        confidence: metadata.confidence,
-        limitations: metadata.limitations
-      })),
-      contact: {
-        documentation: 'https://genesis-luminal.dev/docs',
-        support: 'https://github.com/PrinceOfEgypt1/Genesis_Luminal_Production/issues',
-        disclaimer: 'Este projeto é para fins de demonstração e desenvolvimento'
-      },
-      lastUpdated: new Date().toISOString()
-    });
-  });
-  
-  app.get('/api/system/honesty-report', (req: Request, res: Response) => {
-    const report = FeatureRegistry.generateHonestyReport();
-    const features = FeatureRegistry.getAll();
-    
-    res.json({
-      summary: report,
-        ...metadata,
-        statusEmoji: getStatusEmoji(metadata.status)
-      })),
-      recommendations: [
-        'Marcar claramente funcionalidades simuladas',
-        'Implementar funcionalidades reais onde possível',
-        'Documentar limitações conhecidas',
-        'Manter transparência com usuários'
-      ]
-    });
-  });
-}
+const getStatusEmoji = (status: string): string => {
+  switch (status) {
+    case 'IMPLEMENTADO':
+      return '✅';
+    case 'SIMULACAO':
+      return '🎭';
+    case 'PLANEJADO':
+      return '📋';
+    default:
+      return '❓';
+  }
+};
 
-function getStatusEmoji(status: string): string {
-  const emojiMap: Record<string, string> = {
-    'IMPLEMENTED': '✅',
-    'SIMULATION': '🔴', 
-    'PLANNED': '🟡',
-    'IN_DEVELOPMENT': '🔵',
-    'PARTIAL': '🟠',
-    'DEPRECATED': '⚫'
-  };
+/**
+ * Endpoint para obter disclaimer completo
+ */
+export const getDisclaimerInfo = (req: Request, res: Response) => {
+  const disclaimerInfo = res.locals.addDisclaimer ? res.locals.addDisclaimer() : {};
   
-  return emojiMap[status] || '❓';
-}
+  res.json({
+    ...disclaimerInfo,
+    timestamp: new Date().toISOString(),
+    version: '1.0.0'
+  });
+};
+
+export default {
+  disclaimerMiddleware,
+  includeFeatureStatus,
+  getFeatureStatus,
+  getDisclaimerInfo
+};
