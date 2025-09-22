@@ -20,7 +20,8 @@ export interface EmotionalAnalysisResponse {
   timestamp?: Date | string;
   recommendation?: string;
   dominantAffect?: string;
-  emotionalShift?: string; // ADICIONADO: propriedade ausente
+  emotionalShift?: string;
+  morphogenicSuggestion?: string; // ADICIONADO: última propriedade ausente
 }
 
 export interface EmotionAnalysisResponse extends EmotionalAnalysisResponse {}
