@@ -2,11 +2,6 @@ export interface Vector2D {
     x: number;
     y: number;
 }
-export interface Vector3D {
-    x: number;
-    y: number;
-    z: number;
-}
 export interface EmotionalDNA {
     joy: number;
     nostalgia: number;
@@ -18,26 +13,23 @@ export interface EmotionalDNA {
 }
 export type EmotionalAffect = keyof EmotionalDNA;
 export interface EmotionalAnalysisRequest {
-    currentState: EmotionalDNA;
-    mousePosition: Vector2D;
-    sessionDuration: number;
+    currentState?: EmotionalDNA;
+    mousePosition?: Vector2D;
+    sessionDuration?: number;
     userId?: string;
+    text?: string;
+    metadata?: any;
 }
 export interface EmotionalAnalysisResponse {
-    success: boolean;
-    intensity: number;
-    dominantAffect: EmotionalAffect;
-    timestamp: string;
-    confidence: number;
-    recommendation: string;
-    emotionalShift?: string;
-    morphogenicSuggestion?: string;
-    error?: any;
-}
-export interface HealthCheckResponse {
-    success: boolean;
-    status: string;
-    error?: any;
+    intensity?: number;
+    dominantAffect?: keyof EmotionalDNA;
+    timestamp?: string;
+    success?: boolean;
+    confidence?: number;
+    recommendation?: string;
+    error?: unknown;
+    emotionalShift?: unknown;
+    morphogenicSuggestion?: unknown;
 }
 export interface SystemStatus {
     status: string;
@@ -52,51 +44,5 @@ export interface SystemStatus {
         heapTotal: number;
     };
     claude_api_key: 'configured' | 'missing';
-}
-export interface EmotionalPrediction {
-    predictedEmotion: EmotionalDNA;
-    confidence: number;
-    timeHorizon: number;
-    reasoning: string;
-}
-export interface ClaudeAnalysisResult {
-    confidence: number;
-    recommendation: string;
-    emotionalShift: string;
-    morphogenicSuggestion: string;
-}
-export interface PerformanceMetrics {
-    fps: number;
-    inputLatency: number;
-    memoryUsage: number;
-    particleCount: number;
-    visibleParticles: number;
-    renderedParticles: number;
-    distributionTransitions: number;
-    webglEnabled: boolean;
-    adaptiveOptimizations: number;
-}
-export interface AudioScale {
-    name: string;
-    frequencies: number[];
-    emotions: string[];
-    timbre: 'sine' | 'square' | 'sawtooth' | 'triangle';
-}
-export interface DistributionConfig {
-    name: string;
-    emotions: string[];
-    description: string;
-}
-export type StatusChangeHandler = (message: string) => void;
-export declare enum DistributionType {
-    FIBONACCI = "fibonacci",
-    SPIRAL = "spiral",
-    ORGANIC = "organic",
-    RANDOM = "random"
-}
-export declare enum ConnectionStatus {
-    DISCONNECTED = "disconnected",
-    CONNECTING = "connecting",
-    CONNECTED = "connected"
 }
 //# sourceMappingURL=api.d.ts.map
