@@ -1,3 +1,9 @@
+declare global {
+  interface Window {
+    gtag?: (...args: any[]) => void;
+  }
+}
+
 /**
  * @fileoverview Performance Monitor - Genesis Luminal Frontend
  * @version 1.0.0
@@ -212,7 +218,7 @@ export class PerformanceMonitor {
       list.getEntries().forEach((entry) => {
         if (entry.entryType === 'resource') {
           const resource = entry as PerformanceResourceTiming;
-          const loadTime = resource.loadEnd - resource.loadStart;
+          const loadTime = resource.responseEnd - resource.requestStart;
           
           // Alertar se recurso demorou mais que 3 segundos
           if (loadTime > 3000) {
@@ -283,8 +289,8 @@ export class PerformanceMonitor {
    */
   private sendMetricToAnalytics(metric: string, value: number, labels: Record<string, string> = {}): void {
     // Integração com Google Analytics 4
-    if (typeof gtag !== 'undefined') {
-      gtag('event', 'performance_metric', {
+    if (typeof window.gtag !== 'undefined') {
+      window.gtag?.('event', 'performance_metric', {
         metric_name: metric,
         metric_value: value,
         ...labels
@@ -323,8 +329,8 @@ export class PerformanceMonitor {
    */
   private sendPerformanceAlert(alert: PerformanceAlert): void {
     // Integração com Google Analytics
-    if (typeof gtag !== 'undefined') {
-      gtag('event', 'performance_alert', {
+    if (typeof window.gtag !== 'undefined') {
+      window.gtag?.('event', 'performance_alert', {
         metric_name: alert.metric,
         severity: alert.severity,
         value: alert.value,

@@ -218,7 +218,7 @@ describe('EmotionAnalyzer', () => {
       
       await waitFor(() => {
         const resultContainer = screen.getByTestId('emotion-result');
-        expect(resultContainer).toHaveClass(/joy|happy|positive/);
+        expect(resultContainer).toHaveClass(expect.stringMatching(/(joy|happy|positive)/));
       });
     });
   });

@@ -1,52 +1,55 @@
 /**
- * @fileoverview Setup global para testes frontend - Genesis Luminal
- * @version 1.0.0
- * @author Genesis Luminal Team
+ * @fileoverview Setup de testes - Frontend Genesis Luminal
  */
 
-import '@testing-library/jest-dom';
+import { vi } from 'vitest';
 
-// Mock do IntersectionObserver para testes
-global.IntersectionObserver = class IntersectionObserver {
-  constructor() {}
-  observe() { return null; }
-  disconnect() { return null; }
-  unobserve() { return null; }
-};
+// Mock IntersectionObserver
+class MockIntersectionObserver implements IntersectionObserver {
+  readonly root: Element | null = null;
+  readonly rootMargin: string = '';
+  readonly thresholds: ReadonlyArray<number> = [];
+  
+  constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {}
+  
+  observe(target: Element): void {}
+  unobserve(target: Element): void {}
+  disconnect(): void {}
+  takeRecords(): IntersectionObserverEntry[] { return []; }
+}
 
-// Mock do ResizeObserver para testes
-global.ResizeObserver = class ResizeObserver {
-  constructor() {}
-  observe() { return null; }
-  disconnect() { return null; }
-  unobserve() { return null; }
-};
+global.IntersectionObserver = MockIntersectionObserver;
 
-// Mock do matchMedia para testes
+// Mock matchMedia
+const matchMediaMock = vi.fn().mockImplementation((query: string) => ({
+  matches: false,
+  media: query,
+  onchange: null,
+  addListener: vi.fn(),
+  removeListener: vi.fn(),
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn(),
+  dispatchEvent: vi.fn(),
+}));
+
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: vi.fn().mockImplementation(query => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
+  value: matchMediaMock,
 });
 
-// Mock do localStorage para testes
+// Mock localStorage
 const localStorageMock = {
   getItem: vi.fn(),
   setItem: vi.fn(),
   removeItem: vi.fn(),
   clear: vi.fn(),
+  length: 0,
+  key: vi.fn()
 };
-global.localStorage = localStorageMock;
 
-// Configuração global para testes React
-beforeEach(() => {
+global.localStorage = localStorageMock as Storage;
+
+// Setup global
+afterEach(() => {
   vi.clearAllMocks();
 });
