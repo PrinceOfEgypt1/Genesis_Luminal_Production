@@ -163,7 +163,7 @@ function createRateLimitMiddleware(type: RateLimitType) {
     legacyHeaders: false,
     
     // Adicionar tipo ao request para logging
-    // Removido:     handler: (req: Request) => { (duplicata)
+    handler: (req: Request) => {
       (req as any).rateLimit = { 
         type,
         resetTime: Date.now() + config.windowMs
