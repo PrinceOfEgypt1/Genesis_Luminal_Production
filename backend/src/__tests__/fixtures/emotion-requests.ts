@@ -4,9 +4,9 @@
  * @author Genesis Luminal Team
  */
 
-import { EmotionAnalysisRequest } from '@/types/emotion';
+import { EmotionalAnalysisRequest } from '@/types/emotion';
 
-export const validEmotionRequests: EmotionAnalysisRequest[] = [
+export const validEmotionRequests: EmotionalAnalysisRequest[] = [
   {
     text: 'I am feeling absolutely wonderful today!',
     userId: 'happy-user-1',

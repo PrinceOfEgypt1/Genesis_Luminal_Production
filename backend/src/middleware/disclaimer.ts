@@ -1,107 +1,55 @@
 /**
- * @fileoverview Disclaimer middleware para Genesis Luminal
+ * @fileoverview Disclaimer middleware
  * @version 1.0.0
  */
 
 import { Request, Response, NextFunction } from 'express';
 
-interface FeatureStatus {
+interface FeatureMetadata {
   status: 'IMPLEMENTADO' | 'SIMULACAO' | 'PLANEJADO';
   description: string;
 }
 
 /**
- * Middleware de disclaimer para funcionalidades
+ * Middleware de disclaimer
  */
 export const disclaimerMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  // Adicionar headers de disclaimer
-  res.setHeader('X-Feature-Disclaimer', 'Algumas funcionalidades podem estar em modo simulação');
-  res.setHeader('X-Development-Status', 'Beta');
-  
+  res.setHeader('X-Feature-Disclaimer', 'Algumas funcionalidades podem estar em simulação');
   next();
 };
 
 /**
  * Obter status das funcionalidades
  */
-export const getFeatureStatus = (): Record<string, FeatureStatus> => {
-  return {
-    emotionAnalysis: {
-      status: 'IMPLEMENTADO',
-      description: 'Análise de emoções via providers'
-    },
-    audioEngine: {
-      status: 'SIMULACAO',
-      description: 'Engine de áudio emocional'
-    },
-    metrics: {
-      status: 'IMPLEMENTADO',
-      description: 'Coleta de métricas e observabilidade'
+export const getFeatureStatus = () => {
+  const features = new Map<string, FeatureMetadata>([
+    ['emotionAnalysis', { status: 'IMPLEMENTADO', description: 'Análise de emoções' }],
+    ['audioEngine', { status: 'SIMULACAO', description: 'Engine de áudio' }],
+    ['metrics', { status: 'IMPLEMENTADO', description: 'Métricas' }]
+  ]);
+
+  const getStatusEmoji = (status: string): string => {
+    switch (status) {
+      case 'IMPLEMENTADO': return '✅';
+      case 'SIMULACAO': return '🎭';
+      case 'PLANEJADO': return '📋';
+      default: return '❓';
     }
   };
-};
 
-/**
- * Middleware para incluir status das funcionalidades na resposta
- */
-export const includeFeatureStatus = (req: Request, res: Response, next: NextFunction) => {
-  // Adicionar método para incluir disclaimer na resposta
-  res.locals.addDisclaimer = () => {
-    const features = getFeatureStatus();
-    
-    return {
-      disclaimer: {
-        message: 'Este sistema inclui funcionalidades em diferentes estágios de desenvolvimento',
-        features: Object.entries(features).map(([featureName, metadata]) => ({
-          name: featureName,
-          status: metadata.status,
-          description: metadata.description,
-          statusEmoji: getStatusEmoji(metadata.status)
-        })),
-        recommendations: [
-          'Funcionalidades SIMULACAO são para demonstração',
-          'Funcionalidades IMPLEMENTADO são totalmente funcionais',
-          'Funcionalidades PLANEJADO serão implementadas no futuro'
-        ]
-      }
-    };
+  return {
+    summary: 'Status das funcionalidades',
+    features: Array.from(features.entries()).map(([featureName, metadata]) => ({
+      name: featureName, // Manter apenas UMA propriedade name
+      status: metadata.status,
+      description: metadata.description,
+      statusEmoji: getStatusEmoji(metadata.status)
+    })),
+    recommendations: [
+      'Funcionalidades SIMULACAO são para demonstração',
+      'Funcionalidades IMPLEMENTADO são totalmente funcionais'
+    ]
   };
-  
-  next();
 };
 
-/**
- * Obter emoji para status
- */
-const getStatusEmoji = (status: string): string => {
-  switch (status) {
-    case 'IMPLEMENTADO':
-      return '✅';
-    case 'SIMULACAO':
-      return '🎭';
-    case 'PLANEJADO':
-      return '📋';
-    default:
-      return '❓';
-  }
-};
-
-/**
- * Endpoint para obter disclaimer completo
- */
-export const getDisclaimerInfo = (req: Request, res: Response) => {
-  const disclaimerInfo = res.locals.addDisclaimer ? res.locals.addDisclaimer() : {};
-  
-  res.json({
-    ...disclaimerInfo,
-    timestamp: new Date().toISOString(),
-    version: '1.0.0'
-  });
-};
-
-export default {
-  disclaimerMiddleware,
-  includeFeatureStatus,
-  getFeatureStatus,
-  getDisclaimerInfo
-};
+export default disclaimerMiddleware;
