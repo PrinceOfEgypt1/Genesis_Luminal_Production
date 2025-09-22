@@ -88,8 +88,6 @@ export function createDisclaimerRoutes(app: any): void {
     
     res.json({
       summary: report,
-      features: Array.from(features.entries()).map(([name, metadata]) => ({
-        name,
         ...metadata,
         statusEmoji: getStatusEmoji(metadata.status)
       })),

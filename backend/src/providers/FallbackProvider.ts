@@ -1,5 +1,5 @@
 import type { AIProvider } from './AIProvider';
-import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '../../../shared/types/api';
+import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '../types/emotion';
 
 export class FallbackProvider implements AIProvider {
   name = 'fallback';

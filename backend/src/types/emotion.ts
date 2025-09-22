@@ -1,39 +1,17 @@
 /**
- * @fileoverview Tipos para análise de emoções - Genesis Luminal
+ * @fileoverview Local emotion types
  * @version 1.0.0
  */
 
-export interface EmotionAnalysisRequest {
+export interface EmotionalAnalysisRequest {
   text: string;
-  context?: string;
-  userId?: string;
   timestamp?: Date;
+  userId?: string;
 }
 
-export interface EmotionAnalysisResult {
-  intensity: number;        // 0-1
-  dominantAffect: string;   // joy, anger, sadness, etc
-  confidence: number;       // 0-1
-  emotions: {
-    [key: string]: number;  // emotion name -> intensity
-  };
-  metadata?: {
-    provider: string;
-    processingTime: number;
-    version: string;
-    model?: string;
-    isSimulated?: boolean;  // ADICIONADO
-    [key: string]: any;     // ADICIONADO: permite propriedades extras
-  };
-}
-
-export interface EmotionProvider {
-  name: string;
-  analyze(request: EmotionAnalysisRequest): Promise<EmotionAnalysisResult>;
-}
-
-// Interface AIProvider para compatibilidade
-export interface AIProvider {
-  name: string;
-  analyze(request: EmotionAnalysisRequest): Promise<EmotionAnalysisResult>;
+export interface EmotionalAnalysisResponse {
+  dominant: string;
+  intensity: number;
+  confidence: number;
+  processingTime?: number;
 }

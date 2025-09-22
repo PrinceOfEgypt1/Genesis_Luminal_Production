@@ -1,17 +1,18 @@
 /**
- * @fileoverview Setup de testes - Backend Genesis Luminal
+ * @fileoverview Test setup configuration
+ * @version 1.0.0
  */
 
-import 'reflect-metadata';
+// Mock completo do setImmediate com __promisify__
+const setImmediateWithPromisify = Object.assign(
+  (fn: (...args: any[]) => void, ...args: any[]): NodeJS.Timeout => {
+    return setTimeout(() => fn(...args), 0) as NodeJS.Timeout;
+  },
+  {
+    __promisify__: (value?: any) => Promise.resolve(value)
+  }
+);
 
-// Mock global setImmediate se não existir
-if (typeof global.setImmediate === 'undefined') {
-  global.setImmediate = (fn: (...args: any[]) => void, ...args: any[]): NodeJS.Timeout => {
-    return global.setTimeout(fn, 0, ...args);
-  };
-}
+(global as any).setImmediate = setImmediateWithPromisify;
 
-// Setup de testes Jest
-beforeEach(() => {
-  jest.clearAllMocks();
-});
+// Configuração adicional de mocks

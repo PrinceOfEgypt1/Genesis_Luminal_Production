@@ -1,4 +1,4 @@
-import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '../../../shared/types/api';
+import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '../types/emotion';
 import { ProviderRouter } from '../providers/ProviderRouter';
 
 function extractText(input: EmotionalAnalysisRequest): string {

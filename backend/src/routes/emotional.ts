@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import claudeService from '../services/ClaudeService';
 import { logger } from '../utils/logger';
-import type { EmotionalAnalysisRequest } from '../../../shared/types/api';
+import type { EmotionalAnalysisRequest } from '../types/emotion';
 
 const router = Router();
 

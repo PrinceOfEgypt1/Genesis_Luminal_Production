@@ -1,4 +1,4 @@
-import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '../../../shared/types/api';
+import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '../types/emotion';
 
 export interface AIProvider {
   name: string;

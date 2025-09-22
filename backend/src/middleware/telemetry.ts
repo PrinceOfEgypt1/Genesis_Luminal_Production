@@ -50,7 +50,7 @@ export function telemetryMiddleware(
     const route = req.route?.path || req.path || 'unknown';
     
     recordHttpRequest(
-      duration,
+      duration.toString(),
       req.method,
       route,
       res.statusCode

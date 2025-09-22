@@ -3,7 +3,7 @@ import type { AIProvider } from './AIProvider';
 import { AnthropicProvider } from './AnthropicProvider';
 import { FallbackProvider } from './FallbackProvider';
 import { logger } from '../utils/logger';
-import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '../../../shared/types/api';
+import type { EmotionalAnalysisRequest, EmotionalAnalysisResponse } from '../types/emotion';
 
 type CBState = 'CLOSED' | 'OPEN' | 'HALF_OPEN';
 
