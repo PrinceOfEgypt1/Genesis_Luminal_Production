@@ -16,7 +16,6 @@
     "removeComments": false,
     "moduleResolution": "node",
     "allowJs": true,
-    "noImplicitAny": false,
     "baseUrl": "./",
     "paths": {
       "@/*": ["src/*"],
@@ -27,12 +26,16 @@
     }
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "__tests__/**/*"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    "coverage",
-    "__tests__"
-  ]
+    "coverage"
+  ],
+  "ts-node": {
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
+  }
 }

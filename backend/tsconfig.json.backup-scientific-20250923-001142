@@ -4,7 +4,6 @@
     "module": "commonjs",
     "lib": ["ES2020"],
     "outDir": "./dist",
-    "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
@@ -16,7 +15,6 @@
     "removeComments": false,
     "moduleResolution": "node",
     "allowJs": true,
-    "noImplicitAny": false,
     "baseUrl": "./",
     "paths": {
       "@/*": ["src/*"],
@@ -34,5 +32,9 @@
     "dist",
     "coverage",
     "__tests__"
-  ]
+  ],
+  "ts-node": {
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
+  }
 }
