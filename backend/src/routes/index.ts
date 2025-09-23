@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import emotionalRoutes from './emotional';
 
 const router = Router();
 
