@@ -1,6 +1,3 @@
-/**
- * Logger estruturado - Sprint 5 Passo 3
- */
 import winston from 'winston';
 
 class StructuredLogger {
@@ -18,8 +15,7 @@ class StructuredLogger {
           format: winston.format.simple()
         }),
         new winston.transports.File({ 
-          filename: 'logs/app.log',
-          format: winston.format.json()
+          filename: 'logs/app.log'
         })
       ],
     });
@@ -31,10 +27,6 @@ class StructuredLogger {
 
   error(message: string, meta?: any): void {
     this.logger.error(message, meta);
-  }
-
-  warn(message: string, meta?: any): void {
-    this.logger.warn(message, meta);
   }
 }
 

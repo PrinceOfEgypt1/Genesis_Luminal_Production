@@ -1,19 +1,17 @@
-/**
- * Métricas Prometheus - Sprint 5 Passo 2
- */
 import { register, Counter, Histogram } from 'prom-client';
 
 export class PrometheusMetrics {
   private requestsTotal = new Counter({
     name: 'genesis_requests_total',
-    help: 'Total requests',
+    help: 'Total HTTP requests',
     labelNames: ['method', 'status'],
   });
 
   private requestDuration = new Histogram({
     name: 'genesis_request_duration_seconds',
-    help: 'Request duration',
+    help: 'HTTP request duration',
     labelNames: ['method'],
+    buckets: [0.01, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0],
   });
 
   constructor() {
