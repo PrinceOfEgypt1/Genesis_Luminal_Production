@@ -42,7 +42,8 @@
     "cz-conventional-changelog": "^3.3.0",
     "husky": "^8.0.3",
     "lint-staged": "^15.2.0",
-    "semantic-release": "^22.0.8"
+    "semantic-release": "^22.0.8",
+    "ts-jest": "^29.4.4"
   },
   "config": {
     "commitizen": {
@@ -50,14 +51,16 @@
     }
   },
   "commitlint": {
-    "extends": ["@commitlint/config-conventional"],
+    "extends": [
+      "@commitlint/config-conventional"
+    ],
     "rules": {
       "type-enum": [
         2,
         "always",
         [
           "feat",
-          "fix", 
+          "fix",
           "docs",
           "style",
           "refactor",
@@ -88,10 +91,26 @@
           "release"
         ]
       ],
-      "subject-max-length": [2, "always", 72],
-      "subject-min-length": [2, "always", 10],
-      "subject-case": [2, "always", "sentence-case"],
-      "body-max-line-length": [2, "always", 100]
+      "subject-max-length": [
+        2,
+        "always",
+        72
+      ],
+      "subject-min-length": [
+        2,
+        "always",
+        10
+      ],
+      "subject-case": [
+        2,
+        "always",
+        "sentence-case"
+      ],
+      "body-max-line-length": [
+        2,
+        "always",
+        100
+      ]
     }
   },
   "lint-staged": {

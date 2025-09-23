@@ -12,7 +12,7 @@ export class EmotionalSynthesis {
   public generateAudioContext(emotionalDNA: EmotionalDNA): any {
     return {
       frequency: 200 + emotionalDNA.joy * 600,
-      harmonics: [1, 0.5, 0.3, 0.2].map(h => h * emotionalDNA.intensity || 0.5)
+      harmonics: [1, 0.5, 0.3, 0.2].map(h => h * emotionalDNA.joy || 0.5)
     };
   }
 

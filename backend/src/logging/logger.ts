@@ -1,33 +1,30 @@
+/**
+ * @fileoverview Logger Enterprise - Genesis Luminal
+ * @version 1.0.0
+ * @author Genesis Luminal Team
+ */
+
 import winston from 'winston';
 
-class StructuredLogger {
-  private logger: winston.Logger;
+const logger = winston.createLogger({
+  level: process.env.LOG_LEVEL || 'info',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.errors({ stack: true }),
+    winston.format.json()
+  ),
+  defaultMeta: { service: 'genesis-luminal-backend' },
+  transports: [
+    new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
+    new winston.transports.File({ filename: 'logs/combined.log' }),
+  ],
+});
 
-  constructor() {
-    this.logger = winston.createLogger({
-      level: 'info',
-      format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.json()
-      ),
-      transports: [
-        new winston.transports.Console({
-          format: winston.format.simple()
-        }),
-        new winston.transports.File({ 
-          filename: 'logs/app.log'
-        })
-      ],
-    });
-  }
-
-  info(message: string, meta?: any): void {
-    this.logger.info(message, meta);
-  }
-
-  error(message: string, meta?: any): void {
-    this.logger.error(message, meta);
-  }
+// Para desenvolvimento, adicionar console
+if (process.env.NODE_ENV !== 'production') {
+  logger.add(new winston.transports.Console({
+    format: winston.format.simple()
+  }));
 }
 
-export const logger = new StructuredLogger();
+export default logger;

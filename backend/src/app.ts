@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { prometheusMetrics } from './metrics/prometheus';
-import { logger } from './logging/logger';
+import logger from './logging/logger';
 
 const app = express();
 

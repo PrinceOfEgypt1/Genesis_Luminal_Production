@@ -9,7 +9,7 @@ process.env.PORT = '3001';
 process.env.TEST_DATABASE_URL = 'memory://test';
 
 // Mock do logger para testes silenciosos
-jest.mock('../src/infrastructure/logging/logger', () => ({
+jest.mock('../src/logging/logger', () => ({
   info: jest.fn(),
   error: jest.fn(),
   warn: jest.fn(),
