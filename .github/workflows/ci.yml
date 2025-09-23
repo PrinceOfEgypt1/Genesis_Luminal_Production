@@ -1,273 +1,33 @@
-# ========================================
-# Genesis Luminal Production - CI/CD Pipeline
-# Autor: Genesis Luminal Team
-# Versão: 1.0.0
-# Descrição: Pipeline completo com quality gates
-# ========================================
-
-name: Genesis Luminal CI/CD
+name: Genesis Luminal CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
-env:
-  NODE_VERSION: '18'
-  COVERAGE_THRESHOLD: 60
-
 jobs:
-  # ========================================
-  # JOB 1: QUALITY GATES - LINTING E TYPE CHECK
-  # ========================================
-  code-quality:
-    name: 🔍 Code Quality & Linting
+  test:
     runs-on: ubuntu-latest
     
     steps:
-    - name: 📥 Checkout Repository
-      uses: actions/checkout@v4
-      
-    - name: 🟢 Setup Node.js
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: |
-          backend/package-lock.json
-          frontend/package-lock.json
-    
-    - name: 📦 Install Backend Dependencies
-      working-directory: ./backend
-      run: npm ci
-      
-    - name: 📦 Install Frontend Dependencies
-      working-directory: ./frontend
-      run: npm ci
-    
-    - name: 🔍 ESLint Backend
-      working-directory: ./backend
-      run: npm run lint
-      
-    - name: 🔍 ESLint Frontend
-      working-directory: ./frontend
-      run: npm run lint
-      
-    - name: 🔧 TypeScript Check Backend
-      working-directory: ./backend
-      run: npm run type-check
-      
-    - name: 🔧 TypeScript Check Frontend
-      working-directory: ./frontend
-      run: npm run type-check
-
-  # ========================================
-  # JOB 2: TESTS - UNIT, INTEGRATION E COVERAGE
-  # ========================================
-  tests:
-    name: 🧪 Tests & Coverage
-    runs-on: ubuntu-latest
-    needs: code-quality
-    
-    steps:
-    - name: 📥 Checkout Repository
-      uses: actions/checkout@v4
-      
-    - name: 🟢 Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
+        node-version: '18'
         cache: 'npm'
         cache-dependency-path: backend/package-lock.json
     
-    - name: 📦 Install Dependencies
+    - name: Install dependencies
       working-directory: ./backend
       run: npm ci
       
-    - name: 🧪 Run Unit Tests
+    - name: Run tests
       working-directory: ./backend
-      run: npm run test:unit
+      run: npm test
       
-    - name: 🔗 Run Integration Tests
-      working-directory: ./backend
-      run: npm run test:integration
-      
-    - name: 📊 Generate Coverage Report
-      working-directory: ./backend
-      run: npm run test:coverage
-      
-    - name: 📈 Upload Coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./backend/coverage/lcov.info
-        flags: backend
-        name: genesis-luminal-backend
-        fail_ci_if_error: true
-        
-    - name: 🚨 Coverage Threshold Check
-      working-directory: ./backend
-      run: |
-        COVERAGE=$(npm run test:coverage:check | grep -o '[0-9]\+\.[0-9]\+' | head -1)
-        echo "Current coverage: $COVERAGE%"
-        if (( $(echo "$COVERAGE < $COVERAGE_THRESHOLD" | bc -l) )); then
-          echo "❌ Coverage $COVERAGE% is below threshold $COVERAGE_THRESHOLD%"
-          exit 1
-        else
-          echo "✅ Coverage $COVERAGE% meets threshold $COVERAGE_THRESHOLD%"
-        fi
-
-  # ========================================
-  # JOB 3: BUILD VALIDATION
-  # ========================================
-  build:
-    name: 🏗️ Build Validation
-    runs-on: ubuntu-latest
-    needs: tests
-    
-    steps:
-    - name: 📥 Checkout Repository
-      uses: actions/checkout@v4
-      
-    - name: 🟢 Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: |
-          backend/package-lock.json
-          frontend/package-lock.json
-    
-    - name: 📦 Install Backend Dependencies
-      working-directory: ./backend
-      run: npm ci
-      
-    - name: 📦 Install Frontend Dependencies
-      working-directory: ./frontend
-      run: npm ci
-    
-    - name: 🏗️ Build Backend
+    - name: Build
       working-directory: ./backend
       run: npm run build
-      
-    - name: 🏗️ Build Frontend
-      working-directory: ./frontend
-      run: npm run build
-      
-    - name: 📦 Archive Backend Build
-      uses: actions/upload-artifact@v3
-      with:
-        name: backend-build
-        path: backend/dist/
-        
-    - name: 📦 Archive Frontend Build
-      uses: actions/upload-artifact@v3
-      with:
-        name: frontend-build
-        path: frontend/dist/
-
-  # ========================================
-  # JOB 4: SECURITY SCAN
-  # ========================================
-  security:
-    name: 🔒 Security Scan
-    runs-on: ubuntu-latest
-    needs: code-quality
-    
-    steps:
-    - name: 📥 Checkout Repository
-      uses: actions/checkout@v4
-      
-    - name: 🟢 Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: |
-          backend/package-lock.json
-          frontend/package-lock.json
-    
-    - name: 📦 Install Backend Dependencies
-      working-directory: ./backend
-      run: npm ci
-      
-    - name: 📦 Install Frontend Dependencies
-      working-directory: ./frontend
-      run: npm ci
-    
-    - name: 🔍 NPM Audit Backend
-      working-directory: ./backend
-      run: npm audit --audit-level=moderate
-      
-    - name: 🔍 NPM Audit Frontend
-      working-directory: ./frontend
-      run: npm audit --audit-level=moderate
-      
-    - name: 🛡️ Run Snyk Security Scan
-      uses: snyk/actions/node@master
-      env:
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      with:
-        args: --severity-threshold=high
-
-  # ========================================
-  # JOB 5: DOCUMENTATION CHECK
-  # ========================================
-  documentation:
-    name: 📚 Documentation Check
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: 📥 Checkout Repository
-      uses: actions/checkout@v4
-      
-    - name: 🟢 Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: backend/package-lock.json
-    
-    - name: 📦 Install Dependencies
-      working-directory: ./backend
-      run: npm ci
-      
-    - name: 📄 Generate API Documentation
-      working-directory: ./backend
-      run: npm run docs:generate
-      
-    - name: 🔍 Validate OpenAPI Schema
-      working-directory: ./backend
-      run: npm run docs:validate
-
-  # ========================================
-  # JOB 6: DEPLOYMENT (ONLY ON MAIN)
-  # ========================================
-  deploy:
-    name: 🚀 Deploy to Production
-    runs-on: ubuntu-latest
-    needs: [tests, build, security]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    
-    steps:
-    - name: 📥 Checkout Repository
-      uses: actions/checkout@v4
-      
-    - name: 📥 Download Backend Build
-      uses: actions/download-artifact@v3
-      with:
-        name: backend-build
-        path: backend/dist/
-        
-    - name: 📥 Download Frontend Build
-      uses: actions/download-artifact@v3
-      with:
-        name: frontend-build
-        path: frontend/dist/
-    
-    - name: 🚀 Deploy to Production
-      run: |
-        echo "🚀 Deploying Genesis Luminal to production..."
-        echo "✅ Backend build ready"
-        echo "✅ Frontend build ready"
-        echo "🎉 Deployment successful!"

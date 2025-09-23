@@ -1,12 +1,19 @@
 module.exports = {
-  testEnvironment: 'node',
   preset: 'ts-jest',
-  
-  testMatch: [
-    '<rootDir>/src/__tests__/**/*.test.ts'
-  ],
-  
-  moduleFileExtensions: ['ts', 'js', 'json'],
-  testTimeout: 10000,
-  verbose: true
+  testEnvironment: 'node',
+  extensionsToTreatAsEsm: ['.ts'],
+  globals: {
+    'ts-jest': {
+      useESM: true
+    }
+  },
+  roots: ['<rootDir>/tests'],
+  testMatch: ['<rootDir>/tests/**/*.test.ts'],
+  collectCoverage: true,
+  coverageDirectory: 'coverage',
+  collectCoverageFrom: [
+    'src/**/*.ts',
+    '!src/**/*.d.ts',
+    '!src/index.ts'
+  ]
 };
