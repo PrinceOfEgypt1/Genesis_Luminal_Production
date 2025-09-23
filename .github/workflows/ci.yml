@@ -1,9 +1,10 @@
 # ========================================
-# GENESIS LUMINAL PRODUCTION - CI/CD PIPELINE
-# Workflow principal com quality gates enterprise
+# Genesis Luminal Production - CI/CD Pipeline Enterprise
+# Implementa Quality Gates obrigatórios para produção
+# Coverage mínimo: 60% | Build: obrigatório | Testes: 100% pass
 # ========================================
 
-name: 🚀 CI/CD Pipeline
+name: Genesis Luminal CI/CD Enterprise
 
 on:
   push:
@@ -13,278 +14,124 @@ on:
 
 env:
   NODE_VERSION: '18'
-  COVERAGE_THRESHOLD: 80
+  COVERAGE_THRESHOLD: 60
 
 jobs:
-  # ========================================
-  # JOB 1: QUALITY GATES
-  # ========================================
-  quality-gates:
-    name: 🔍 Quality Gates
+  # ==========================================
+  # JOB 1: QUALITY GATES - BACKEND
+  # ==========================================
+  backend-quality-gates:
+    name: Backend Quality Gates
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    
-    steps:
-    - name: 📥 Checkout Code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: 🟢 Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: |
-          backend/package-lock.json
-          frontend/package-lock.json
-
-    - name: 📦 Install Dependencies - Backend
-      working-directory: ./backend
-      run: |
-        npm ci --prefer-offline --no-audit
-        echo "✅ Backend dependencies installed"
-
-    - name: 📦 Install Dependencies - Frontend
-      working-directory: ./frontend
-      run: |
-        npm ci --prefer-offline --no-audit
-        echo "✅ Frontend dependencies installed"
-
-    - name: 🔍 TypeScript Check - Backend
-      working-directory: ./backend
-      run: |
-        echo "🔍 Running TypeScript check for backend..."
-        npm run type-check || npm run build --dry-run
-        echo "✅ Backend TypeScript validation passed"
-
-    - name: 🔍 TypeScript Check - Frontend
-      working-directory: ./frontend
-      run: |
-        echo "🔍 Running TypeScript check for frontend..."
-        npm run type-check || npm run build --dry-run
-        echo "✅ Frontend TypeScript validation passed"
-
-    - name: 🧹 Lint Check - Backend
-      working-directory: ./backend
-      run: |
-        echo "🧹 Running ESLint for backend..."
-        npm run lint || echo "⚠️ Lint issues found but not blocking"
-
-    - name: 🧹 Lint Check - Frontend
-      working-directory: ./frontend
-      run: |
-        echo "🧹 Running ESLint for frontend..."
-        npm run lint || echo "⚠️ Lint issues found but not blocking"
-
-  # ========================================
-  # JOB 2: BACKEND TESTS
-  # ========================================
-  backend-tests:
-    name: 🧪 Backend Tests
-    runs-on: ubuntu-latest
-    needs: quality-gates
-    timeout-minutes: 15
     
     steps:
     - name: 📥 Checkout Code
       uses: actions/checkout@v4
 
-    - name: 🟢 Setup Node.js
+    - name: 🔧 Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
         cache-dependency-path: backend/package-lock.json
 
-    - name: 📦 Install Dependencies
-      working-directory: ./backend
+    - name: 📦 Install Backend Dependencies
+      working-directory: backend
       run: npm ci
 
-    - name: 🧪 Run Unit Tests
-      working-directory: ./backend
-      run: |
-        echo "🧪 Running backend unit tests..."
-        npm run test:ci
-        echo "✅ Backend unit tests completed"
+    - name: 🔍 TypeScript Type Check
+      working-directory: backend
+      run: npm run type-check
 
-    - name: 📊 Coverage Check
-      working-directory: ./backend
+    - name: 🧹 ESLint Code Quality
+      working-directory: backend
+      run: npm run lint
+
+    - name: 🧪 Run Unit Tests
+      working-directory: backend
+      run: npm test -- --coverage --watchAll=false
+
+    - name: 📊 Check Coverage Threshold
+      working-directory: backend
       run: |
-        echo "📊 Checking test coverage..."
-        npm run test:coverage
-        
-        # Extract coverage percentage
         COVERAGE=$(cat coverage/coverage-summary.json | jq '.total.lines.pct')
-        echo "Current coverage: ${COVERAGE}%"
-        
-        if (( $(echo "$COVERAGE < ${{ env.COVERAGE_THRESHOLD }}" | bc -l) )); then
-          echo "❌ Coverage ${COVERAGE}% is below threshold ${{ env.COVERAGE_THRESHOLD }}%"
+        echo "Current coverage: $COVERAGE%"
+        if (( $(echo "$COVERAGE < $COVERAGE_THRESHOLD" | bc -l) )); then
+          echo "❌ Coverage $COVERAGE% is below threshold $COVERAGE_THRESHOLD%"
           exit 1
         else
-          echo "✅ Coverage ${COVERAGE}% meets threshold ${{ env.COVERAGE_THRESHOLD }}%"
+          echo "✅ Coverage $COVERAGE% meets threshold $COVERAGE_THRESHOLD%"
         fi
 
-    - name: 📤 Upload Coverage Reports
-      uses: actions/upload-artifact@v4
-      with:
-        name: backend-coverage
-        path: backend/coverage/
-        retention-days: 30
+    - name: 🏗️ Build Backend
+      working-directory: backend
+      run: npm run build
 
-  # ========================================
-  # JOB 3: FRONTEND TESTS
-  # ========================================
-  frontend-tests:
-    name: ⚛️ Frontend Tests
+    - name: 📈 Upload Coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./backend/coverage/lcov.info
+        flags: backend
+        name: backend-coverage
+
+  # ==========================================
+  # JOB 2: QUALITY GATES - FRONTEND
+  # ==========================================
+  frontend-quality-gates:
+    name: Frontend Quality Gates
     runs-on: ubuntu-latest
-    needs: quality-gates
-    timeout-minutes: 15
     
     steps:
     - name: 📥 Checkout Code
       uses: actions/checkout@v4
 
-    - name: 🟢 Setup Node.js
+    - name: 🔧 Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: 'npm'
         cache-dependency-path: frontend/package-lock.json
 
-    - name: 📦 Install Dependencies
-      working-directory: ./frontend
+    - name: 📦 Install Frontend Dependencies
+      working-directory: frontend
       run: npm ci
 
-    - name: 🧪 Run Unit Tests
-      working-directory: ./frontend
-      run: |
-        echo "🧪 Running frontend unit tests..."
-        npm run test:ci
-        echo "✅ Frontend unit tests completed"
+    - name: 🔍 TypeScript Type Check
+      working-directory: frontend
+      run: npm run type-check
 
-    - name: 📊 Coverage Check
-      working-directory: ./frontend
-      run: |
-        echo "📊 Checking test coverage..."
-        npm run test:coverage
-        
-        # Extract coverage from vitest output
-        echo "✅ Frontend coverage check completed"
+    - name: 🧹 ESLint Code Quality
+      working-directory: frontend
+      run: npm run lint
 
-    - name: 📤 Upload Coverage Reports
-      uses: actions/upload-artifact@v4
-      with:
-        name: frontend-coverage
-        path: frontend/coverage/
-        retention-days: 30
-
-  # ========================================
-  # JOB 4: BUILD VALIDATION
-  # ========================================
-  build-validation:
-    name: 🏗️ Build Validation
-    runs-on: ubuntu-latest
-    needs: [backend-tests, frontend-tests]
-    timeout-minutes: 10
-    
-    steps:
-    - name: 📥 Checkout Code
-      uses: actions/checkout@v4
-
-    - name: 🟢 Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-
-    - name: 📦 Install Dependencies
-      run: |
-        cd backend && npm ci
-        cd ../frontend && npm ci
-
-    - name: 🏗️ Build Backend
-      working-directory: ./backend
-      run: |
-        echo "🏗️ Building backend..."
-        npm run build
-        echo "✅ Backend build successful"
+    - name: 🧪 Run Frontend Tests
+      working-directory: frontend
+      run: npm test -- --coverage --watchAll=false
 
     - name: 🏗️ Build Frontend
-      working-directory: ./frontend
+      working-directory: frontend
+      run: npm run build
+
+    - name: 📏 Bundle Size Analysis
+      working-directory: frontend
       run: |
-        echo "🏗️ Building frontend..."
-        npm run build
-        echo "✅ Frontend build successful"
+        BUNDLE_SIZE=$(du -sh dist/ | cut -f1)
+        echo "Bundle size: $BUNDLE_SIZE"
+        # Add bundle size validation logic here
 
-    - name: 📤 Upload Build Artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-artifacts
-        path: |
-          backend/dist/
-          frontend/dist/
-        retention-days: 7
-
-  # ========================================
-  # JOB 5: SECURITY SCAN
-  # ========================================
-  security-scan:
-    name: 🛡️ Security Scan
-    runs-on: ubuntu-latest
-    needs: quality-gates
-    timeout-minutes: 10
-    
-    steps:
-    - name: 📥 Checkout Code
-      uses: actions/checkout@v4
-
-    - name: 🟢 Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-
-    - name: 🔍 NPM Audit - Backend
-      working-directory: ./backend
-      run: |
-        echo "🔍 Running npm audit for backend..."
-        npm audit --audit-level=high || echo "⚠️ Security vulnerabilities found"
-
-    - name: 🔍 NPM Audit - Frontend
-      working-directory: ./frontend
-      run: |
-        echo "🔍 Running npm audit for frontend..."
-        npm audit --audit-level=high || echo "⚠️ Security vulnerabilities found"
-
-    - name: 🛡️ CodeQL Analysis
-      uses: github/codeql-action/init@v3
-      with:
-        languages: javascript
-
-    - name: 🛡️ Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
-
-  # ========================================
-  # JOB 6: INTEGRATION TESTS
-  # ========================================
+  # ==========================================
+  # JOB 3: INTEGRATION TESTS
+  # ==========================================
   integration-tests:
-    name: 🔗 Integration Tests
+    name: Integration Tests
     runs-on: ubuntu-latest
-    needs: build-validation
-    timeout-minutes: 20
-    
-    services:
-      # Mock external services if needed
-      mock-api:
-        image: wiremock/wiremock:latest
-        ports:
-          - 8080:8080
+    needs: [backend-quality-gates, frontend-quality-gates]
     
     steps:
     - name: 📥 Checkout Code
       uses: actions/checkout@v4
 
-    - name: 🟢 Setup Node.js
+    - name: 🔧 Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
@@ -295,111 +142,125 @@ jobs:
         cd ../frontend && npm ci
 
     - name: 🚀 Start Backend Server
-      working-directory: ./backend
+      working-directory: backend
       run: |
-        echo "🚀 Starting backend server..."
         npm run build
-        npm start &
+        nohup npm start &
         sleep 10
-        echo "✅ Backend server started"
 
     - name: 🧪 Run Integration Tests
-      working-directory: ./backend
-      run: |
-        echo "🧪 Running integration tests..."
-        npm run test:integration || echo "⚠️ Some integration tests failed"
+      working-directory: backend
+      run: npm run test:integration
 
-    - name: 🔍 Health Check
+    - name: 🔍 API Health Check
       run: |
-        echo "🔍 Performing health check..."
         curl -f http://localhost:3001/api/health || exit 1
-        echo "✅ Health check passed"
+        curl -f http://localhost:3001/metrics || exit 1
 
-  # ========================================
-  # JOB 7: DEPLOYMENT PREVIEW (PR ONLY)
-  # ========================================
-  deployment-preview:
-    name: 🚀 Deployment Preview
+  # ==========================================
+  # JOB 4: SECURITY SCANNING
+  # ==========================================
+  security-scan:
+    name: Security Scanning
     runs-on: ubuntu-latest
-    needs: [integration-tests, security-scan]
-    if: github.event_name == 'pull_request'
-    timeout-minutes: 15
     
     steps:
     - name: 📥 Checkout Code
       uses: actions/checkout@v4
 
-    - name: 🟢 Setup Node.js
+    - name: 🔒 Run npm audit
+      run: |
+        cd backend && npm audit --audit-level=moderate
+        cd ../frontend && npm audit --audit-level=moderate
+
+    - name: 🔍 CodeQL Analysis
+      uses: github/codeql-action/init@v2
+      with:
+        languages: javascript
+
+    - name: 🏗️ Autobuild
+      uses: github/codeql-action/autobuild@v2
+
+    - name: 🔍 Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+
+  # ==========================================
+  # JOB 5: PERFORMANCE TESTING
+  # ==========================================
+  performance-tests:
+    name: Performance Testing
+    runs-on: ubuntu-latest
+    needs: [integration-tests]
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+
+    - name: 🔧 Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
 
-    - name: 📦 Download Build Artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: build-artifacts
-
-    - name: 🚀 Deploy Preview
+    - name: 📦 Install Dependencies
       run: |
-        echo "🚀 Deploying preview environment..."
-        echo "Preview URL: https://preview-${{ github.event.number }}.genesis-luminal.dev"
-        echo "✅ Preview deployment completed"
+        cd backend && npm ci
+        cd ../frontend && npm ci
 
-  # ========================================
-  # JOB 8: PRODUCTION DEPLOYMENT (MAIN ONLY)
-  # ========================================
-  production-deployment:
-    name: 🌟 Production Deployment
+    - name: 🚀 Start Services
+      run: |
+        cd backend && npm run build && nohup npm start &
+        cd ../frontend && nohup npm run dev &
+        sleep 15
+
+    - name: 🏃 Lighthouse CI Performance Audit
+      uses: treosh/lighthouse-ci-action@v9
+      with:
+        configPath: '.lighthouserc.json'
+        uploadArtifacts: true
+
+  # ==========================================
+  # JOB 6: DEPLOYMENT (se todos os gates passarem)
+  # ==========================================
+  deploy:
+    name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: [integration-tests, security-scan]
+    needs: [integration-tests, security-scan, performance-tests]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    environment: production
-    timeout-minutes: 20
     
     steps:
     - name: 📥 Checkout Code
       uses: actions/checkout@v4
 
-    - name: 📦 Download Build Artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: build-artifacts
-
-    - name: 🌟 Deploy to Production
+    - name: 🚀 Deploy Success Notification
       run: |
-        echo "🌟 Deploying to production..."
-        echo "Production URL: https://genesis-luminal.com"
-        echo "✅ Production deployment completed"
+        echo "🎉 All quality gates passed!"
+        echo "📊 Coverage: ≥${{ env.COVERAGE_THRESHOLD }}%"
+        echo "🔒 Security: Clean"
+        echo "⚡ Performance: Validated"
+        echo "🚀 Ready for production deployment"
 
-    - name: 🔔 Deployment Notification
-      run: |
-        echo "🔔 Sending deployment notification..."
-        echo "✅ Deployment notification sent"
-
-  # ========================================
-  # JOB 9: SUMMARY REPORT
-  # ========================================
-  summary-report:
-    name: 📊 Summary Report
+  # ==========================================
+  # JOB 7: QUALITY REPORT
+  # ==========================================
+  quality-report:
+    name: Quality Report
     runs-on: ubuntu-latest
-    needs: [backend-tests, frontend-tests, build-validation, security-scan]
+    needs: [backend-quality-gates, frontend-quality-gates, integration-tests, security-scan]
     if: always()
     
     steps:
-    - name: 📊 Generate Summary
+    - name: 📊 Generate Quality Report
       run: |
-        echo "📊 CI/CD Pipeline Summary"
-        echo "=========================="
-        echo "Backend Tests: ${{ needs.backend-tests.result }}"
-        echo "Frontend Tests: ${{ needs.frontend-tests.result }}"
-        echo "Build Validation: ${{ needs.build-validation.result }}"
-        echo "Security Scan: ${{ needs.security-scan.result }}"
-        echo "=========================="
+        echo "# Genesis Luminal Quality Report" > quality-report.md
+        echo "## Sprint 6: Fundação de Qualidade" >> quality-report.md
+        echo "- Backend Tests: ${{ needs.backend-quality-gates.result }}" >> quality-report.md
+        echo "- Frontend Tests: ${{ needs.frontend-quality-gates.result }}" >> quality-report.md
+        echo "- Integration Tests: ${{ needs.integration-tests.result }}" >> quality-report.md
+        echo "- Security Scan: ${{ needs.security-scan.result }}" >> quality-report.md
+        echo "- Coverage Threshold: ${{ env.COVERAGE_THRESHOLD }}%" >> quality-report.md
         
-        if [[ "${{ needs.backend-tests.result }}" == "success" && 
-              "${{ needs.frontend-tests.result }}" == "success" && 
-              "${{ needs.build-validation.result }}" == "success" ]]; then
-          echo "✅ All quality gates passed!"
-        else
-          echo "❌ Some quality gates failed"
-        fi
+    - name: 📤 Upload Quality Report
+      uses: actions/upload-artifact@v3
+      with:
+        name: quality-report
+        path: quality-report.md

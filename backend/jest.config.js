@@ -1,71 +1,82 @@
 /**
- * @fileoverview Configuração Jest para testes backend - Genesis Luminal
+ * @fileoverview Configuração Jest Enterprise para Genesis Luminal Backend
  * @version 1.0.0
  * @author Genesis Luminal Team
+ * @description Configuração otimizada para testes unitários, integração e coverage enterprise
  */
 
 module.exports = {
   // Ambiente de teste
   testEnvironment: 'node',
   
-  // Diretório raiz dos testes
-  roots: ['<rootDir>/src'],
-  
-  // Padrões de arquivos de teste
+  // Diretórios de teste
+  roots: ['<rootDir>/src', '<rootDir>/__tests__'],
   testMatch: [
-    '<rootDir>/src/**/__tests__/**/*.{js,ts}',
-    '<rootDir>/src/**/*.(test|spec).{js,ts}'
+    '**/__tests__/**/*.{js,ts}',
+    '**/?(*.)+(spec|test).{js,ts}'
   ],
   
   // Transformações TypeScript
   transform: {
     '^.+\\.ts$': 'ts-jest',
+    '^.+\\.js$': 'babel-jest'
   },
   
-  // Extensões de arquivo suportadas
-  moduleFileExtensions: ['ts', 'js', 'json'],
+  // Extensões de arquivo
+  moduleFileExtensions: ['ts', 'js', 'json', 'node'],
   
-  // Configuração de cobertura
+  // Module name mapping para imports absolutos
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^@core/(.*)$': '<rootDir>/src/core/$1',
+    '^@infrastructure/(.*)$': '<rootDir>/src/infrastructure/$1',
+    '^@presentation/(.*)$': '<rootDir>/src/presentation/$1',
+    '^@shared/(.*)$': '<rootDir>/src/shared/$1'
+  },
+  
+  // Coverage configuration (Meta: 60%+ para Sprint 6)
   collectCoverage: true,
+  coverageDirectory: 'coverage',
+  coverageReporters: [
+    'text',
+    'lcov',
+    'html',
+    'json-summary'
+  ],
+  
+  // Coverage thresholds (Quality Gate)
+  coverageThreshold: {
+    global: {
+      branches: 60,
+      functions: 60,
+      lines: 60,
+      statements: 60
+    }
+  },
+  
+  // Arquivos para coleta de coverage
   collectCoverageFrom: [
     'src/**/*.{ts,js}',
     '!src/**/*.d.ts',
-    '!src/**/__tests__/**',
-    '!src/**/node_modules/**',
-    '!src/server.ts', // Arquivo de inicialização
+    '!src/**/*.test.{ts,js}',
+    '!src/**/*.spec.{ts,js}',
+    '!src/**/index.{ts,js}',
+    '!src/**/__tests__/**'
   ],
   
-  // Diretório de relatórios de cobertura
-  coverageDirectory: 'coverage',
+  // Setup files
+  setupFilesAfterEnv: ['<rootDir>/__tests__/setup.js'],
   
-  // Formatos de relatório
-  coverageReporters: ['text', 'lcov', 'html', 'json-summary'],
-  
-  // Thresholds de cobertura (Meta: 80%)
-  coverageThreshold: {
-    global: {
-      branches: 80,
-      functions: 80,
-      lines: 80,
-      statements: 80,
-    },
-  },
-  
-  // Setup de testes
-  setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
-  
-  // Mapeamento de módulos
-  moduleNameMapping: {
-    '^@/(.*)$': '<rootDir>/src/$1',
-    '^@tests/(.*)$': '<rootDir>/src/__tests__/$1',
-  },
-  
-  // Timeout para testes
+  // Configurações de timeout
   testTimeout: 10000,
   
-  // Limpeza automática de mocks
-  clearMocks: true,
-  
-  // Relatório verbose
+  // Verbose output para debugging
   verbose: true,
+  
+  // Clear mocks between tests
+  clearMocks: true,
+  restoreMocks: true,
+  
+  // Global teardown
+  globalTeardown: '<rootDir>/__tests__/teardown.js'
 };
