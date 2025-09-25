@@ -6,13 +6,13 @@
   "type": "module",
   "scripts": {
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev": "tsx watch src/app.ts",
     "dev:backend": "cd backend && npm run dev",
     "dev:frontend": "cd frontend && npm run dev",
-    "build": "npm run build:backend && npm run build:frontend",
+    "build": "tsc",
     "build:backend": "cd backend && npm run build",
     "build:frontend": "cd frontend && npm run build",
-    "test": "npm run test:backend && npm run test:frontend",
+    "test": "NODE_OPTIONS=\"--loader tsx/esm\" jest",
     "test:backend": "cd backend && npm run test",
     "test:frontend": "cd frontend && npm run test",
     "test:ci": "npm run test:backend:ci && npm run test:frontend:ci",
@@ -29,7 +29,8 @@
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
     "version": "npm run changelog && git add CHANGELOG.md",
     "prepare": "husky install",
-    "commit": "git-cz"
+    "commit": "git-cz",
+    "start": "node dist/app.js"
   },
   "devDependencies": {
     "@commitlint/cli": "^18.4.0",
@@ -43,7 +44,8 @@
     "husky": "^8.0.3",
     "lint-staged": "^15.2.0",
     "semantic-release": "^22.0.8",
-    "ts-jest": "^29.4.4"
+    "ts-jest": "^29.4.4",
+    "tsx": "^4.20.5"
   },
   "config": {
     "commitizen": {
