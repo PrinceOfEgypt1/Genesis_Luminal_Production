@@ -4,7 +4,7 @@
  */
 
 import request from 'supertest';
-import { app } from '../../app';
+import app from '../../app';
 
 describe('Genesis Luminal API Endpoints', () => {
   describe('Health Check', () => {
